@@ -1,0 +1,21 @@
+{
+  "name": "myrotina-provisional-name",
+  "version": "1.0.0",
+  "description": "Um aplicativo de produtividade pessoal completo e gamificado, operando diretamente no seu navegador em um único arquivo HTML.",
+  "main": "app.js",
+  "scripts": {
+    "dev": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/william-fls/MyRotina-Provisional-name.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/william-fls/MyRotina-Provisional-name/issues"
+  },
+  "homepage": "https://github.com/william-fls/MyRotina-Provisional-name#readme"
+}
