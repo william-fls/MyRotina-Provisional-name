@@ -1,0 +1,1046 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minha Rotina</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+  <header id="mobile-topbar">
+    <button class="icon-btn mobile-only" type="button" onclick="toggleSidebar()" aria-label="Abrir menu">
+      <i data-lucide="menu" style="width:18px;height:18px"></i>
+    </button>
+    <div class="mobile-brand">Minha Rotina</div>
+    <button class="icon-btn mobile-only" type="button" onclick="toggleTheme()" aria-label="Alternar tema">
+      <i data-lucide="sun" id="theme-icon-mobile" style="width:18px;height:18px"></i>
+    </button>
+  </header>
+
+  <div id="toast-stack" class="toast-stack"></div>
+
+  <!-- =============================================
+     SIDEBAR NAVIGATION
+============================================= -->
+  <nav id="sidebar">
+    <div class="nav-logo">Minha Rotina</div>
+
+    <a class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+      <i data-lucide="layout-dashboard" style="width:20px;height:20px;flex-shrink:0"></i>
+      <span class="nav-label">Dashboard</span>
+    </a>
+    <a class="nav-item" data-page="tasks" onclick="navigate('tasks')">
+      <i data-lucide="check-square" style="width:20px;height:20px;flex-shrink:0"></i>
+      <span class="nav-label">Planejamento</span>
+    </a>
+    <a class="nav-item" data-page="missions" onclick="navigate('missions')">
+      <i data-lucide="crosshair" style="width:20px;height:20px;flex-shrink:0"></i>
+      <span class="nav-label">MissÃµes</span>
+    </a>
+    
+    <a class="nav-item" data-page="ai" onclick="navigate('ai')">
+      <i data-lucide="bot" style="width:20px;height:20px;flex-shrink:0"></i>
+      <span class="nav-label">Rotina A.I.</span>
+    </a>
+    
+    <a class="nav-item" data-page="fitness" onclick="navigate('fitness')">
+      <i data-lucide="dumbbell" style="width:20px;height:20px;flex-shrink:0"></i>
+      <span class="nav-label">Exercícios</span>
+    </a>
+
+    <a class="nav-item" data-page="stats" onclick="navigate('stats')">
+      <i data-lucide="bar-chart-2" style="width:20px;height:20px;flex-shrink:0"></i>
+      <span class="nav-label">Estatísticas</span>
+    </a>
+
+    <div class="nav-bottom" style="width:100%">
+      <a class="nav-item" onclick="toggleNotifications();closeSidebar()">
+        <i data-lucide="bell" style="width:20px;height:20px;flex-shrink:0"></i>
+        <span class="nav-label">Notificações</span>
+      </a>
+      <a class="nav-item" onclick="toggleTheme();closeSidebar()">
+        <i data-lucide="sun" id="theme-icon" style="width:20px;height:20px;flex-shrink:0"></i>
+        <span class="nav-label">Tema</span>
+      </a>
+      <a class="nav-item" onclick="exportData();closeSidebar()">
+        <i data-lucide="download" style="width:20px;height:20px;flex-shrink:0"></i>
+        <span class="nav-label">Exportar</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- =============================================
+     MAIN CONTENT AREA
+============================================= -->
+  <main id="main">
+
+    <!-- ==================== DASHBOARD ==================== -->
+    <section class="page active" id="page-dashboard">
+      <div class="dashboard-hero mb-4">
+        <div>
+          <p id="greeting" class="text-muted text-sm" style="font-family:'DM Mono',monospace;"></p>
+          <h1 class="page-title" style="margin-bottom:4px">Bem-vindo, <span id="user-name"
+              style="color:var(--accent)">você</span> 👋</h1>
+          <p id="location-tag" class="text-sm text-muted">Organize tarefas, hábitos e sua agenda em um só lugar.</p>
+        </div>
+        <div class="clock-panel">
+          <div id="clock-display" class="mono">--:--:--</div>
+          <div id="date-display"></div>
+        </div>
+      </div>
+
+      <div class="tip-bar" id="daily-tip">
+        <strong style="color:var(--accent)">💡 Dica do dia:</strong> <span id="tip-text"></span>
+      </div>
+
+      <!-- Weekly Calendar -->
+      <div class="card mb-4" id="weekly-calendar-card" style="padding:16px 20px;">
+        <div class="flex items-center justify-between mb-3">
+          <div class="section-title" style="margin-bottom:0">Esta Semana</div>
+          <span class="text-xs text-muted" id="weekly-calendar-date" style="font-weight:600;text-transform:capitalize"></span>
+        </div>
+        <div id="weekly-calendar-grid" style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;"></div>
+      </div>
+
+      <!-- Overview Cards -->
+      <div class="grid-3 mb-4">
+        <div class="card card-sm" style="border-left: 3px solid var(--accent);">
+          <div class="section-title">Tarefas hoje</div>
+          <div style="font-family:'DM Mono',monospace;font-size:32px;font-weight:300;color:var(--accent)"
+            id="ov-tasks-done">0/0</div>
+          <div class="progress-bar mt-4">
+            <div class="progress-fill" style="background:var(--accent)" id="ov-tasks-bar"></div>
+          </div>
+        </div>
+        <div class="card card-sm" style="border-left: 3px solid var(--accent2);">
+          <div class="section-title">Hábitos feitos</div>
+          <div style="font-family:'DM Mono',monospace;font-size:32px;font-weight:300;color:var(--accent2)"
+            id="ov-daily-done">0/0</div>
+          <div class="progress-bar mt-4">
+            <div class="progress-fill" style="background:var(--accent2)" id="ov-daily-bar"></div>
+          </div>
+        </div>
+        <div class="card card-sm" style="border-left: 3px solid var(--accent3);">
+          <div class="section-title">Progresso do dia</div>
+          <div style="font-family:'DM Mono',monospace;font-size:32px;font-weight:300;color:var(--accent3)"
+            id="ov-progress">0%</div>
+          <div class="progress-bar mt-4">
+            <div class="progress-fill" style="background:var(--accent3)" id="ov-progress-bar"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2 mb-4">
+        <div class="card">
+          <div class="flex items-center justify-between mb-3">
+            <div class="section-title" style="margin-bottom:0">Resumo de Atividade</div>
+            <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="navigate('stats')">Estatísticas</button>
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+            <div class="stat-box" style="padding:16px">
+              <div class="stat-number" id="dash-stat-tasks" style="font-size:28px">0</div>
+              <div class="stat-label">Feitas Hoje</div>
+            </div>
+            <div class="stat-box" style="padding:16px">
+              <div class="stat-number" id="dash-stat-streak" style="font-size:28px">0</div>
+              <div class="stat-label">Dias Seguidos</div>
+            </div>
+          </div>
+          <div class="tip-bar" style="margin-bottom:0; padding:10px 14px">
+            <strong style="color:var(--accent)">Foco:</strong> Mantenha a barra de progresso no topo sempre cheia.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Ritmo Automático</div>
+          <div class="status-stack mb-4">
+            <div id="daily-reset-status" class="status-line"></div>
+            <div id="notification-status" class="status-line"></div>
+          </div>
+
+          <div class="responsive-actions">
+            <button class="btn btn-primary" id="notifications-btn" onclick="toggleNotifications()">
+              <i data-lucide="bell-ring" style="width:16px;height:16px"></i>
+              <span id="notifications-btn-label">Ativar notificações</span>
+            </button>
+            <button class="btn btn-ghost" onclick="sendTestNotification()">
+              <i data-lucide="zap" style="width:16px;height:16px"></i> Testar aviso
+            </button>
+          </div>
+
+          <hr class="divider" />
+
+          <div class="section-title" style="margin-bottom:8px">Próximos lembretes</div>
+          <div id="upcoming-reminders" class="inline-note">Nenhum lembrete configurado ainda.</div>
+        </div>
+      </div>
+
+      <!-- Recent Tasks -->
+      <div class="grid-3 mb-4" id="dash-lists-container">
+        <div class="card" id="dash-card-tasks">
+          <div class="flex items-center justify-between mb-3">
+            <div class="section-title" style="margin-bottom:0">Tarefas de Hoje</div>
+            <button class="btn btn-primary" style="padding:6px 12px;font-size:12px" onclick="navigate('tasks')">Ver tudo</button>
+          </div>
+          <div id="dash-tasks-list"></div>
+        </div>
+        <div class="card" id="dash-card-daily">
+          <div class="flex items-center justify-between mb-3">
+            <div class="section-title" style="margin-bottom:0">Tarefas Recorrentes</div>
+            <button class="btn btn-primary" style="padding:6px 12px;font-size:12px" onclick="navigate('tasks')">Ver tudo</button>
+          </div>
+          <div id="dash-daily-list"></div>
+        </div>
+        <div class="card" id="dash-card-exercises" style="display:none;">
+          <div class="flex items-center justify-between mb-3">
+            <div class="section-title" style="margin-bottom:0">Treino de Hoje</div>
+            <button class="btn btn-primary" style="padding:6px 12px;font-size:12px" onclick="navigate('fitness')">Ver tudo</button>
+          </div>
+          <div id="dash-exercises-list"></div>
+        </div>
+      </div>
+
+      <!-- Reset Day -->
+      <div class="mt-4 responsive-actions">
+        <button class="btn btn-danger" onclick="confirmResetDay()">
+          <i data-lucide="refresh-ccw" style="width:16px;height:16px"></i> Resetar Dia
+        </button>
+        <button class="btn btn-ghost" onclick="openNameModal()">
+          <i data-lucide="user" style="width:16px;height:16px"></i> Alterar nome
+        </button>
+      </div>
+    </section>
+
+        <!-- ==================== MISSIONS ==================== -->
+    <section class="page" id="page-missions">
+      <div class="dashboard-hero mb-4">
+        <div>
+          <h1 class="page-title" style="margin-bottom:4px">MissÃµes e Conquistas ðŸ›¡ï¸</h1>
+          <p class="text-sm text-muted">Mantenha a consistÃªncia, ganhe XP e desbloqueie novas recompensas.</p>
+        </div>
+      </div>
+      
+      <div class="grid-2 mb-4">
+        <div class="card game-card">
+          <div class="flex items-center justify-between mb-3">
+            <div class="section-title" style="margin-bottom:0">Seu Perfil</div>
+            <span class="tag" id="game-rank-tag">Lv 1</span>
+          </div>
+          <div class="grid-3 mb-3">
+            <div class="stat-box">
+              <div class="stat-number" id="game-level">1</div>
+              <div class="stat-label">NÃ­vel</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number" id="game-streak">0d</div>
+              <div class="stat-label">Streak</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number" id="game-badges-count">0</div>
+              <div class="stat-label">Conquistas</div>
+            </div>
+          </div>
+          <div class="section-title" style="margin-bottom:8px">Progresso</div>
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <span id="game-rank-title" class="text-sm font-bold">Aprendiz</span>
+            <span id="game-xp" class="mono text-sm text-muted">0/120 XP</span>
+          </div>
+          <div class="progress-bar mb-2">
+            <div class="progress-fill" id="game-level-bar" style="background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%"></div>
+          </div>
+          <p id="game-next-level" class="text-sm text-muted mt-2 mb-2"></p>
+        </div>
+        
+        <div class="card">
+           <div class="section-title" style="margin-bottom:16px">MissÃµes de Hoje</div>
+           <p class="text-sm text-muted mb-4">Cumpra essas metas diÃ¡rias para ganhar bÃ´nus de XP.</p>
+           <div id="game-missions" class="mission-list"></div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+         <div class="section-title" style="margin-bottom:16px">BaÃº de Conquistas</div>
+         <div id="game-achievements" class="achievement-list"></div>
+      </div>
+    </section>
+
+
+    <!-- ==================== MISSIONS ==================== -->
+    <section class="page" id="page-missions">
+      <div class="dashboard-hero mb-4">
+        <div>
+          <h1 class="page-title" style="margin-bottom:4px">Missões e Conquistas 🛡️</h1>
+          <p class="text-sm text-muted">Mantenha a consistência, ganhe XP e desbloqueie novas recompensas.</p>
+        </div>
+      </div>
+      
+      <div class="grid-2 mb-4">
+        <div class="card game-card">
+          <div class="flex items-center justify-between mb-3">
+            <div class="section-title" style="margin-bottom:0">Seu Perfil</div>
+            <span class="tag" id="game-rank-tag">Lv 1</span>
+          </div>
+          <div class="grid-3 mb-3">
+            <div class="stat-box">
+              <div class="stat-number" id="game-level">1</div>
+              <div class="stat-label">Nível</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number" id="game-streak">0d</div>
+              <div class="stat-label">Streak</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number" id="game-badges-count">0</div>
+              <div class="stat-label">Conquistas</div>
+            </div>
+          </div>
+          <div class="section-title" style="margin-bottom:8px">Progresso</div>
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <span id="game-rank-title" class="text-sm font-bold">Aprendiz</span>
+            <span id="game-xp" class="mono text-sm text-muted">0/120 XP</span>
+          </div>
+          <div class="progress-bar mb-2">
+            <div class="progress-fill" id="game-level-bar" style="background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%"></div>
+          </div>
+          <p id="game-next-level" class="text-sm text-muted mt-2 mb-2"></p>
+        </div>
+        
+        <div class="card">
+           <div class="section-title" style="margin-bottom:16px">Missões Diárias</div>
+           <p class="text-sm text-muted mb-4">Cumpra essas metas para ganhar bônus de XP.</p>
+           <div id="game-missions" class="mission-list"></div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+         <div class="section-title" style="margin-bottom:16px">Baú de Conquistas</div>
+         <div id="game-achievements" class="achievement-list"></div>
+      </div>
+    </section>
+
+    <!-- ==================== TASKS ==================== -->
+    <section class="page" id="page-tasks">
+      <h1 class="page-title">Rotina e Tarefas do Dia</h1>
+
+      <!-- Add Task -->
+      <div class="card mb-4" id="task-composer">
+        <div class="section-title">Nova Tarefa</div>
+        <div class="mb-3">
+          <input type="text" id="task-input" placeholder="Descreva a tarefa..." maxlength="120" />
+        </div>
+        <div class="task-config-grid mb-3">
+          <div>
+            <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Prioridade</label>
+            <select id="task-priority" onchange="syncTaskFormState()">
+              <option value="high">🔴 Alta</option>
+              <option value="med" selected>🟡 Média</option>
+              <option value="low">🟢 Baixa</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Data & Hora de hoje</label>
+            <input type="datetime-local" id="task-datetime" step="900" />
+          </div>
+        </div>
+        <div class="task-toggle-row mb-3">
+          <label class="option-toggle">
+            <input type="checkbox" id="task-repeat-daily" onchange="syncTaskFormState()" />
+            <div>
+              <strong>Repetir diariamente</strong>
+              <span>Ideal para rotinas fixas. O horário é mantido e a tarefa volta todo dia.</span>
+            </div>
+          </label>
+          <label class="option-toggle">
+            <input type="checkbox" id="task-has-exercise" onchange="syncTaskFormState()" />
+            <div>
+              <strong>Gerar desafio de movimento</strong>
+              <span>Se a tarefa falhar, o app cria um exercício curto para compensar o ciclo perdido.</span>
+            </div>
+          </label>
+        </div>
+        <div class="exercise-preview" id="task-exercise-preview">
+          <strong>Desafio desativado</strong>
+          <span>Ative para gerar um exercício rápido quando a tarefa falhar.</span>
+        </div>
+        <button class="btn btn-primary" onclick="addTask()">
+          <i data-lucide="plus" style="width:16px;height:16px"></i> Adicionar Tarefa
+        </button>
+      </div>
+
+      <div class="card mb-4">
+        <div class="flex items-center justify-between mb-3">
+          <div class="section-title" style="margin-bottom:0">Desafios de Movimento</div>
+          <span class="tag" id="exercise-summary">0 pendentes</span>
+        </div>
+        <div id="exercise-list" class="exercise-list"></div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="filterTasks('all', this)">Todas</button>
+        <button class="filter-tab" onclick="filterTasks('pending', this)">Pendentes</button>
+        <button class="filter-tab" onclick="filterTasks('done', this)">Concluídas</button>
+        <button class="filter-tab" onclick="filterTasks('today', this)">Hoje</button>
+        <button class="filter-tab" onclick="filterTasks('high', this)">Alta prioridade</button>
+      </div>
+
+      <div id="tasks-list"></div>
+
+      <div class="card mt-4 mb-4">
+        <div class="section-title" style="margin-bottom:12px">Progresso ContÃ­nuo (Tarefas DiÃ¡rias)</div>
+        <div id="weekly-heatmap"></div>
+      </div>
+      <div class="card mt-4 mb-4">
+        <div class="section-title" style="margin-bottom:12px">Progresso ContÃ­nuo (Tarefas DiÃ¡rias)</div>
+        <div id="weekly-heatmap"></div>
+      </div>
+      <div class="planning-stack mt-4">
+        <div>
+          <div class="section-title">Rotina do Dia</div>
+          <div class="tip-bar">
+            <strong style="color:var(--accent2)">Planejamento de hoje:</strong> <span id="tb-date"></span> — Arraste
+            tarefas pendentes para os blocos de tempo.
+          </div>
+        </div>
+
+        <div class="grid-2 timeblocks-layout">
+          <div>
+            <div class="time-block morning">
+              <div class="time-block-header">
+                <span style="font-size:20px">ðŸŒ…</span>
+                <span class="block-label" style="color:var(--warn)">ManhÃ£</span>
+                <span class="block-time">06:00 â€“ 12:00</span>
+              </div>
+              <div id="block-morning-tasks"></div>
+              <div class="drop-zone" id="drop-morning" ondragover="allowDrop(event)" ondrop="dropTask(event,'morning')">
+                Solte tarefas aqui</div>
+            </div>
+            <div class="time-block afternoon">
+              <div class="time-block-header">
+                <span style="font-size:20px">â˜€ï¸</span>
+                <span class="block-label" style="color:var(--accent3)">Tarde</span>
+                <span class="block-time">12:00 â€“ 18:00</span>
+              </div>
+              <div id="block-afternoon-tasks"></div>
+              <div class="drop-zone" id="drop-afternoon" ondragover="allowDrop(event)"
+                ondrop="dropTask(event,'afternoon')">Solte tarefas aqui</div>
+            </div>
+            <div class="time-block evening">
+              <div class="time-block-header">
+                <span style="font-size:20px">ðŸŒ†</span>
+                <span class="block-label" style="color:var(--accent)">Noite</span>
+                <span class="block-time">18:00 â€“ 22:00</span>
+              </div>
+              <div id="block-evening-tasks"></div>
+              <div class="drop-zone" id="drop-evening" ondragover="allowDrop(event)" ondrop="dropTask(event,'evening')">
+                Solte tarefas aqui</div>
+            </div>
+            <div class="time-block night">
+              <div class="time-block-header">
+                <span style="font-size:20px">ðŸŒ™</span>
+                <span class="block-label" style="color:var(--muted)">Madrugada</span>
+                <span class="block-time">22:00 â€“ 06:00</span>
+              </div>
+              <div id="block-night-tasks"></div>
+              <div class="drop-zone" id="drop-night" ondragover="allowDrop(event)" ondrop="dropTask(event,'night')">
+                Solte tarefas aqui</div>
+            </div>
+          </div>
+
+          <div class="card sticky-panel">
+            <div class="section-title">Tarefas Pendentes</div>
+            <p class="text-sm text-muted mb-3">Arraste para os blocos de tempo ou use os atalhos no celular.</p>
+            <div id="drag-tasks-list"></div>
+            <div style="margin-top:16px">
+              <div class="section-title">SugestÃ£o de rotina</div>
+              <div id="suggested-routine"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+
+    <!-- ==================== ROTINA AI ==================== -->
+    <section class="page" id="page-ai" style="max-width:800px; margin:0 auto; width:100%">
+      <div class="flex items-center justify-between mb-4">
+         <div>
+            <h1 class="page-title" style="margin-bottom:4px">Rotina A.I. <span style="font-size:18px">✨</span></h1>
+            <p class="text-muted text-sm">Assistente com Gemini · cria, edita e organiza sua rotina.</p>
+         </div>
+         <div style="display:flex;gap:8px">
+            <button class="icon-btn" onclick="clearAIChatHistory()" aria-label="Limpar chat" title="Limpar Histórico" style="background:var(--surface2);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border)">
+               <i data-lucide="trash-2" style="width:20px;height:20px;color:var(--muted)"></i>
+            </button>
+            <button class="icon-btn" onclick="openAiSettings()" aria-label="Configurações da IA" style="background:var(--surface2);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border)">
+               <i data-lucide="settings" style="width:20px;height:20px;color:var(--text)"></i>
+            </button>
+         </div>
+      </div>
+      
+      <div class="card" style="display:flex;flex-direction:column;height:calc(100vh - 200px);min-height:400px;padding:0;overflow:hidden;border:1px solid var(--border);border-radius:16px">
+         <!-- Chat History -->
+         <div id="ai-chat-history" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;background:var(--bg)">
+            <div style="display:flex; gap:12px; align-items:flex-end; max-width:90%; align-self:flex-start;">
+               <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg, var(--accent), var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;flex-shrink:0;box-shadow:0 4px 10px rgba(124,109,247,0.3)">✨</div>
+               <div class="ai-msg bot-msg">
+                  Olá! Sou a Rotina A.I. 🤖 Agora tenho acesso completo à sua lista de tarefas!<br><br>Posso <b>criar, editar, deletar e marcar tarefas como concluídas</b> — é só pedir em linguagem natural.<br><br>Exemplos: <em>"Cria uma rotina matinal pra mim"</em>, <em>"Deleta as tarefas concluídas"</em>, <em>"Muda a prioridade de X para alta"</em>.
+               </div>
+            </div>
+         </div>
+         
+         <!-- Suggestions -->
+         <div style="padding:12px 20px;background:var(--surface);border-top:1px solid var(--border);display:flex;gap:10px;overflow-x:auto;-webkit-overflow-scrolling:touch">
+            <button class="btn btn-ghost" style="white-space:nowrap;font-size:13px;padding:8px 14px;border:1px solid var(--border);border-radius:20px;color:var(--text)" onclick="document.getElementById('ai-input').value='Monte minha rotina matinal';processAIInput()">🌅 Rotina Matinal</button>
+            <button class="btn btn-ghost" style="white-space:nowrap;font-size:13px;padding:8px 14px;border:1px solid var(--border);border-radius:20px;color:var(--text)" onclick="document.getElementById('ai-input').value='Deleta todas as tarefas concluídas';processAIInput()">🧹 Limpar concluídas</button>
+            <button class="btn btn-ghost" style="white-space:nowrap;font-size:13px;padding:8px 14px;border:1px solid var(--border);border-radius:20px;color:var(--text)" onclick="document.getElementById('ai-input').value='Crie uma rotina de estudos para mim';processAIInput()">📚 Rotina de estudos</button>
+            <button class="btn btn-ghost" style="white-space:nowrap;font-size:13px;padding:8px 14px;border:1px solid var(--border);border-radius:20px;color:var(--text)" onclick="document.getElementById('ai-input').value='Estou muito cansado hoje, adapta minha rotina';processAIInput()">🥱 Estou cansado</button>
+            <button class="btn btn-ghost" style="white-space:nowrap;font-size:13px;padding:8px 14px;border:1px solid var(--border);border-radius:20px;color:var(--text)" onclick="document.getElementById('ai-input').value='Quais são minhas tarefas pendentes hoje?';processAIInput()">📋 Ver pendentes</button>
+         </div>
+
+         <!-- Input Area -->
+         <div style="padding:16px 20px;background:var(--surface2);border-top:1px solid var(--border);display:flex;gap:12px;align-items:center;">
+            <input type="text" id="ai-input" class="input" placeholder="Mande uma mensagem..." onkeypress="if(event.key==='Enter') processAIInput()" style="flex:1;margin-bottom:0;border-radius:24px;padding:12px 20px;background:var(--bg)">
+            <button class="btn btn-primary" style="height:46px;width:46px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;flex-shrink:0" onclick="processAIInput()"><i data-lucide="send" style="width:20px;margin-left:2px"></i></button>
+         </div>
+      </div>
+    </section>
+
+    <!-- ==================== TIME BLOCKS ==================== -->
+    <section class="legacy-page" id="page-timeblocks-legacy" style="display:none !important" aria-hidden="true">
+      <h1 class="page-title">Agenda do Dia</h1>
+
+      <div class="tip-bar">
+        <strong style="color:var(--accent2)">🗓️ Hoje:</strong> <span id="tb-date"></span> — Arraste tarefas pendentes
+        para os blocos de tempo!
+      </div>
+
+      <div class="grid-2 timeblocks-layout">
+        <div>
+          <!-- Time Blocks -->
+          <div class="time-block morning">
+            <div class="time-block-header">
+              <span style="font-size:20px">🌅</span>
+              <span class="block-label" style="color:var(--warn)">Manhã</span>
+              <span class="block-time">06:00 – 12:00</span>
+            </div>
+            <div id="block-morning-tasks"></div>
+            <div class="drop-zone" id="drop-morning" ondragover="allowDrop(event)" ondrop="dropTask(event,'morning')">
+              Solte tarefas aqui</div>
+          </div>
+          <div class="time-block afternoon">
+            <div class="time-block-header">
+              <span style="font-size:20px">☀️</span>
+              <span class="block-label" style="color:var(--accent3)">Tarde</span>
+              <span class="block-time">12:00 – 18:00</span>
+            </div>
+            <div id="block-afternoon-tasks"></div>
+            <div class="drop-zone" id="drop-afternoon" ondragover="allowDrop(event)"
+              ondrop="dropTask(event,'afternoon')">Solte tarefas aqui</div>
+          </div>
+          <div class="time-block evening">
+            <div class="time-block-header">
+              <span style="font-size:20px">🌆</span>
+              <span class="block-label" style="color:var(--accent)">Noite</span>
+              <span class="block-time">18:00 – 22:00</span>
+            </div>
+            <div id="block-evening-tasks"></div>
+            <div class="drop-zone" id="drop-evening" ondragover="allowDrop(event)" ondrop="dropTask(event,'evening')">
+              Solte tarefas aqui</div>
+          </div>
+          <div class="time-block night">
+            <div class="time-block-header">
+              <span style="font-size:20px">🌙</span>
+              <span class="block-label" style="color:var(--muted)">Madrugada</span>
+              <span class="block-time">22:00 – 06:00</span>
+            </div>
+            <div id="block-night-tasks"></div>
+            <div class="drop-zone" id="drop-night" ondragover="allowDrop(event)" ondrop="dropTask(event,'night')">Solte
+              tarefas aqui</div>
+          </div>
+        </div>
+
+        <!-- Pending Tasks to Drag -->
+        <div class="card sticky-panel">
+          <div class="section-title">Tarefas Pendentes</div>
+          <p class="text-sm text-muted mb-3">Arraste para os blocos de tempo ou use os atalhos no celular.</p>
+          <div id="drag-tasks-list"></div>
+          <div style="margin-top:16px">
+            <div class="section-title">Sugestão de rotina</div>
+            <div id="suggested-routine"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== STATS ==================== -->
+
+    <!-- ==================== FITNESS ==================== -->
+    <section class="page" id="page-fitness">
+      <div class="dashboard-hero mb-4" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+          <h1 class="page-title" style="margin-bottom:4px">Exercícios 💪</h1>
+          <p class="text-sm text-muted">Plano personalizado por IA · acompanhe sua evolução física.</p>
+        </div>
+        <button class="btn btn-primary" onclick="openFitnessProfile()" style="gap:8px;display:flex;align-items:center">
+          <i data-lucide="user-cog" style="width:16px;height:16px"></i> Meu Perfil
+        </button>
+      </div>
+
+      <!-- Gamification Banner -->
+      <div class="card mb-4" id="fitness-game-banner" style="background:linear-gradient(135deg,rgba(124,109,247,0.15),rgba(92,230,184,0.1));border:1px solid rgba(124,109,247,0.25)">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div style="display:flex;align-items:center;gap:16px">
+            <div style="font-size:36px" id="fitness-avatar">🥚</div>
+            <div>
+              <div style="font-size:13px;color:var(--muted);font-weight:500">Rank Fitness</div>
+              <div style="font-size:18px;font-weight:800;color:var(--accent)" id="fitness-rank-title">Iniciante</div>
+              <div style="font-size:12px;color:var(--muted)" id="fitness-xp-label">0 XP de treino</div>
+            </div>
+          </div>
+          <div style="flex:1;min-width:160px;max-width:260px">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px">
+              <span id="fitness-level-label">Nível 1</span>
+              <span id="fitness-xp-next">0/200 XP</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="fitness-xp-bar" style="background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width 0.6s ease"></div>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px" id="fitness-streak-label">🔥 0 dias de treino consecutivos</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2 mb-4">
+        <!-- Today's workout -->
+        <div class="card" style="display:flex;flex-direction:column;gap:0">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div class="section-title" style="margin-bottom:0">Treino de Hoje</div>
+            <button class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="generateFitnessPlan()">
+              <i data-lucide="sparkles" style="width:14px;height:14px;margin-right:4px"></i>Gerar com IA
+            </button>
+          </div>
+          <div id="fitness-today-plan">
+            <div class="empty-state">
+              <p>Nenhum treino gerado.<br>Configure seu perfil e clique em <b>Gerar com IA</b>.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats & Body tracking -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card">
+            <div class="section-title" style="margin-bottom:12px">Meus Dados Físicos</div>
+            <div id="fitness-profile-display">
+              <p class="text-sm text-muted">Nenhum perfil configurado ainda.<br>Clique em <b>Meu Perfil</b> para começar.</p>
+            </div>
+          </div>
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <div class="section-title" style="margin-bottom:0">Histórico de Peso</div>
+              <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="openWeightLog()">+ Registrar</button>
+            </div>
+            <div id="fitness-weight-chart-wrap" style="position:relative;height:120px">
+              <canvas id="fitness-weight-chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weekly plan -->
+      <div class="card mb-4">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div class="section-title" style="margin-bottom:0">Plano Semanal</div>
+          <span class="tag" id="fitness-plan-tag" style="display:none">IA Gerado</span>
+        </div>
+        <div id="fitness-weekly-plan">
+          <p class="text-sm text-muted">Gere um plano com IA para ver sua semana de treinos.</p>
+        </div>
+      </div>
+
+      <!-- Badges fitness -->
+      <div class="card">
+        <div class="section-title" style="margin-bottom:16px">Conquistas Fitness 🏅</div>
+        <div id="fitness-badges" style="display:flex;flex-wrap:wrap;gap:10px">
+          <p class="text-sm text-muted">Complete treinos para desbloquear conquistas.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="page-stats">
+      <h1 class="page-title">Estatísticas & Relatórios</h1>
+
+      <div class="grid-4 mb-4" id="stats-summary"></div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="section-title">Conclusão Semanal de Tarefas</div>
+          <canvas id="chart-tasks" height="200"></canvas>
+        </div>
+        <div class="card">
+          <div class="section-title">Hábitos por Dia da Semana</div>
+          <canvas id="chart-habits" height="200"></canvas>
+        </div>
+      </div>
+      <div class="card mt-4">
+        <div class="section-title">Melhores Dias da Semana</div>
+        <div id="best-days"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =============================================
+     MODALS
+============================================= -->
+  <!-- Confirm Modal -->
+  <div class="modal-overlay" id="modal-confirm">
+    <div class="modal">
+      <div class="modal-title" id="confirm-title">Confirmar ação</div>
+      <p class="text-muted mb-4" id="confirm-msg">Tem certeza?</p>
+      <div class="flex gap-2">
+        <button class="btn btn-danger" id="confirm-yes-btn">Confirmar</button>
+        <button class="btn btn-ghost" onclick="closeModal('modal-confirm')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Task Modal -->
+  <div class="modal-overlay" id="modal-edit-task">
+    <div class="modal">
+      <div class="modal-title">Editar Tarefa</div>
+      <div class="mb-3"><input type="text" id="edit-task-text" placeholder="Texto da tarefa" /></div>
+      <div class="task-config-grid mb-3">
+        <select id="edit-task-priority" onchange="syncTaskFormState(true)">
+          <option value="high">🔴 Alta</option>
+          <option value="med">🟡 Média</option>
+          <option value="low">🟢 Baixa</option>
+        </select>
+        <input type="datetime-local" id="edit-task-datetime" step="900" />
+      </div>
+      <div class="task-toggle-row mb-3">
+        <label class="option-toggle">
+          <input type="checkbox" id="edit-task-repeat-daily" onchange="syncTaskFormState(true)" />
+          <div>
+            <strong>Repetir diariamente</strong>
+            <span>Mantém a tarefa no ciclo de todos os dias.</span>
+          </div>
+        </label>
+        <label class="option-toggle">
+          <input type="checkbox" id="edit-task-has-exercise" onchange="syncTaskFormState(true)" />
+          <div>
+            <strong>Gerar desafio de movimento</strong>
+            <span>Cria um exercício quando a tarefa perde o prazo.</span>
+          </div>
+        </label>
+      </div>
+      <div class="exercise-preview mb-3" id="edit-task-exercise-preview">
+        <strong>Desafio desativado</strong>
+        <span>Ative para gerar um exercício curto quando essa tarefa falhar.</span>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn btn-primary" onclick="saveEditTask()">Salvar</button>
+        <button class="btn btn-ghost" onclick="closeModal('modal-edit-task')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Name Modal -->
+  <div class="modal-overlay" id="modal-name">
+    <div class="modal">
+      <div class="modal-title">Qual é o seu nome?</div>
+      <div class="mb-3"><input type="text" id="name-input" placeholder="Seu nome..." maxlength="30" /></div>
+      <div class="flex gap-2">
+        <button class="btn btn-primary" onclick="saveName()">Salvar</button>
+        <button class="btn btn-ghost" onclick="closeModal('modal-name')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Blocking Modal for Exercises -->
+  <div class="modal-overlay" id="modal-blocking-exercise" style="z-index:9999">
+    <div class="modal card" style="max-width:400px;text-align:center">
+      <div style="font-size:48px;margin-bottom:12px">⚠️</div>
+      <h2 class="section-title" style="margin-bottom:8px">Desafios Pendentes!</h2>
+      <p class="text-sm text-muted" style="margin-bottom:20px" id="blocking-ex-desc">Você possui desafios de movimento pendentes por tarefas que não foram concluídas no prazo.</p>
+      
+      <div id="blocking-ex-list" style="margin-bottom:20px;text-align:left;background:var(--surface2);border-radius:12px;padding:12px;max-height:200px;overflow-y:auto;">
+      </div>
+
+      <div class="flex gap-2" style="flex-direction:column">
+        <button class="btn btn-primary" onclick="goToExercisesAndCloseModal()">Resolver Agora</button>
+        <button class="btn btn-ghost" onclick="closeModal('modal-blocking-exercise')">Ignorar por enquanto</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================
+     JAVASCRIPT
+============================================= -->
+  <script src="app.js"></script>
+
+  <!-- MODAL: Fitness Profile -->
+  <div class="modal-overlay" id="modal-fitness-profile">
+    <div class="modal card" style="max-width:480px;margin:0 16px;max-height:90vh;overflow-y:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <h2 class="section-title" style="margin:0;display:flex;align-items:center;gap:8px">
+          <i data-lucide="user-cog" style="width:20px;height:20px;color:var(--accent)"></i> Meu Perfil Físico
+        </h2>
+        <button class="icon-btn" onclick="closeModal('modal-fitness-profile')"><i data-lucide="x"></i></button>
+      </div>
+
+      <div class="grid-2" style="gap:12px;margin-bottom:12px">
+        <div class="form-group" style="margin:0">
+          <label>Idade (anos)</label>
+          <input type="number" id="fp-age" class="input" placeholder="25" min="10" max="99">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Sexo</label>
+          <select id="fp-sex" class="input">
+            <option value="male">Masculino</option>
+            <option value="female">Feminino</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-2" style="gap:12px;margin-bottom:12px">
+        <div class="form-group" style="margin:0">
+          <label>Altura (cm)</label>
+          <input type="number" id="fp-height" class="input" placeholder="175" min="100" max="250">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Peso atual (kg)</label>
+          <input type="number" id="fp-weight" class="input" placeholder="70" step="0.1" min="30" max="300">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Objetivo principal</label>
+        <select id="fp-goal" class="input">
+          <option value="lose_fat">Perder gordura</option>
+          <option value="gain_muscle">Ganhar músculo</option>
+          <option value="maintain">Manter forma</option>
+          <option value="endurance">Melhorar resistência</option>
+          <option value="general">Saúde geral</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Nível de experiência</label>
+        <select id="fp-level" class="input">
+          <option value="beginner">Iniciante (menos de 6 meses)</option>
+          <option value="intermediate">Intermediário (6 meses–2 anos)</option>
+          <option value="advanced">Avançado (2+ anos)</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Dias de treino</label>
+        <div id="fp-days-picker" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+          <button type="button" data-day="Seg" onclick="toggleDayPick(this)" class="day-pick-btn">Seg</button>
+          <button type="button" data-day="Ter" onclick="toggleDayPick(this)" class="day-pick-btn">Ter</button>
+          <button type="button" data-day="Qua" onclick="toggleDayPick(this)" class="day-pick-btn">Qua</button>
+          <button type="button" data-day="Qui" onclick="toggleDayPick(this)" class="day-pick-btn">Qui</button>
+          <button type="button" data-day="Sex" onclick="toggleDayPick(this)" class="day-pick-btn">Sex</button>
+          <button type="button" data-day="Sáb" onclick="toggleDayPick(this)" class="day-pick-btn">Sáb</button>
+          <button type="button" data-day="Dom" onclick="toggleDayPick(this)" class="day-pick-btn">Dom</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px" id="fp-days-count">Nenhum dia selecionado</div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Equipamento disponível</label>
+        <select id="fp-equipment" class="input">
+          <option value="none">Sem equipamento (calistenia)</option>
+          <option value="dumbbells">Halteres em casa</option>
+          <option value="gym">Academia completa</option>
+          <option value="resistance_bands">Elásticos/bandas</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:20px">
+        <label>Restrições / Observações (opcional)</label>
+        <input type="text" id="fp-notes" class="input" placeholder="Ex: joelho lesionado, não posso correr...">
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" style="flex:1" onclick="saveFitnessProfile()">Salvar Perfil</button>
+        <button class="btn btn-ghost" onclick="closeModal('modal-fitness-profile')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Weight Log -->
+  <div class="modal-overlay" id="modal-weight-log">
+    <div class="modal card" style="max-width:360px;margin:0 16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <h2 class="section-title" style="margin:0">⚖️ Registrar Peso</h2>
+        <button class="icon-btn" onclick="closeModal('modal-weight-log')"><i data-lucide="x"></i></button>
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Peso (kg)</label>
+        <input type="number" id="wl-weight" class="input" placeholder="70.5" step="0.1" min="30" max="300">
+      </div>
+      <div class="form-group" style="margin-bottom:20px">
+        <label>Data</label>
+        <input type="date" id="wl-date" class="input">
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" style="flex:1" onclick="saveWeightEntry()">Registrar</button>
+        <button class="btn btn-ghost" onclick="closeModal('modal-weight-log')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Exercise Done -->
+  <div class="modal-overlay" id="modal-exercise-done">
+    <div class="modal card" style="max-width:360px;margin:0 16px;text-align:center">
+      <div style="font-size:56px;margin-bottom:12px" id="exdone-emoji">💪</div>
+      <h2 class="section-title" style="margin-bottom:8px" id="exdone-title">Treino concluído!</h2>
+      <p class="text-sm text-muted" style="margin-bottom:20px" id="exdone-body">Você ganhou XP de treino!</p>
+      <div style="background:rgba(124,109,247,0.1);border:1px solid rgba(124,109,247,0.25);border-radius:12px;padding:16px;margin-bottom:20px">
+        <div style="font-size:28px;font-weight:800;color:var(--accent)" id="exdone-xp">+50 XP</div>
+        <div style="font-size:12px;color:var(--muted)">XP de Treino</div>
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="closeModal('modal-exercise-done')">Continuar 🚀</button>
+    </div>
+  </div>
+
+  <!-- MODAL: Exercise Detail -->
+  <div class="modal-overlay" id="modal-exercise-detail">
+    <div class="modal card" style="max-width:500px;margin:0 16px;max-height:90vh;overflow-y:auto;padding:0">
+      <!-- Header -->
+      <div id="exd-header" style="padding:20px 20px 16px;background:linear-gradient(135deg,rgba(124,109,247,0.15),rgba(92,230,184,0.08));border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <div>
+            <div style="font-size:11px;color:var(--accent);font-weight:700;letter-spacing:1px;margin-bottom:4px" id="exd-focus-label">TREINO</div>
+            <h2 style="font-size:20px;font-weight:800;margin:0;line-height:1.2" id="exd-name">Exercício</h2>
+            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap" id="exd-muscles"></div>
+          </div>
+          <button class="icon-btn" onclick="closeModal('modal-exercise-detail')" style="flex-shrink:0"><i data-lucide="x"></i></button>
+        </div>
+        <!-- Sets/Reps/Rest chips -->
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap" id="exd-chips"></div>
+      </div>
+
+      <div style="padding:20px;display:flex;flex-direction:column;gap:20px">
+        <!-- How To -->
+        <div id="exd-howto-section">
+          <div style="font-size:12px;font-weight:700;color:var(--accent2);letter-spacing:0.5px;margin-bottom:10px">📋 COMO FAZER</div>
+          <ol id="exd-howto" style="padding-left:20px;display:flex;flex-direction:column;gap:8px"></ol>
+        </div>
+
+        <!-- Tip -->
+        <div id="exd-tip-section" style="background:rgba(124,109,247,0.08);border:1px solid rgba(124,109,247,0.2);border-radius:10px;padding:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px">💡 DICA RÁPIDA</div>
+          <div style="font-size:13px;color:var(--text);line-height:1.5" id="exd-tip"></div>
+        </div>
+
+        <!-- Common mistakes -->
+        <div id="exd-mistakes-section">
+          <div style="font-size:12px;font-weight:700;color:var(--danger);letter-spacing:0.5px;margin-bottom:10px">⚠️ ERROS COMUNS</div>
+          <div id="exd-mistakes" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+
+        <!-- Variation -->
+        <div id="exd-variation-section" style="background:rgba(92,230,184,0.08);border:1px solid rgba(92,230,184,0.2);border-radius:10px;padding:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--accent2);margin-bottom:6px">🔄 VARIAÇÃO</div>
+          <div style="font-size:13px;color:var(--text);line-height:1.5" id="exd-variation"></div>
+        </div>
+
+        <!-- Action button -->
+        <button id="exd-complete-btn" class="btn btn-primary" style="width:100%;height:48px;font-size:15px;font-weight:700" onclick="completeFromDetail()">
+          ✓ Marcar como Feito · +25 XP
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: AI Settings -->
+
+  <div class="modal-overlay" id="modal-ai-settings">
+    <div class="modal card" style="max-width:440px; margin: 0 16px;">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="section-title" style="margin:0;display:flex;align-items:center;gap:8px">
+          <i data-lucide="brain-circuit" style="width:20px;height:20px;color:var(--accent)"></i> 
+          Motor de Inteligência Local
+        </h2>
+        <button class="icon-btn" onclick="closeModal('modal-ai-settings')" style="color:var(--muted)">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      
+      <p class="text-sm mb-4" style="color:var(--muted); line-height:1.5">
+        Para conversar organicamente e gerar tarefas inteligentes, usamos a API oficial do <b>Google Gemini</b>. O processo é simples:
+      </p>
+
+      <div class="mb-5" style="background:var(--surface3); padding:16px; border-radius:12px;border:1px solid var(--border)">
+         <strong style="color:var(--text);font-size:13px;display:block;margin-bottom:8px">Passo 1: Obtenha uma chave grátis</strong>
+         <a href="https://aistudio.google.com/app/apikey" target="_blank" class="btn btn-ghost" style="color:var(--accent);font-size:13px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:600;width:100%;border:1px solid var(--accent);background:rgba(124, 109, 247, 0.1)">
+            Entrar no Google AI Studio <i data-lucide="external-link" style="width:14px;height:14px"></i>
+         </a>
+      </div>
+
+      <div class="form-group mb-5">
+        <label>Passo 2: Cole sua API Key exclusiva</label>
+        <input type="password" id="ai-api-key" class="input" placeholder="AIzaSyA..." style="font-family:monospace;letter-spacing:1px">
+      </div>
+      
+      <div style="padding:12px;background:rgba(92, 230, 184, 0.1);border-radius:8px;border:1px solid rgba(92, 230, 184, 0.2);margin-bottom:20px">
+        <p class="text-xs" style="color:var(--success);text-align:center;margin:0;line-height:1.4">
+          🔐 <b>Fique seguro!</b> Códigos ou conversas não passam por nós. A chave trafega diretamente do seu navegador particular para o Google.
+        </p>
+      </div>
+
+      <div class="flex gap-2">
+        <button class="btn btn-primary" style="flex:1" onclick="saveAiSettings()">Guardar Conexão</button>
+      </div>
+    </div>
+  </div>
+
+  <!--
+==============================================
+  INSTRUÇÕES DE USO
+==============================================
+
+1. Salve este arquivo como: minha-rotina.html
+   (em qualquer pasta do seu computador)
+
+2. Abra no navegador: clique duas vezes no arquivo
+   OU arraste para o Chrome/Firefox/Edge
+
+3. TODOS os dados são salvos automaticamente no
+   localStorage do navegador — nenhuma internet
+   necessária para o app funcionar!
+
+4. Para backup, clique em "Exportar" na barra lateral
+   para baixar um arquivo JSON com todos os seus dados.
+
+5. Funciona offline após o primeiro carregamento
+   (Tailwind, Chart.js e Lucide são carregados via CDN
+   apenas na primeira vez).
+
+ATALHOS DE TECLADO:
+- Enter no campo de tarefa → Adicionar tarefa
+- Enter no campo de hábito → Adicionar hábito
+- Esc → Fechar modal
+Desenvolvido para: 
+==============================================
+-->
+</body>
+
+</html>
