@@ -173,27 +173,52 @@
     // =============================================
     // ROTINA AI LOGIC
     // =============================================
+    function getAiIntroMarkup() {
+      return `
+        <div class="ai-message-row bot">
+          <div class="ai-avatar bot">AI</div>
+          <div class="ai-bubble bot">
+            <div class="ai-bubble-label">Rotina A.I.</div>
+            Ola! Posso <b>criar, editar, deletar e concluir tarefas</b> com base no que voce pedir.<br><br>
+            Tente algo como <em>"organize minha manhã"</em>, <em>"limpe as concluídas"</em> ou <em>"crie uma rotina de estudos"</em>.
+          </div>
+        </div>
+      `;
+    }
+
+    function createAiMessageElement(text, sender = 'user', extraClass = '') {
+      const wrapper = document.createElement('div');
+      const safeUserText = escapeHtml(text || '');
+      const messageContent = sender === 'user' ? safeUserText : (text || '');
+      wrapper.className = `ai-message-row ${sender} ${extraClass}`.trim();
+      wrapper.innerHTML = `
+        <div class="ai-avatar ${sender}">${sender === 'user' ? 'VO' : 'AI'}</div>
+        <div class="ai-bubble ${sender}">
+          ${sender === 'bot' ? '<div class="ai-bubble-label">Rotina A.I.</div>' : ''}
+          ${messageContent}
+        </div>
+      `;
+      return wrapper;
+    }
+
+    function scrollAiToEnd() {
+      const chat = document.getElementById('ai-chat-history');
+      if (chat) chat.scrollTop = chat.scrollHeight;
+    }
+
+    function setAiPrompt(text, submit = false) {
+      const input = document.getElementById('ai-input');
+      if (!input) return;
+      input.value = text;
+      input.focus();
+      if (submit) processAIInput();
+    }
+
     function sendAIMessage(text, sender = 'user') {
       const chat = document.getElementById('ai-chat-history');
       if (!chat) return;
-      const wrapper = document.createElement('div');
-      
-      if (sender === 'user') {
-         wrapper.style.cssText = "display:flex; gap:12px; align-items:flex-end; max-width:90%; align-self:flex-end; flex-direction:row-reverse;";
-         wrapper.innerHTML = `
-            <div style="width:32px;height:32px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;color:var(--text);font-size:14px;flex-shrink:0">??</div>
-            <div class="ai-msg user-msg">${text}</div>
-         `;
-      } else {
-         wrapper.style.cssText = "display:flex; gap:12px; align-items:flex-end; max-width:90%; align-self:flex-start;";
-         wrapper.innerHTML = `
-            <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg, var(--accent), var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;flex-shrink:0;box-shadow:0 4px 10px rgba(var(--accent-rgb),0.3)">?</div>
-            <div class="ai-msg bot-msg">${text}</div>
-         `;
-      }
-      
-      chat.appendChild(wrapper);
-      chat.scrollTop = chat.scrollHeight;
+      chat.appendChild(createAiMessageElement(text, sender));
+      scrollAiToEnd();
     }
 
     // Histórico de conversa da IA
@@ -202,11 +227,8 @@
     function renderAIChatHistory() {
       const chat = document.getElementById('ai-chat-history');
       if (!chat) return;
-      
-      const firstChild = chat.firstElementChild;
-      chat.innerHTML = '';
-      if (firstChild) chat.appendChild(firstChild);
-      
+      chat.innerHTML = getAiIntroMarkup();
+
       aiChatHistory.forEach(msg => {
         const text = msg.parts[0].text;
         if (msg.role === 'user') {
@@ -364,15 +386,10 @@
 
       const chat = document.getElementById('ai-chat-history');
       const typingId = 'typing-' + Date.now();
-      const typingEl = document.createElement('div');
+      const typingEl = createAiMessageElement('<em>Pensando...</em>', 'bot', 'typing');
       typingEl.id = typingId;
-      typingEl.style.cssText = 'display:flex;gap:12px;align-items:flex-end;max-width:90%;align-self:flex-start;';
-      typingEl.innerHTML = `
-        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;flex-shrink:0;box-shadow:0 4px 10px rgba(var(--accent-rgb),0.3)">?</div>
-        <div class="ai-msg bot-msg" style="opacity:0.6;font-style:italic">Pensando...</div>
-      `;
       chat.appendChild(typingEl);
-      chat.scrollTop = chat.scrollHeight;
+      scrollAiToEnd();
 
       try {
         // Snapshot das tarefas atuais para contexto

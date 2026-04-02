@@ -459,44 +459,51 @@
 
 
     <!-- ==================== ROTINA AI ==================== -->
-    <section class="page" id="page-ai" style="max-width:800px; margin:0 auto; width:100%">
-      <div class="flex items-center justify-between mb-4">
-         <div>
-            <h1 class="page-title" style="margin-bottom:4px">Rotina A.I. <span style="font-size:18px">✨</span></h1>
-            <p class="text-muted text-sm">Assistente com <span id="ai-provider-name">Gemini</span> · cria, edita e organiza sua rotina.</p>
-         </div>
-         <div style="display:flex;gap:8px">
-            <button class="icon-btn" onclick="clearAIChatHistory()" aria-label="Limpar chat" title="Limpar Histórico" style="background:var(--surface2);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border)">
-               <i data-lucide="trash-2" style="width:20px;height:20px;color:var(--muted)"></i>
-            </button>
-         </div>
-      </div>
-      
-      <div class="card" style="display:flex;flex-direction:column;height:calc(100vh - 200px);min-height:400px;padding:0;overflow:hidden;border:1px solid var(--border);border-radius:16px">
-         <!-- Chat History -->
-         <div id="ai-chat-history" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;background:var(--bg)">
-            <div style="display:flex; gap:12px; align-items:flex-end; max-width:90%; align-self:flex-start;">
-               <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg, var(--accent), var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;flex-shrink:0;box-shadow:0 4px 10px rgba(var(--accent-rgb),0.3)">✨</div>
-               <div class="ai-msg bot-msg">
-                  Olá! Sou a Rotina A.I. 🤖 Agora tenho acesso completo à sua lista de tarefas!<br><br>Posso <b>criar, editar, deletar e marcar tarefas como concluídas</b> — é só pedir em linguagem natural.<br><br>Exemplos: <em>"Cria uma rotina matinal pra mim"</em>, <em>"Deleta as tarefas concluídas"</em>, <em>"Muda a prioridade de X para alta"</em>.
-               </div>
-            </div>
-         </div>
-         
-         <!-- Suggestions -->
-         <div style="padding:12px 20px;background:var(--surface);border-top:1px solid var(--border);display:flex;gap:10px;overflow-x:auto;-webkit-overflow-scrolling:touch">
-            <button class="btn btn-ghost" style="white-space:nowrap;font-size:13px;padding:8px 14px;border:1px solid var(--border);border-radius:20px;color:var(--text)" onclick="document.getElementById('ai-input').value='Monte minha rotina matinal';processAIInput()">🌅 Rotina Matinal</button>
-            <button class="btn btn-ghost" style="white-space:nowrap;font-size:13px;padding:8px 14px;border:1px solid var(--border);border-radius:20px;color:var(--text)" onclick="document.getElementById('ai-input').value='Deleta todas as tarefas concluídas';processAIInput()">🧹 Limpar concluídas</button>
-            <button class="btn btn-ghost" style="white-space:nowrap;font-size:13px;padding:8px 14px;border:1px solid var(--border);border-radius:20px;color:var(--text)" onclick="document.getElementById('ai-input').value='Crie uma rotina de estudos para mim';processAIInput()">📚 Rotina de estudos</button>
-            <button class="btn btn-ghost" style="white-space:nowrap;font-size:13px;padding:8px 14px;border:1px solid var(--border);border-radius:20px;color:var(--text)" onclick="document.getElementById('ai-input').value='Estou muito cansado hoje, adapta minha rotina';processAIInput()">🥱 Estou cansado</button>
-            <button class="btn btn-ghost" style="white-space:nowrap;font-size:13px;padding:8px 14px;border:1px solid var(--border);border-radius:20px;color:var(--text)" onclick="document.getElementById('ai-input').value='Quais são minhas tarefas pendentes hoje?';processAIInput()">📋 Ver pendentes</button>
-         </div>
+    <section class="page ai-page" id="page-ai">
+      <div class="ai-shell">
+        <div class="ai-topbar">
+          <div>
+            <div class="ai-kicker">Assistente pessoal</div>
+            <h1 class="page-title" style="margin-bottom:6px">Rotina A.I.</h1>
+            <p class="text-muted text-sm">Conversa com <span id="ai-provider-name">Gemini</span> para criar, reorganizar e limpar sua rotina.</p>
+          </div>
+          <button class="icon-btn ai-clear-btn" onclick="clearAIChatHistory()" aria-label="Limpar chat" title="Limpar Histórico">
+            <i data-lucide="trash-2" style="width:18px;height:18px"></i>
+          </button>
+        </div>
 
-         <!-- Input Area -->
-         <div style="padding:16px 20px;background:var(--surface2);border-top:1px solid var(--border);display:flex;gap:12px;align-items:center;">
-            <input type="text" id="ai-input" class="input" placeholder="Mande uma mensagem..." onkeypress="if(event.key==='Enter') processAIInput()" style="flex:1;margin-bottom:0;border-radius:24px;padding:12px 20px;background:var(--bg)">
-            <button class="btn btn-primary" style="height:46px;width:46px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;flex-shrink:0" onclick="processAIInput()"><i data-lucide="send" style="width:20px;margin-left:2px"></i></button>
-         </div>
+        <div class="ai-overview">
+          <div class="ai-overview-card">
+            <div class="ai-overview-label">Modo</div>
+            <div class="ai-overview-value">Ações no app</div>
+            <div class="ai-overview-copy">Pode sugerir e aplicar mudanças nas suas tarefas.</div>
+          </div>
+          <div class="ai-overview-card">
+            <div class="ai-overview-label">Melhor uso</div>
+            <div class="ai-overview-value">Pedidos curtos</div>
+            <div class="ai-overview-copy">Exemplo: “organize minha manhã” ou “limpe concluídas”.</div>
+          </div>
+        </div>
+
+        <div class="ai-chat-card">
+          <div class="ai-thread" id="ai-chat-history"></div>
+
+          <div class="ai-suggestions">
+            <button class="ai-chip" type="button" onclick="setAiPrompt('Monte minha rotina matinal', true)">Rotina matinal</button>
+            <button class="ai-chip" type="button" onclick="setAiPrompt('Deleta todas as tarefas concluídas', true)">Limpar concluídas</button>
+            <button class="ai-chip" type="button" onclick="setAiPrompt('Crie uma rotina de estudos para mim', true)">Rotina de estudos</button>
+            <button class="ai-chip" type="button" onclick="setAiPrompt('Estou muito cansado hoje, adapta minha rotina', true)">Estou cansado</button>
+            <button class="ai-chip" type="button" onclick="setAiPrompt('Quais são minhas tarefas pendentes hoje?', true)">Ver pendentes</button>
+          </div>
+
+          <div class="ai-composer">
+            <input type="text" id="ai-input" class="ai-input" placeholder="Peça uma rotina, uma limpeza ou uma reorganização..." onkeypress="if(event.key==='Enter') processAIInput()">
+            <button class="btn btn-primary ai-send-btn" type="button" onclick="processAIInput()">
+              <i data-lucide="send" style="width:18px;height:18px"></i>
+              <span>Enviar</span>
+            </button>
+          </div>
+        </div>
       </div>
     </section>
 
