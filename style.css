@@ -116,6 +116,14 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      min-width: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
     }
 
     body {
@@ -342,12 +350,17 @@
       margin-left: 72px;
       min-height: 100vh;
       transition: margin 0.3s;
+      width: 100%;
+      max-width: 100%;
+      overflow-x: clip;
     }
 
     .page {
       display: none;
       padding: 24px 24px 30px;
       max-width: 1160px;
+      width: 100%;
+      overflow-x: clip;
     }
 
     .page.active {
@@ -1326,29 +1339,24 @@
       }
 
       #weekly-calendar-grid {
-        gap: 8px;
-        min-width: 560px;
+        gap: 4px;
+        min-width: 0;
       }
 
       #weekly-calendar-card {
-        overflow-x: auto;
+        overflow: hidden;
       }
 
       .filter-tabs {
         display: flex;
         gap: 8px;
-        overflow-x: auto;
+        flex-wrap: wrap;
         padding-bottom: 4px;
-        scrollbar-width: none;
-      }
-
-      .filter-tabs::-webkit-scrollbar {
-        display: none;
       }
 
       .filter-tab {
         white-space: nowrap;
-        flex: 0 0 auto;
+        flex: 1 1 calc(50% - 8px);
       }
 
       .pending-task-card,
@@ -1360,6 +1368,74 @@
 
       .dashboard-now-item {
         align-items: center;
+      }
+
+      .settings-hero {
+        padding: 18px 16px;
+        border-radius: 20px;
+      }
+
+      .settings-hero-badges {
+        width: 100%;
+        gap: 8px;
+      }
+
+      .settings-pill-card {
+        white-space: normal;
+        text-align: center;
+      }
+
+      .settings-surface {
+        padding: 16px;
+        border-radius: 18px;
+      }
+
+      .settings-item,
+      .settings-item.compact {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      .toggle-switch {
+        align-self: flex-start;
+      }
+
+      .settings-inline-actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-start;
+      }
+
+      .settings-inline-actions .settings-pill-card,
+      .settings-inline-actions .btn {
+        width: 100%;
+      }
+
+      .settings-theme-stack {
+        padding: 14px;
+        border-radius: 16px;
+      }
+
+      .settings-theme-head {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .theme-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .theme-card {
+        min-height: 0;
+        padding: 12px;
+      }
+
+      .theme-card-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
       }
     }
 
@@ -1403,6 +1479,26 @@
         padding: 12px;
       }
 
+      .settings-hero {
+        padding: 16px 14px;
+      }
+
+      .settings-kicker {
+        margin-bottom: 8px;
+        letter-spacing: 0.16em;
+      }
+
+      .settings-panel {
+        gap: 10px;
+      }
+
+      .settings-note-card,
+      .settings-status,
+      .settings-note {
+        padding: 12px 13px;
+        border-radius: 14px;
+      }
+
       .btn {
         min-height: 46px;
         width: 100%;
@@ -1416,9 +1512,12 @@
       }
 
       .block-assign-btn,
-      .filter-tab,
-      .theme-card-badge {
+      .filter-tab {
         min-height: 38px;
+      }
+
+      .filter-tab {
+        flex-basis: 100%;
       }
 
       input,
@@ -1441,6 +1540,10 @@
       .mobile-dock-item {
         min-height: 56px;
         font-size: 9px;
+      }
+
+      .theme-card-badge {
+        min-height: 0;
       }
 
       .modal-overlay {
@@ -2026,6 +2129,7 @@
       font-weight: 700;
       line-height: 1;
       white-space: nowrap;
+      max-width: 100%;
     }
 
     .settings-pill-card.soft {
