@@ -5,6 +5,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Minha Rotina</title>
+  <meta name="theme-color" content="#0A0A0F" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Minha Rotina" />
+  <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="manifest.webmanifest" />
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -179,6 +185,21 @@
         </div>
       </div>
 
+      <div class="card mb-4 dashboard-now-card">
+        <div class="dashboard-now-head">
+          <div>
+            <div class="section-title" style="margin-bottom:4px">Foco do periodo</div>
+            <div class="text-sm text-muted">Tarefas sem data que voce encaixou para o horario atual.</div>
+          </div>
+          <span class="settings-pill-card active" id="dashboard-now-pill">Agora</span>
+        </div>
+        <div class="dashboard-now-meta">
+          <div id="dashboard-now-title" class="dashboard-now-title">Manha</div>
+          <div id="dashboard-now-range" class="dashboard-now-range">06:00 - 12:00</div>
+        </div>
+        <div id="dashboard-now-list"></div>
+      </div>
+
       <!-- Recent Tasks -->
       <div class="grid-3 mb-4" id="dash-lists-container">
         <div class="card" id="dash-card-tasks">
@@ -318,9 +339,28 @@
               <option value="low">🟢 Baixa</option>
             </select>
           </div>
-          <div>
+          <div id="task-datetime-wrap">
             <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Data & Hora de hoje</label>
             <input type="datetime-local" id="task-datetime" step="900" />
+          </div>
+        </div>
+        <div class="task-mode-row mb-3">
+          <label class="option-toggle">
+            <input type="checkbox" id="task-no-datetime" onchange="syncTaskFormState()" />
+            <div>
+              <strong>Sem data e hora</strong>
+              <span>Use para tarefas flexiveis que voce quer encaixar em um periodo do dia.</span>
+            </div>
+          </label>
+          <div id="task-block-wrap" hidden>
+            <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Periodo do dia</label>
+            <select id="task-block">
+              <option value="">Escolher depois</option>
+              <option value="morning">Manha</option>
+              <option value="afternoon">Tarde</option>
+              <option value="evening">Noite</option>
+              <option value="night">Madrugada</option>
+            </select>
           </div>
         </div>
         <div class="task-toggle-row mb-3">
@@ -371,66 +411,38 @@
         <div class="section-title" style="margin-bottom:12px">Progresso Contínuo (Tarefas Diárias)</div>
         <div id="weekly-heatmap"></div>
       </div>
-      <div class="card mt-4 mb-4">
-        <div class="section-title" style="margin-bottom:12px">Progresso Contínuo (Tarefas Diárias)</div>
-        <div id="weekly-heatmap"></div>
-      </div>
       <div class="planning-stack mt-4">
         <div>
           <div class="section-title">Rotina do Dia</div>
           <div class="tip-bar">
-            <strong style="color:var(--accent2)">Planejamento de hoje:</strong> <span id="tb-date"></span> — Arraste
-            tarefas pendentes para os blocos de tempo.
+            <strong style="color:var(--accent2)">Planejamento de hoje:</strong> <span id="tb-date"></span> — Distribua
+            as tarefas pendentes pelos blocos de tempo com os atalhos rápidos.
           </div>
         </div>
 
         <div class="grid-2 timeblocks-layout">
           <div>
             <div class="time-block morning">
-              <div class="time-block-header">
-                <span style="font-size:20px">🌅</span>
-                <span class="block-label" style="color:var(--warn)">Manhã</span>
-                <span class="block-time">06:00 - 12:00</span>
-              </div>
+              <div class="time-block-header"></div>
               <div id="block-morning-tasks"></div>
-              <div class="drop-zone" id="drop-morning" ondragover="allowDrop(event)" ondrop="dropTask(event,'morning')">
-                Solte tarefas aqui</div>
             </div>
             <div class="time-block afternoon">
-              <div class="time-block-header">
-                <span style="font-size:20px">☀️</span>
-                <span class="block-label" style="color:var(--accent3)">Tarde</span>
-                <span class="block-time">12:00 - 18:00</span>
-              </div>
+              <div class="time-block-header"></div>
               <div id="block-afternoon-tasks"></div>
-              <div class="drop-zone" id="drop-afternoon" ondragover="allowDrop(event)"
-                ondrop="dropTask(event,'afternoon')">Solte tarefas aqui</div>
             </div>
             <div class="time-block evening">
-              <div class="time-block-header">
-                <span style="font-size:20px">🌆</span>
-                <span class="block-label" style="color:var(--accent)">Noite</span>
-                <span class="block-time">18:00 - 22:00</span>
-              </div>
+              <div class="time-block-header"></div>
               <div id="block-evening-tasks"></div>
-              <div class="drop-zone" id="drop-evening" ondragover="allowDrop(event)" ondrop="dropTask(event,'evening')">
-                Solte tarefas aqui</div>
             </div>
             <div class="time-block night">
-              <div class="time-block-header">
-                <span style="font-size:20px">🌙</span>
-                <span class="block-label" style="color:var(--muted)">Madrugada</span>
-                <span class="block-time">22:00 - 06:00</span>
-              </div>
+              <div class="time-block-header"></div>
               <div id="block-night-tasks"></div>
-              <div class="drop-zone" id="drop-night" ondragover="allowDrop(event)" ondrop="dropTask(event,'night')">
-                Solte tarefas aqui</div>
             </div>
           </div>
 
           <div class="card sticky-panel">
             <div class="section-title">Tarefas Pendentes</div>
-            <p class="text-sm text-muted mb-3">Arraste para os blocos de tempo ou use os atalhos no celular.</p>
+            <p class="text-sm text-muted mb-3">Apenas tarefas sem data aparecem aqui. Escolha um periodo para encaixar cada uma.</p>
             <div id="drag-tasks-list"></div>
             <div style="margin-top:16px">
               <div class="section-title">Sugestão de rotina</div>
@@ -448,7 +460,7 @@
       <div class="flex items-center justify-between mb-4">
          <div>
             <h1 class="page-title" style="margin-bottom:4px">Rotina A.I. <span style="font-size:18px">✨</span></h1>
-            <p class="text-muted text-sm">Assistente com Gemini · cria, edita e organiza sua rotina.</p>
+            <p class="text-muted text-sm">Assistente com <span id="ai-provider-name">Gemini</span> · cria, edita e organiza sua rotina.</p>
          </div>
          <div style="display:flex;gap:8px">
             <button class="icon-btn" onclick="clearAIChatHistory()" aria-label="Limpar chat" title="Limpar Histórico" style="background:var(--surface2);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border)">
@@ -461,7 +473,7 @@
          <!-- Chat History -->
          <div id="ai-chat-history" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;background:var(--bg)">
             <div style="display:flex; gap:12px; align-items:flex-end; max-width:90%; align-self:flex-start;">
-               <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg, var(--accent), var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;flex-shrink:0;box-shadow:0 4px 10px rgba(124,109,247,0.3)">✨</div>
+               <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg, var(--accent), var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;flex-shrink:0;box-shadow:0 4px 10px rgba(var(--accent-rgb),0.3)">✨</div>
                <div class="ai-msg bot-msg">
                   Olá! Sou a Rotina A.I. 🤖 Agora tenho acesso completo à sua lista de tarefas!<br><br>Posso <b>criar, editar, deletar e marcar tarefas como concluídas</b> — é só pedir em linguagem natural.<br><br>Exemplos: <em>"Cria uma rotina matinal pra mim"</em>, <em>"Deleta as tarefas concluídas"</em>, <em>"Muda a prioridade de X para alta"</em>.
                </div>
@@ -485,75 +497,6 @@
       </div>
     </section>
 
-    <!-- ==================== TIME BLOCKS ==================== -->
-    <section class="legacy-page" id="page-timeblocks-legacy" style="display:none !important" aria-hidden="true">
-      <h1 class="page-title">Agenda do Dia</h1>
-
-      <div class="tip-bar">
-        <strong style="color:var(--accent2)">🗓️ Hoje:</strong> <span id="tb-date"></span> — Arraste tarefas pendentes
-        para os blocos de tempo!
-      </div>
-
-      <div class="grid-2 timeblocks-layout">
-        <div>
-          <!-- Time Blocks -->
-          <div class="time-block morning">
-            <div class="time-block-header">
-              <span style="font-size:20px">🌅</span>
-              <span class="block-label" style="color:var(--warn)">Manhã</span>
-              <span class="block-time">06:00 – 12:00</span>
-            </div>
-            <div id="block-morning-tasks"></div>
-            <div class="drop-zone" id="drop-morning" ondragover="allowDrop(event)" ondrop="dropTask(event,'morning')">
-              Solte tarefas aqui</div>
-          </div>
-          <div class="time-block afternoon">
-            <div class="time-block-header">
-              <span style="font-size:20px">☀️</span>
-              <span class="block-label" style="color:var(--accent3)">Tarde</span>
-              <span class="block-time">12:00 – 18:00</span>
-            </div>
-            <div id="block-afternoon-tasks"></div>
-            <div class="drop-zone" id="drop-afternoon" ondragover="allowDrop(event)"
-              ondrop="dropTask(event,'afternoon')">Solte tarefas aqui</div>
-          </div>
-          <div class="time-block evening">
-            <div class="time-block-header">
-              <span style="font-size:20px">🌆</span>
-              <span class="block-label" style="color:var(--accent)">Noite</span>
-              <span class="block-time">18:00 – 22:00</span>
-            </div>
-            <div id="block-evening-tasks"></div>
-            <div class="drop-zone" id="drop-evening" ondragover="allowDrop(event)" ondrop="dropTask(event,'evening')">
-              Solte tarefas aqui</div>
-          </div>
-          <div class="time-block night">
-            <div class="time-block-header">
-              <span style="font-size:20px">🌙</span>
-              <span class="block-label" style="color:var(--muted)">Madrugada</span>
-              <span class="block-time">22:00 – 06:00</span>
-            </div>
-            <div id="block-night-tasks"></div>
-            <div class="drop-zone" id="drop-night" ondragover="allowDrop(event)" ondrop="dropTask(event,'night')">Solte
-              tarefas aqui</div>
-          </div>
-        </div>
-
-        <!-- Pending Tasks to Drag -->
-        <div class="card sticky-panel">
-          <div class="section-title">Tarefas Pendentes</div>
-          <p class="text-sm text-muted mb-3">Arraste para os blocos de tempo ou use os atalhos no celular.</p>
-          <div id="drag-tasks-list"></div>
-          <div style="margin-top:16px">
-            <div class="section-title">Sugestão de rotina</div>
-            <div id="suggested-routine"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== STATS ==================== -->
-
     <!-- ==================== FITNESS ==================== -->
     <section class="page" id="page-fitness">
       <div class="dashboard-hero mb-4" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
@@ -567,7 +510,7 @@
       </div>
 
       <!-- Gamification Banner -->
-      <div class="card mb-4" id="fitness-game-banner" data-gamification-only="true" style="background:linear-gradient(135deg,rgba(124,109,247,0.15),rgba(92,230,184,0.1));border:1px solid rgba(124,109,247,0.25)">
+      <div class="card mb-4" id="fitness-game-banner" data-gamification-only="true" style="background:linear-gradient(135deg,rgba(var(--accent-rgb),0.15),rgba(var(--accent2-rgb),0.1));border:1px solid rgba(var(--accent-rgb),0.25)">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
           <div style="display:flex;align-items:center;gap:16px">
             <div style="font-size:36px" id="fitness-avatar">🥚</div>
@@ -682,100 +625,143 @@
     </section>
 
     <section class="page" id="page-settings">
-      <div class="dashboard-hero mb-4" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
-        <div>
-          <h1 class="page-title" style="margin-bottom:4px">Configurações</h1>
-          <p class="text-sm text-muted">Ajuste recursos, aparência, inteligência artificial e privacidade local.</p>
+      <div class="settings-hero mb-4">
+        <div class="settings-hero-copy">
+          <div class="settings-kicker">Central de Controle</div>
+          <h1 class="page-title" style="margin-bottom:6px">Configurações</h1>
+          <p class="text-sm text-muted">Personalize a experiência, controle alertas e deixe o app com a sua cara.</p>
+        </div>
+        <div class="settings-hero-badges">
+          <span class="settings-pill-card">Local-first</span>
+          <span class="settings-pill-card soft">Tudo salvo no seu navegador</span>
         </div>
       </div>
 
-      <!-- APARÊNCIA -->
-      <div class="card mb-4">
-        <div class="section-title">Aparência</div>
-        <div class="settings-panel">
-          <div class="settings-item">
-            <div>
-              <div class="settings-title">Tema</div>
-              <div class="settings-copy">Alterne entre modo claro e escuro.</div>
+      <div class="settings-layout">
+        <div class="settings-column">
+          <div class="card settings-surface">
+            <div class="settings-section-head">
+              <div>
+                <div class="settings-kicker">Visual</div>
+                <div class="section-title" style="margin-bottom:0">Aparência e painel</div>
+              </div>
             </div>
-            <button class="btn btn-ghost" style="padding:8px 12px;display:flex;align-items:center;gap:6px" onclick="toggleTheme();renderSettingsPage()">
-              <i data-lucide="sun" id="theme-settings-icon" style="width:16px;height:16px"></i>
-              <span id="theme-settings-label">Escuro</span>
-            </button>
-          </div>
-        </div>
-      </div>
+            <div class="settings-panel">
+              <div class="settings-item">
+                <div class="settings-theme-stack" style="width:100%">
+                  <div class="settings-theme-head">
+                    <div>
+                      <div class="settings-title">Tema e paleta</div>
+                      <div class="settings-copy" id="settings-theme-copy">Escolha uma aparência pronta para o app.</div>
+                    </div>
+                    <span class="settings-pill-card active" id="settings-theme-pill">Escuro Padrão</span>
+                  </div>
+                  <div id="settings-theme-grid" class="theme-grid"></div>
+                </div>
+              </div>
 
-      <!-- RECURSOS OPCIONAIS -->
-      <div class="card mb-4">
-        <div class="section-title">Recursos Opcionais</div>
-        <div class="settings-panel">
-          <div class="settings-item">
-            <div>
-              <div class="settings-title">Gamificação</div>
-              <div class="settings-copy">Ativa missões, conquistas, XP, níveis e cristais. Ao desligar, o histórico fica salvo para você reativar quando quiser.</div>
-            </div>
-            <label class="toggle-switch" for="settings-gamification-toggle">
-              <input type="checkbox" id="settings-gamification-toggle" onchange="toggleGamificationSetting(this.checked)">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-          <div class="settings-status" id="settings-gamification-status"></div>
-        </div>
-      </div>
+              <div class="settings-item">
+                <div>
+                  <div class="settings-title">Relógio da tela principal</div>
+                  <div class="settings-copy" id="settings-clock-status">Relógio visível no topo da tela principal.</div>
+                </div>
+                <label class="toggle-switch" for="settings-clock-toggle">
+                  <input type="checkbox" id="settings-clock-toggle" onchange="toggleDashboardClockSetting(this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
 
-      <!-- INTELIGÊNCIA ARTIFICIAL -->
-      <div class="card mb-4">
-        <div class="section-title">Inteligência Artificial</div>
-        <div class="settings-panel">
-          <div class="settings-item compact">
-            <div>
-              <div class="settings-title">Motor de IA (Google Gemini)</div>
-              <div class="settings-copy">Configure sua chave de API para usar IA no app.</div>
+              <div class="settings-item">
+                <div>
+                  <div class="settings-title">Gamificação</div>
+                  <div class="settings-copy">Ativa missões, conquistas, XP, níveis e cristais sem perder o histórico salvo.</div>
+                </div>
+                <label class="toggle-switch" for="settings-gamification-toggle">
+                  <input type="checkbox" id="settings-gamification-toggle" onchange="toggleGamificationSetting(this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="settings-status" id="settings-gamification-status"></div>
             </div>
-            <button class="btn btn-ghost" style="padding:8px 12px" onclick="openModal('modal-ai-settings-inline')">Configurar</button>
           </div>
-        </div>
-        <div style="padding:12px;background:rgba(124, 109, 247, 0.1);border-radius:8px;border:1px solid rgba(124, 109, 247, 0.2);margin-top:12px">
-          <p class="text-xs" style="color:var(--accent);text-align:center;margin:0;line-height:1.4">
-            ℹ️ <b>Informação:</b> A chave da API é armazenada localmente no seu navegador e não é compartilhada conosco.
-          </p>
-        </div>
-      </div>
 
-      <!-- CONTA E DADOS -->
-      <div class="card mb-4">
-        <div class="section-title">Conta e Dados</div>
-        <div class="settings-panel">
-          <div class="settings-item compact">
-            <div>
-              <div class="settings-title">Nome exibido</div>
-              <div class="settings-copy" id="settings-current-name">Você</div>
+          <div class="card settings-surface">
+            <div class="settings-section-head">
+              <div>
+                <div class="settings-kicker">IA</div>
+                <div class="section-title" style="margin-bottom:0">Inteligência artificial</div>
+              </div>
             </div>
-            <button class="btn btn-ghost" style="padding:8px 12px" onclick="openNameModal()">Alterar nome</button>
-          </div>
-          <div class="settings-item compact">
-            <div>
-              <div class="settings-title">Notificações do navegador</div>
-              <div class="settings-copy">Gerencie lembretes e alertas.</div>
+            <div class="settings-panel">
+              <div class="settings-item compact">
+                <div>
+                  <div class="settings-title">Motor atual · <span id="settings-ai-provider">Gemini</span></div>
+                  <div class="settings-copy">Configure chave, modelo e provedor para usar IA no chat e nos treinos.</div>
+                </div>
+                <button class="btn btn-ghost" style="padding:8px 12px" onclick="openAiSettings()">Configurar</button>
+              </div>
+              <div class="settings-note-card">
+                Sua chave fica salva localmente no navegador e não é enviada para nós.
+              </div>
             </div>
-            <button class="btn btn-ghost" style="padding:8px 12px" onclick="toggleNotifications()">Alternar</button>
-          </div>
-          <div class="settings-item compact">
-            <div>
-              <div class="settings-title">Exportar backup</div>
-              <div class="settings-copy">Baixe seus dados locais (tarefas, hábitos, fotos, pesos, etc).</div>
-            </div>
-            <button class="btn btn-primary" style="padding:8px 12px" onclick="exportData()">Exportar</button>
           </div>
         </div>
-      </div>
 
-      <!-- PRIVACIDADE LOCAL -->
-      <div class="card">
-        <div class="section-title">Privacidade Local</div>
-        <div class="settings-note">
-          🔒 Tudo continua salvo localmente no seu navegador: tarefas, hábitos, fotos de progresso, histórico de peso, configurações e chaves de API. Nada é compartilhado sem sua permissão.
+        <div class="settings-column">
+          <div class="card settings-surface">
+            <div class="settings-section-head">
+              <div>
+                <div class="settings-kicker">Conta</div>
+                <div class="section-title" style="margin-bottom:0">Dados e alertas</div>
+              </div>
+            </div>
+            <div class="settings-panel">
+              <div class="settings-item compact">
+                <div>
+                  <div class="settings-title">Nome exibido</div>
+                  <div class="settings-copy" id="settings-current-name">Você</div>
+                </div>
+                <button class="btn btn-ghost" style="padding:8px 12px" onclick="openNameModal()">Alterar nome</button>
+              </div>
+
+              <div class="settings-item compact">
+                <div>
+                  <div class="settings-title">Notificações do app</div>
+                  <div class="settings-copy" id="settings-notification-status">Gerencie lembretes e alertas.</div>
+                </div>
+                <div class="settings-inline-actions">
+                  <span class="settings-pill-card" id="settings-notification-pill">Desligadas</span>
+                  <button class="btn btn-primary" style="padding:8px 12px" onclick="toggleNotifications()">
+                    <span id="settings-notification-action-label">Ativar alertas</span>
+                  </button>
+                </div>
+              </div>
+              <div class="settings-note-card" id="settings-mobile-note">
+                No celular, instalar o app na tela inicial deixa os alertas mais estáveis.
+              </div>
+
+              <div class="settings-item compact">
+                <div>
+                  <div class="settings-title">Exportar backup</div>
+                  <div class="settings-copy">Baixe seus dados locais: tarefas, hábitos, fotos, pesos e configurações.</div>
+                </div>
+                <button class="btn btn-ghost" style="padding:8px 12px" onclick="exportData()">Exportar</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card settings-surface">
+            <div class="settings-section-head">
+              <div>
+                <div class="settings-kicker">Privacidade</div>
+                <div class="section-title" style="margin-bottom:0">Seus dados continuam seus</div>
+              </div>
+            </div>
+            <div class="settings-note">
+              Tudo continua salvo localmente no seu navegador: tarefas, hábitos, fotos de progresso, histórico de peso,
+              configurações e chaves de API. Nada é compartilhado sem sua permissão.
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -800,32 +786,57 @@
       </div>
       
       <p class="text-sm mb-4" style="color:var(--muted); line-height:1.5">
-        Para conversar organicamente e gerar tarefas inteligentes, usamos a API oficial do <b>Google Gemini</b>. O processo é simples:
+        Escolha o provedor de IA e salve sua chave localmente. Você pode trocar de motor quando quiser.
       </p>
 
-      <div class="mb-5" style="background:var(--surface3); padding:16px; border-radius:12px;border:1px solid var(--border)">
-         <strong style="color:var(--text);font-size:13px;display:block;margin-bottom:8px">Passo 1: Obtenha uma chave grátis</strong>
-         <a href="https://aistudio.google.com/app/apikey" target="_blank" class="btn btn-ghost" style="color:var(--accent);font-size:13px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:600;width:100%;border:1px solid var(--accent);background:rgba(124, 109, 247, 0.1)">
-            Entrar no Google AI Studio <i data-lucide="external-link" style="width:14px;height:14px"></i>
-         </a>
+      <div class="form-group mb-4">
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;color:var(--text);font-weight:500">
+          <i data-lucide="cpu" style="width:16px;height:16px"></i>
+          Provedor de IA
+        </label>
+        <select id="ai-provider-select" class="input" onchange="onAiProviderChange()">
+          <option value="gemini">Google Gemini</option>
+          <option value="openai">OpenAI (ChatGPT)</option>
+          <option value="groq">Groq</option>
+          <option value="mistral">Mistral</option>
+          <option value="custom">OpenAI compatível (custom)</option>
+        </select>
       </div>
 
-      <div class="form-group mb-5">
-        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;color:var(--text);font-weight:500">
+      <div class="form-group mb-4">
+        <label id="ai-key-label" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;color:var(--text);font-weight:500">
           <i data-lucide="lock" style="width:16px;height:16px"></i>
-          Passo 2: Cole sua API Key
+          Chave da API
         </label>
-        <input type="password" id="ai-api-key" class="input" placeholder="AIzaSyA..." style="font-family:monospace;letter-spacing:1px">
+        <input type="password" id="ai-api-key" class="input" placeholder="" style="font-family:monospace;letter-spacing:1px">
+      </div>
+
+      <div class="form-group mb-4">
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;color:var(--text);font-weight:500">
+          <i data-lucide="sparkles" style="width:16px;height:16px"></i>
+          Modelo
+        </label>
+        <input type="text" id="ai-model" class="input" placeholder="">
+        <div class="settings-note" id="ai-model-note"></div>
+      </div>
+
+      <div class="form-group mb-4" id="ai-base-url-group">
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;color:var(--text);font-weight:500">
+          <i data-lucide="link-2" style="width:16px;height:16px"></i>
+          Endpoint/Base URL
+        </label>
+        <input type="text" id="ai-base-url" class="input" placeholder="">
+        <div class="settings-note" id="ai-base-url-note"></div>
       </div>
       
       <div style="padding:12px;background:rgba(92, 230, 184, 0.1);border-radius:8px;border:1px solid rgba(92, 230, 184, 0.2);margin-bottom:20px">
         <p class="text-xs" style="color:var(--success);text-align:center;margin:0;line-height:1.4">
-          🔐 <b>Fique seguro!</b> Códigos ou conversas não passam por nós. A chave trafega diretamente do seu navegador particular para o Google.
+          🔐 <b>Fique seguro!</b> Códigos ou conversas não passam por nós. A chave trafega diretamente do seu navegador para o provedor selecionado.
         </p>
       </div>
 
       <div class="flex gap-2">
-            <button class="btn btn-primary" style="flex:1" onclick="saveAiSettings();closeModal('modal-ai-settings-inline')">Salvar conexão</button>
+            <button class="btn btn-primary" style="flex:1" onclick="saveAiSettings()">Salvar conexão</button>
       </div>
     </div>
   </div>
@@ -848,12 +859,37 @@
       <div class="modal-title">Editar Tarefa</div>
       <div class="mb-3"><input type="text" id="edit-task-text" placeholder="Texto da tarefa" /></div>
       <div class="task-config-grid mb-3">
-        <select id="edit-task-priority" onchange="syncTaskFormState(true)">
-          <option value="high">🔴 Alta</option>
-          <option value="med">🟡 Média</option>
-          <option value="low">🟢 Baixa</option>
-        </select>
-        <input type="datetime-local" id="edit-task-datetime" step="900" />
+        <div>
+          <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Prioridade</label>
+          <select id="edit-task-priority" onchange="syncTaskFormState(true)">
+            <option value="high">🔴 Alta</option>
+            <option value="med">🟡 Média</option>
+            <option value="low">🟢 Baixa</option>
+          </select>
+        </div>
+        <div id="edit-task-datetime-wrap">
+          <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Data & Hora</label>
+          <input type="datetime-local" id="edit-task-datetime" step="900" />
+        </div>
+      </div>
+      <div class="task-mode-row mb-3">
+        <label class="option-toggle">
+          <input type="checkbox" id="edit-task-no-datetime" onchange="syncTaskFormState(true)" />
+          <div>
+            <strong>Sem data e hora</strong>
+            <span>Deixa a tarefa pronta para ser encaixada nos periodos do dia.</span>
+          </div>
+        </label>
+        <div id="edit-task-block-wrap" hidden>
+          <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Periodo do dia</label>
+          <select id="edit-task-block">
+            <option value="">Escolher depois</option>
+            <option value="morning">Manha</option>
+            <option value="afternoon">Tarde</option>
+            <option value="evening">Noite</option>
+            <option value="night">Madrugada</option>
+          </select>
+        </div>
       </div>
       <div class="task-toggle-row mb-3">
         <label class="option-toggle">
@@ -914,6 +950,14 @@
   <!-- =============================================
      JAVASCRIPT
 ============================================= -->
+  <script src="scripts/core/theme.js"></script>
+  <script src="scripts/pages/settings.js"></script>
+  <script src="scripts/pages/missions.js"></script>
+  <script src="scripts/pages/dashboard.js"></script>
+  <script src="scripts/pages/tasks.js"></script>
+  <script src="scripts/pages/stats.js"></script>
+  <script src="scripts/pages/ai.js"></script>
+  <script src="scripts/pages/fitness.js"></script>
   <script src="app.js"></script>
 
   <!-- MODAL: Fitness Profile -->
@@ -1068,7 +1112,7 @@
       <div style="font-size:56px;margin-bottom:12px" id="exdone-emoji">💪</div>
       <h2 class="section-title" style="margin-bottom:8px" id="exdone-title">Treino concluído!</h2>
       <p class="text-sm text-muted" style="margin-bottom:20px" id="exdone-body">Você ganhou XP de treino!</p>
-      <div style="background:rgba(124,109,247,0.1);border:1px solid rgba(124,109,247,0.25);border-radius:12px;padding:16px;margin-bottom:20px">
+      <div style="background:rgba(var(--accent-rgb),0.1);border:1px solid rgba(var(--accent-rgb),0.25);border-radius:12px;padding:16px;margin-bottom:20px">
         <div style="font-size:28px;font-weight:800;color:var(--accent)" id="exdone-xp">+50 XP</div>
         <div style="font-size:12px;color:var(--muted)">XP de Treino</div>
       </div>
@@ -1080,7 +1124,7 @@
   <div class="modal-overlay" id="modal-exercise-detail">
     <div class="modal card" style="max-width:500px;margin:0 16px;max-height:90vh;overflow-y:auto;padding:0">
       <!-- Header -->
-      <div id="exd-header" style="padding:20px 20px 16px;background:linear-gradient(135deg,rgba(124,109,247,0.15),rgba(92,230,184,0.08));border-bottom:1px solid var(--border)">
+      <div id="exd-header" style="padding:20px 20px 16px;background:linear-gradient(135deg,rgba(var(--accent-rgb),0.15),rgba(var(--accent2-rgb),0.08));border-bottom:1px solid var(--border)">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
           <div>
             <div style="font-size:11px;color:var(--accent);font-weight:700;letter-spacing:1px;margin-bottom:4px" id="exd-focus-label">TREINO</div>
@@ -1101,7 +1145,7 @@
         </div>
 
         <!-- Tip -->
-        <div id="exd-tip-section" style="background:rgba(124,109,247,0.08);border:1px solid rgba(124,109,247,0.2);border-radius:10px;padding:12px">
+        <div id="exd-tip-section" style="background:rgba(var(--accent-rgb),0.08);border:1px solid rgba(var(--accent-rgb),0.2);border-radius:10px;padding:12px">
           <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px">💡 DICA RÁPIDA</div>
           <div style="font-size:13px;color:var(--text);line-height:1.5" id="exd-tip"></div>
         </div>
@@ -1113,7 +1157,7 @@
         </div>
 
         <!-- Variation -->
-        <div id="exd-variation-section" style="background:rgba(92,230,184,0.08);border:1px solid rgba(92,230,184,0.2);border-radius:10px;padding:12px">
+        <div id="exd-variation-section" style="background:rgba(var(--success-rgb),0.08);border:1px solid rgba(var(--success-rgb),0.2);border-radius:10px;padding:12px">
           <div style="font-size:11px;font-weight:700;color:var(--accent2);margin-bottom:6px">🔄 VARIAÇÃO</div>
           <div style="font-size:13px;color:var(--text);line-height:1.5" id="exd-variation"></div>
         </div>
