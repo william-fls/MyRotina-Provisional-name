@@ -17,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/william-fls/MyRotina-Provisional-name/issues"
   },
-  "homepage": "https://github.com/william-fls/MyRotina-Provisional-name#readme"
+  "homepage": "https://github.com/william-fls/MyRotina-Provisional-name#readme",
+  "dependencies": {
+    "jsdom": "^29.0.1"
+  }
 }
