@@ -1,4 +1,4 @@
-
+﻿
     // =============================================
     // STATE & STORAGE
     // =============================================
@@ -9,6 +9,8 @@
       fitnessLogs: 'mr_fitnessLogs',
       fitnessWeightLog: 'mr_fitnessWeightLog',
       fitnessGameState: 'mr_fitnessGameState',
+      progressPhotos: 'mr_progressPhotos',
+      appSettings: 'mr_appSettings',
 
       habits: 'mr_habits',
       habitLogs: 'mr_habitLogs',
@@ -21,6 +23,7 @@
       notificationSettings: 'mr_notificationSettings',
       notificationLog: 'mr_notificationLog',
       gameState: 'mr_gameState',
+      timeblockHistory: 'mr_timeblockHistory',
       rewardLedger: 'mr_rewardLedger',
       taskPenaltyLog: 'mr_taskPenaltyLog',
       taskExerciseLog: 'mr_taskExerciseLog',
@@ -39,10 +42,26 @@
     let dailyTaskLogs = load(STORAGE_KEYS.dailyTaskLogs, {});
     let taskStats = load(STORAGE_KEYS.taskStats, {});
     let timeblocks = load(STORAGE_KEYS.timeblocks, { morning: [], afternoon: [], evening: [], night: [] });
+    let timeblockHistory = load(STORAGE_KEYS.timeblockHistory, {});
     let dailyReset = load(STORAGE_KEYS.dailyReset, { lastDate: '', totalResets: 0 });
     let notificationSettings = load(STORAGE_KEYS.notificationSettings, { enabled: false, permission: 'default', reminderMinutes: 15, dailyBriefing: true, eveningNudge: true });
     let notificationLog = load(STORAGE_KEYS.notificationLog, {});
-    let gameState = load(STORAGE_KEYS.gameState, { xp: 0, totalXpEarned: 0, badges: [], dayStreak: 0, lastPerfectDay: '', missionsClaimed: {} });
+    let gameState = load(STORAGE_KEYS.gameState, {
+      xp: 0,
+      totalXpEarned: 0,
+      badges: [],
+      dayStreak: 0,
+      lastPerfectDay: '',
+      legendaryDayLog: {},
+      missionsClaimed: {},
+      crystals: 0,
+      aiTasksCompleted: 0,
+      punitiveExercisesCompleted: 0,
+      aiActionLog: {},
+      taskCompletionLog: {},
+      punitiveLog: {},
+      daySnapshots: {},
+    });
     let rewardLedger = load(STORAGE_KEYS.rewardLedger, { tasks: {}, habits: {} });
     let taskExerciseLog = load(STORAGE_KEYS.taskExerciseLog, load(STORAGE_KEYS.taskPenaltyLog, {}));
     let exerciseChallenges = load(STORAGE_KEYS.exerciseChallenges, []);
@@ -51,8 +70,11 @@
     let fitnessLogs = load(STORAGE_KEYS.fitnessLogs, {});
     let fitnessWeightLog = load(STORAGE_KEYS.fitnessWeightLog, []);
     let fitnessGameState = load(STORAGE_KEYS.fitnessGameState, { xp: 0, streak: 0, lastTrainingDate: '', badges: [] });
+    let progressPhotos = load(STORAGE_KEYS.progressPhotos, []);
+    let appSettings = load(STORAGE_KEYS.appSettings, { gamificationEnabled: true });
     let editingTaskId = null;
     let currentFilter = 'all';
+    let pendingProgressPhotoData = '';
 
     function localDateKey(date = new Date()) {
       const safe = new Date(date);
@@ -75,18 +97,34 @@
       'Sono às 23h',
     ];
     const DEFAULT_NOTIFICATION_SETTINGS = { enabled: false, permission: 'default', reminderMinutes: 15, dailyBriefing: true, eveningNudge: true };
-    const DEFAULT_GAME_STATE = { xp: 0, totalXpEarned: 0, badges: [], dayStreak: 0, lastPerfectDay: '', missionsClaimed: {} };
+    const DEFAULT_APP_SETTINGS = { gamificationEnabled: true };
+    const DEFAULT_GAME_STATE = {
+      xp: 0,
+      totalXpEarned: 0,
+      badges: [],
+      dayStreak: 0,
+      lastPerfectDay: '',
+      legendaryDayLog: {},
+      missionsClaimed: { daily: {}, weekly: {}, monthly: {} },
+      crystals: 0,
+      aiTasksCompleted: 0,
+      punitiveExercisesCompleted: 0,
+      aiActionLog: {},
+      taskCompletionLog: {},
+      punitiveLog: {},
+      daySnapshots: {},
+    };
     const DEFAULT_REWARD_LEDGER = { tasks: {}, habits: {} };
     const EXERCISE_LIBRARY = {
       daily: {
-        high: { title: 'Circuito rapido', detail: '20 agachamentos + 20 polichinelos.', duration: '4 min' },
-        med: { title: 'Ativacao curta', detail: '15 agachamentos + 30 segundos de prancha.', duration: '3 min' },
+        high: { title: 'Circuito rápido', detail: '20 agachamentos + 20 polichinelos.', duration: '4 min' },
+        med: { title: 'Ativação curta', detail: '15 agachamentos + 30 segundos de prancha.', duration: '3 min' },
         low: { title: 'Movimento leve', detail: '5 minutos de caminhada ou alongamento ativo.', duration: '5 min' },
       },
       once: {
-        high: { title: 'Recuperacao intensa', detail: '3 rodadas de 15 agachamentos e 20 polichinelos.', duration: '8 min' },
+        high: { title: 'Recuperação intensa', detail: '3 rodadas de 15 agachamentos e 20 polichinelos.', duration: '8 min' },
         med: { title: 'Cardio de retomada', detail: '6 minutos de caminhada acelerada ou 40 polichinelos.', duration: '6 min' },
-        low: { title: 'Reinicio corporal', detail: '10 minutos de caminhada leve ou mobilidade completa.', duration: '10 min' },
+        low: { title: 'Reinício corporal', detail: '10 minutos de caminhada leve ou mobilidade completa.', duration: '10 min' },
       },
     };
 
@@ -135,16 +173,21 @@
       dailyTaskLogs = dailyTaskLogs && typeof dailyTaskLogs === 'object' ? dailyTaskLogs : {};
       taskStats = taskStats && typeof taskStats === 'object' ? taskStats : {};
       timeblocks = timeblocks && typeof timeblocks === 'object' ? timeblocks : { ...EMPTY_TIMEBLOCKS };
+      timeblockHistory = timeblockHistory && typeof timeblockHistory === 'object' ? timeblockHistory : {};
       dailyReset = dailyReset && typeof dailyReset === 'object' ? { lastDate: dailyReset.lastDate || '', totalResets: dailyReset.totalResets || 0 } : { lastDate: '', totalResets: 0 };
       notificationSettings = notificationSettings && typeof notificationSettings === 'object'
         ? { ...DEFAULT_NOTIFICATION_SETTINGS, ...notificationSettings }
         : { ...DEFAULT_NOTIFICATION_SETTINGS };
+      appSettings = appSettings && typeof appSettings === 'object'
+        ? { ...DEFAULT_APP_SETTINGS, ...appSettings }
+        : { ...DEFAULT_APP_SETTINGS };
       notificationLog = notificationLog && typeof notificationLog === 'object' ? notificationLog : {};
       gameState = gameState && typeof gameState === 'object'
         ? { ...DEFAULT_GAME_STATE, ...gameState }
         : { ...DEFAULT_GAME_STATE };
       taskExerciseLog = taskExerciseLog && typeof taskExerciseLog === 'object' ? taskExerciseLog : {};
       exerciseChallenges = Array.isArray(exerciseChallenges) ? exerciseChallenges : [];
+      progressPhotos = Array.isArray(progressPhotos) ? progressPhotos : [];
       rewardLedger = rewardLedger && typeof rewardLedger === 'object'
         ? {
           tasks: rewardLedger.tasks && typeof rewardLedger.tasks === 'object' ? rewardLedger.tasks : {},
@@ -155,11 +198,41 @@
         if (!Array.isArray(timeblocks[block])) timeblocks[block] = [];
       });
       if (!Array.isArray(gameState.badges)) gameState.badges = [];
-      if (!gameState.missionsClaimed || typeof gameState.missionsClaimed !== 'object') gameState.missionsClaimed = {};
+      if (!gameState.legendaryDayLog || typeof gameState.legendaryDayLog !== 'object') gameState.legendaryDayLog = {};
+      const legacyMissionClaims = gameState.missionsClaimed && typeof gameState.missionsClaimed === 'object'
+        ? Object.fromEntries(Object.entries(gameState.missionsClaimed).filter(([, value]) => Array.isArray(value)))
+        : {};
+      gameState.missionsClaimed = {
+        daily: gameState.missionsClaimed?.daily && typeof gameState.missionsClaimed.daily === 'object'
+          ? gameState.missionsClaimed.daily
+          : legacyMissionClaims,
+        weekly: gameState.missionsClaimed?.weekly && typeof gameState.missionsClaimed.weekly === 'object'
+          ? gameState.missionsClaimed.weekly
+          : {},
+        monthly: gameState.missionsClaimed?.monthly && typeof gameState.missionsClaimed.monthly === 'object'
+          ? gameState.missionsClaimed.monthly
+          : {},
+      };
+      gameState.crystals = Number(gameState.crystals || 0);
+      gameState.aiTasksCompleted = Number(gameState.aiTasksCompleted || 0);
+      gameState.punitiveExercisesCompleted = Number(gameState.punitiveExercisesCompleted || 0);
+      gameState.aiActionLog = gameState.aiActionLog && typeof gameState.aiActionLog === 'object' ? gameState.aiActionLog : {};
+      gameState.taskCompletionLog = gameState.taskCompletionLog && typeof gameState.taskCompletionLog === 'object' ? gameState.taskCompletionLog : {};
+      gameState.punitiveLog = gameState.punitiveLog && typeof gameState.punitiveLog === 'object' ? gameState.punitiveLog : {};
+      gameState.daySnapshots = gameState.daySnapshots && typeof gameState.daySnapshots === 'object' ? gameState.daySnapshots : {};
+      fitnessGameState = fitnessGameState && typeof fitnessGameState === 'object'
+        ? {
+          xp: Number(fitnessGameState.xp || 0),
+          streak: Number(fitnessGameState.streak || 0),
+          lastTrainingDate: fitnessGameState.lastTrainingDate || '',
+          badges: Array.isArray(fitnessGameState.badges) ? fitnessGameState.badges : [],
+        }
+        : { xp: 0, streak: 0, lastTrainingDate: '', badges: [] };
       tasks = tasks.map(task => ({
         ...task,
         repeatDaily: Boolean(task.repeatDaily),
         hasExercise: Boolean(task.hasExercise ?? task.hasPenalty),
+        createdByAI: Boolean(task.createdByAI),
         datetime: task.datetime || '',
       }));
       exerciseChallenges = exerciseChallenges
@@ -170,11 +243,21 @@
           cycleDate: challenge.cycleDate || todayKey(),
           taskId: challenge.taskId || '',
           taskText: challenge.taskText || 'Tarefa',
-          planName: challenge.planName || challenge.title || 'Movimento rapido',
+          planName: challenge.planName || challenge.title || 'Movimento rápido',
           detail: challenge.detail || '',
           duration: challenge.duration || '',
           cadenceLabel: challenge.cadenceLabel || 'Pontual',
         }));
+      progressPhotos = progressPhotos
+        .filter(photo => photo && typeof photo === 'object' && photo.image)
+        .map(photo => ({
+          id: photo.id || uid(),
+          date: photo.date || todayKey(),
+          image: photo.image,
+          note: photo.note || '',
+          createdAt: photo.createdAt || new Date().toISOString(),
+        }))
+        .sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.createdAt || '').localeCompare(a.createdAt || ''));
 
       const onlyDemoTasks = tasks.length > 0 && tasks.every(task => DEMO_TASK_TEXTS.includes(task.text));
 
@@ -195,11 +278,15 @@
 
       save(STORAGE_KEYS.dailyReset, dailyReset);
       save(STORAGE_KEYS.notificationSettings, notificationSettings);
+      save(STORAGE_KEYS.appSettings, appSettings);
       save(STORAGE_KEYS.notificationLog, notificationLog);
       save(STORAGE_KEYS.gameState, gameState);
+      save(STORAGE_KEYS.fitnessGameState, fitnessGameState);
+      save(STORAGE_KEYS.timeblockHistory, timeblockHistory);
       save(STORAGE_KEYS.rewardLedger, rewardLedger);
       save(STORAGE_KEYS.taskExerciseLog, taskExerciseLog);
       save(STORAGE_KEYS.exerciseChallenges, exerciseChallenges);
+      save(STORAGE_KEYS.progressPhotos, progressPhotos);
     }
 
     function uid() { return Math.random().toString(36).slice(2, 10); }
@@ -345,6 +432,15 @@
       return text.length > max ? `${text.slice(0, max - 1).trim()}…` : text;
     }
 
+    function escapeHtml(text = '') {
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     function getTaskXp(task) {
       return 10;
     }
@@ -377,43 +473,71 @@
       showToast('Desafio criado', `${truncateText(task.text, 40)} virou ${plan.title.toLowerCase()}.`, 'warn');
     }
 
-    const LEVEL_THRESHOLDS = [0, 300, 800, 2000, 3500, 5000, 7000, 9500, 12500, 16000, 20000];
+    function buildLevelThresholds(maxLevel = 100) {
+      const thresholds = [0];
+      for (let level = 2; level <= maxLevel; level++) {
+        const previous = thresholds[thresholds.length - 1];
+        const requirement = 80 + Math.round((level - 1) * 28 + Math.pow(level - 1, 1.34) * 6);
+        thresholds.push(previous + requirement);
+      }
+      return thresholds;
+    }
+
+    const LEVEL_THRESHOLDS = buildLevelThresholds(100);
+    const LEVEL_TITLE_RANGES = [
+      { min: 1, max: 4, title: 'Aprendiz do Ritmo' },
+      { min: 5, max: 9, title: 'Escudeiro da Rotina' },
+      { min: 10, max: 14, title: 'Cadete do Foco' },
+      { min: 15, max: 19, title: 'Guardião da Constância' },
+      { min: 20, max: 29, title: 'Arquiteto do Dia' },
+      { min: 30, max: 39, title: 'Capitão do Progresso' },
+      { min: 40, max: 49, title: 'Comandante do Amanhecer' },
+      { min: 50, max: 59, title: 'Lenda da Rotina' },
+      { min: 60, max: 74, title: 'Mestre do Tempo' },
+      { min: 75, max: 89, title: 'Avatar da Disciplina' },
+      { min: 90, max: 100, title: 'Deus da Produtividade' },
+    ];
+    const LEVEL_MILESTONES = [1, 5, 10, 15, 20, 30, 40, 50, 60, 75, 100];
 
     function getLevelFromXp(xp = 0) {
       for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
         if (xp >= LEVEL_THRESHOLDS[i]) return i + 1;
       }
-      return Math.floor((xp - 20000) / 4000) + 12;
+      return 1;
     }
 
     function getLevelTitle(level) {
-      if (level >= 4) return 'Lenda da Rotina';
-      if (level >= 3) return 'Guerreiro da Rotina';
-      if (level >= 2) return 'Disciplinado';
-      return 'Aprendiz';
+      return LEVEL_TITLE_RANGES.find(range => level >= range.min && level <= range.max)?.title || 'Ícone da Rotina';
     }
 
     function getLevelProgress() {
       const xp = gameState.xp || 0;
       const level = getLevelFromXp(xp);
-      const currentLevelStart = LEVEL_THRESHOLDS[level - 1] || ((level - 11) * 500 + 3250);
-      const nextLevelStart = LEVEL_THRESHOLDS[level] || ((level - 10) * 500 + 3250);
-      
+      const currentLevelStart = LEVEL_THRESHOLDS[level - 1] || 0;
+      const nextLevelStart = LEVEL_THRESHOLDS[level] || (LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1] + 1200);
       const current = xp - currentLevelStart;
-      const next = nextLevelStart - currentLevelStart;
-      
+      const next = Math.max(nextLevelStart - currentLevelStart, 1);
+
       return {
         level,
         current,
         next,
-        pct: Math.round((current / next) * 100) || 0,
-        remaining: next - current,
+        pct: Math.max(0, Math.min(100, Math.round((current / next) * 100))),
+        remaining: Math.max(next - current, 0),
         title: getLevelTitle(level),
       };
     }
 
+    function getLevelMilestones() {
+      return LEVEL_MILESTONES.map(level => ({
+        level,
+        title: getLevelTitle(level),
+        xp: LEVEL_THRESHOLDS[level - 1] || 0,
+      }));
+    }
+
     function grantXp(amount, reason = '', tone = 'success') {
-      if (!amount) return;
+      if (!amount || !isGamificationEnabled()) return;
       const previousLevel = getLevelFromXp(gameState.xp || 0);
       gameState.xp = Math.max(0, (gameState.xp || 0) + amount);
       if (amount > 0) gameState.totalXpEarned = (gameState.totalXpEarned || 0) + amount;
@@ -427,22 +551,89 @@
       }
     }
 
+    function grantCrystals(amount, reason = '') {
+      if (!amount || !isGamificationEnabled()) return;
+      gameState.crystals = Math.max(0, Number(gameState.crystals || 0) + amount);
+      saveGameState();
+      if (amount > 0 && reason) showToast(`+${amount} Cristal${amount > 1 ? 's' : ''}`, reason, 'success');
+    }
+
     function hasBadge(id) {
       return (gameState.badges || []).some(badge => badge.id === id);
     }
 
-    function unlockBadge(id, title, description, icon = '🏆') {
+    function launchCelebration(icon, title, subtitle = '') {
+      const layer = document.getElementById('celebration-layer');
+      if (!layer) return;
+      layer.innerHTML = '';
+      layer.classList.add('active');
+
+      const card = document.createElement('div');
+      card.className = 'celebration-card';
+      card.innerHTML = `
+        <div class="celebration-icon">${icon}</div>
+        <div class="celebration-title">${title}</div>
+        <div class="celebration-subtitle">${subtitle}</div>
+      `;
+      layer.appendChild(card);
+
+      for (let i = 0; i < 18; i++) {
+        const piece = document.createElement('span');
+        piece.className = 'confetti-piece';
+        piece.style.left = `${8 + Math.random() * 84}%`;
+        piece.style.animationDelay = `${Math.random() * 0.25}s`;
+        piece.style.animationDuration = `${1.2 + Math.random() * 0.8}s`;
+        piece.style.background = ['var(--accent)', 'var(--accent2)', 'var(--accent3)', 'var(--warn)'][i % 4];
+        piece.style.transform = `rotate(${Math.random() * 240}deg)`;
+        layer.appendChild(piece);
+      }
+
+      window.clearTimeout(window.__mrCelebrationTimer);
+      window.__mrCelebrationTimer = window.setTimeout(() => {
+        layer.classList.remove('active');
+        layer.innerHTML = '';
+      }, 2600);
+    }
+
+    function unlockBadge(id, title, description, icon = '*', meta = {}) {
+      if (!isGamificationEnabled()) return false;
       if (hasBadge(id)) return false;
       gameState.badges.unshift({
         id,
         title,
         description,
         icon,
+        category: meta.category || 'bonus',
+        rarity: meta.rarity || 'bonus',
+        isSecret: Boolean(meta.isSecret),
+        isSeasonal: Boolean(meta.isSeasonal),
         unlockedAt: new Date().toISOString(),
       });
       saveGameState();
       showToast(`${icon} Conquista desbloqueada`, title, 'success');
       sendBrowserNotification(`badge-${id}`, 'Nova conquista', `${icon} ${title}`);
+      launchCelebration(icon, title, description);
+      return true;
+    }
+
+    function hasFitnessBadge(id) {
+      return (fitnessGameState.badges || []).some(badge => badge.id === id);
+    }
+
+    function grantFitnessXp(amount, reason = '') {
+      if (!amount || !isGamificationEnabled()) return;
+      fitnessGameState.xp = Math.max(0, Number(fitnessGameState.xp || 0) + amount);
+      save(STORAGE_KEYS.fitnessGameState, fitnessGameState);
+      grantXp(amount, reason || 'Progresso fitness');
+    }
+
+    function unlockFitnessBadge(id, title, desc, icon = '🏅') {
+      if (!isGamificationEnabled()) return false;
+      if (hasFitnessBadge(id)) return false;
+      fitnessGameState.badges = Array.isArray(fitnessGameState.badges) ? fitnessGameState.badges : [];
+      fitnessGameState.badges.unshift({ id, title, desc, icon, unlockedAt: new Date().toISOString() });
+      save(STORAGE_KEYS.fitnessGameState, fitnessGameState);
+      showToast(`${icon} Marco fitness`, title, 'success');
       return true;
     }
 
@@ -467,57 +658,560 @@
       saveGameState();
     }
 
-    function getDailyMissions() {
-      const today = todayKey();
-      const doneTasks = taskStats[today]?.done || 0;
-      const doneDailies = (dailyTaskLogs[today] || []).length;
-      
-      const dailyTasksCount = tasks.filter(t => t.repeatDaily).length;
-      
-      return [
-        { id: 'mission-dailies', label: 'Hábito Diário', progress: Math.min(doneDailies, dailyTasksCount), total: dailyTasksCount || 1, reward: 25 },
-        { id: 'mission-tasks', label: 'Missão do Dia', progress: Math.min(doneTasks, 3), total: 3, reward: 25 },
-      ];
+    function getCurrentWeekKeys() {
+      const start = new Date();
+      const diff = start.getDay() === 0 ? -6 : 1 - start.getDay();
+      start.setHours(0, 0, 0, 0);
+      start.setDate(start.getDate() + diff);
+      const keys = [];
+      const cursor = new Date(start);
+      const end = new Date();
+      end.setHours(0, 0, 0, 0);
+      while (cursor <= end) {
+        keys.push(localDateKey(cursor));
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      return keys;
     }
 
-    function checkMissionRewards() {
-      const today = todayKey();
-      if (!Array.isArray(gameState.missionsClaimed[today])) gameState.missionsClaimed[today] = [];
-      getDailyMissions().forEach(mission => {
-        if (mission.progress < mission.total) return;
-        if (gameState.missionsClaimed[today].includes(mission.id)) return;
-        gameState.missionsClaimed[today].push(mission.id);
-        saveGameState();
-        grantXp(mission.reward, `Missão concluída: ${mission.label}`);
+    function getCurrentMonthKeys() {
+      const start = new Date();
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+      const keys = [];
+      const cursor = new Date(start);
+      const end = new Date();
+      end.setHours(0, 0, 0, 0);
+      while (cursor <= end) {
+        keys.push(localDateKey(cursor));
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      return keys;
+    }
+
+    function getMonthKey(date = new Date()) {
+      const safe = new Date(date);
+      return `${safe.getFullYear()}-${String(safe.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function formatMonthLabel(monthKey) {
+      const [year, month] = String(monthKey || '').split('-').map(Number);
+      if (!year || !month) return 'Mês';
+      return new Date(year, month - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    }
+
+    function isGamificationEnabled() {
+      return Boolean(appSettings.gamificationEnabled);
+    }
+
+    function saveAppSettings() {
+      save(STORAGE_KEYS.appSettings, appSettings);
+    }
+
+    function updateGamificationVisibility() {
+      const enabled = isGamificationEnabled();
+      document.querySelectorAll('[data-gamification-only="true"]').forEach(el => {
+        if (!el) return;
+        el.hidden = !enabled;
+      });
+      if (!enabled && document.getElementById('page-missions')?.classList.contains('active')) {
+        navigate('settings');
+      }
+    }
+
+    function toggleGamificationSetting(enabled) {
+      appSettings.gamificationEnabled = Boolean(enabled);
+      saveAppSettings();
+      updateGamificationVisibility();
+      if (appSettings.gamificationEnabled) {
+        checkMissionRewards();
+        evaluateAchievements();
+      }
+      renderSettingsPage();
+      refreshUI();
+      renderFitnessPage();
+      if (document.getElementById('page-stats')?.classList.contains('active')) renderStats();
+      showToast(
+        appSettings.gamificationEnabled ? 'Gamificação ativada' : 'Gamificação desativada',
+        appSettings.gamificationEnabled
+          ? 'Missões, conquistas e níveis voltaram a aparecer.'
+          : 'Missões e conquistas ficaram ocultas, mas seus dados foram preservados.',
+        appSettings.gamificationEnabled ? 'success' : 'warn'
+      );
+    }
+
+    function renderSettingsPage() {
+      const toggle = document.getElementById('settings-gamification-toggle');
+      if (toggle) toggle.checked = isGamificationEnabled();
+      const status = document.getElementById('settings-gamification-status');
+      if (status) {
+        status.textContent = isGamificationEnabled()
+          ? 'Status atual: gamificação ligada.'
+          : 'Status atual: gamificação desligada.';
+      }
+      const currentName = document.getElementById('settings-current-name');
+      if (currentName) {
+        currentName.textContent = (load(STORAGE_KEYS.name, '') || 'Você').trim() || 'Você';
+      }
+    }
+
+    function getDailyTaskStreak(taskId, endKey = todayKey()) {
+      let streak = 0;
+      const cursor = new Date(`${endKey}T00:00:00`);
+      while ((dailyTaskLogs[localDateKey(cursor)] || []).includes(taskId)) {
+        streak += 1;
+        cursor.setDate(cursor.getDate() - 1);
+      }
+      return streak;
+    }
+
+    function getWeightWeekStreak() {
+      if (!Array.isArray(fitnessWeightLog) || fitnessWeightLog.length === 0) return 0;
+      const getWeekKey = (dateKey) => {
+        const safe = new Date(`${dateKey}T00:00:00`);
+        const diff = safe.getDay() === 0 ? -6 : 1 - safe.getDay();
+        safe.setDate(safe.getDate() + diff);
+        safe.setHours(0, 0, 0, 0);
+        return localDateKey(safe);
+      };
+      const weeks = [...new Set(fitnessWeightLog.map(entry => getWeekKey(entry.date)))].sort();
+      let streak = 0;
+      const cursor = new Date();
+      const diff = cursor.getDay() === 0 ? -6 : 1 - cursor.getDay();
+      cursor.setDate(cursor.getDate() + diff);
+      cursor.setHours(0, 0, 0, 0);
+      while (weeks.includes(localDateKey(cursor))) {
+        streak += 1;
+        cursor.setDate(cursor.getDate() - 7);
+      }
+      return streak;
+    }
+
+    function getWeekKey(date = new Date()) {
+      const safe = new Date(date);
+      const diff = safe.getDay() === 0 ? -6 : 1 - safe.getDay();
+      safe.setHours(0, 0, 0, 0);
+      safe.setDate(safe.getDate() + diff);
+      return localDateKey(safe);
+    }
+
+    function ensureDailyCounterBucket(bucket, dateKey) {
+      if (!bucket[dateKey] || typeof bucket[dateKey] !== 'object') bucket[dateKey] = {};
+      return bucket[dateKey];
+    }
+
+    function recordAiAction(count = 1, dateKey = todayKey()) {
+      if (!count) return;
+      gameState.aiActionLog[dateKey] = Number(gameState.aiActionLog[dateKey] || 0) + count;
+      saveGameState();
+    }
+
+    function recordPunitiveExercise(dateKey = todayKey()) {
+      gameState.punitiveLog[dateKey] = Number(gameState.punitiveLog[dateKey] || 0) + 1;
+      saveGameState();
+    }
+
+    function recordTaskCompletion(taskId, dateKey = todayKey(), completedAt = new Date().toISOString()) {
+      const bucket = ensureDailyCounterBucket(gameState.taskCompletionLog, dateKey);
+      bucket[taskId] = completedAt;
+      saveGameState();
+    }
+
+    function clearTaskCompletion(taskId, dateKey = todayKey()) {
+      const bucket = gameState.taskCompletionLog[dateKey];
+      if (!bucket || typeof bucket !== 'object') return;
+      delete bucket[taskId];
+      if (!Object.keys(bucket).length) delete gameState.taskCompletionLog[dateKey];
+      saveGameState();
+    }
+
+    function getTaskCompletionTimes(dateKey = todayKey()) {
+      const bucket = gameState.taskCompletionLog[dateKey];
+      if (!bucket || typeof bucket !== 'object') return [];
+      return Object.values(bucket)
+        .map(value => new Date(value))
+        .filter(value => !Number.isNaN(value.getTime()))
+        .sort((a, b) => a - b);
+    }
+
+    function getBlockTasks(block, dateKey = todayKey()) {
+      return (timeblocks[block] || [])
+        .map(id => tasks.find(task => task.id === id))
+        .filter(task => task && isTaskForDate(task, dateKey));
+    }
+
+    function buildDaySnapshot(dateKey = todayKey()) {
+      const snapshot = {
+        date: dateKey,
+        doneTasks: Number(taskStats[dateKey]?.done || 0),
+        totalTasks: Number(taskStats[dateKey]?.total || 0),
+        doneHabits: Number((dailyTaskLogs[dateKey] || []).length),
+        totalHabits: Number(tasks.filter(task => task.repeatDaily).length),
+        workoutDone: Array.isArray(fitnessLogs[dateKey]) && fitnessLogs[dateKey].length > 0,
+        weightLogged: fitnessWeightLog.some(entry => entry.date === dateKey),
+        usedTimeblocks: Boolean(timeblockHistory[dateKey]),
+        aiActions: Number(gameState.aiActionLog[dateKey] || 0),
+        punitiveDone: Number(gameState.punitiveLog[dateKey] || 0),
+        morningAssigned: 0,
+        morningDone: 0,
+        eveningAssigned: 0,
+        eveningDone: 0,
+        nightAssigned: 0,
+        nightDone: 0,
+        completionSpanMinutes: null,
+        hadAnyActivity: false,
+        morningRoutineComplete: false,
+        eveningRoutineComplete: false,
+        nightRoutineComplete: false,
+        eveningNightComplete: false,
+        legendary: false,
+      };
+
+      const dayTasks = tasks.filter(task => isTaskForDate(task, dateKey));
+      const dailyTasks = tasks.filter(task => task.repeatDaily);
+      const allTasksDone = dayTasks.length > 0 && dayTasks.every(task => task.done);
+      const allHabitsDone = dailyTasks.length > 0
+        ? dailyTasks.every(task => (dailyTaskLogs[dateKey] || []).includes(task.id))
+        : true;
+      const hasWorkoutToday = Boolean(fitnessPlan);
+
+      const morningTasks = getBlockTasks('morning', dateKey);
+      const eveningTasks = getBlockTasks('evening', dateKey);
+      const nightTasks = getBlockTasks('night', dateKey);
+
+      snapshot.morningAssigned = morningTasks.length;
+      snapshot.morningDone = morningTasks.filter(task => task.done).length;
+      snapshot.eveningAssigned = eveningTasks.length;
+      snapshot.eveningDone = eveningTasks.filter(task => task.done).length;
+      snapshot.nightAssigned = nightTasks.length;
+      snapshot.nightDone = nightTasks.filter(task => task.done).length;
+
+      const completionTimes = getTaskCompletionTimes(dateKey);
+      if (completionTimes.length >= 2) {
+        snapshot.completionSpanMinutes = Math.round((completionTimes[completionTimes.length - 1] - completionTimes[0]) / 60000);
+      }
+
+      snapshot.hadAnyActivity = snapshot.doneTasks > 0 || snapshot.doneHabits > 0 || snapshot.workoutDone || snapshot.punitiveDone > 0;
+      snapshot.morningRoutineComplete = snapshot.morningAssigned >= 3 && snapshot.morningDone >= snapshot.morningAssigned;
+      snapshot.eveningRoutineComplete = snapshot.eveningAssigned > 0 && snapshot.eveningDone >= snapshot.eveningAssigned;
+      snapshot.nightRoutineComplete = snapshot.nightAssigned > 0 && snapshot.nightDone >= snapshot.nightAssigned;
+      snapshot.eveningNightComplete = snapshot.eveningRoutineComplete && snapshot.nightRoutineComplete;
+      snapshot.legendary = (dayTasks.length > 0 || dailyTasks.length > 0 || hasWorkoutToday)
+        && allTasksDone
+        && allHabitsDone
+        && (!hasWorkoutToday || snapshot.workoutDone);
+
+      return snapshot;
+    }
+
+    function persistDaySnapshot(dateKey = todayKey()) {
+      gameState.daySnapshots[dateKey] = buildDaySnapshot(dateKey);
+      saveGameState();
+      return gameState.daySnapshots[dateKey];
+    }
+
+    function getDaySnapshot(dateKey = todayKey()) {
+      if (dateKey === todayKey()) return buildDaySnapshot(dateKey);
+      return gameState.daySnapshots[dateKey] || null;
+    }
+
+    function getAllDaySnapshots() {
+      return {
+        ...(gameState.daySnapshots || {}),
+        [todayKey()]: buildDaySnapshot(todayKey()),
+      };
+    }
+
+    function hasActivityOnDate(dateKey) {
+      const snapshot = getDaySnapshot(dateKey) || gameState.daySnapshots?.[dateKey];
+      if (snapshot) return Boolean(snapshot.hadAnyActivity || snapshot.doneTasks || snapshot.doneHabits || snapshot.workoutDone || snapshot.punitiveDone);
+      return Boolean((taskStats[dateKey]?.done || 0) > 0 || (dailyTaskLogs[dateKey] || []).length > 0);
+    }
+
+    function getActivityYears() {
+      const keys = new Set([
+        ...Object.keys(taskStats || {}),
+        ...Object.keys(dailyTaskLogs || {}),
+        ...Object.keys(gameState.daySnapshots || {}),
+        ...Object.keys(gameState.legendaryDayLog || {}),
+      ]);
+      return [...keys]
+        .map(key => Number(String(key).slice(0, 4)))
+        .filter(year => Number.isFinite(year))
+        .sort((a, b) => a - b);
+    }
+
+    function getEasterSunday(year) {
+      const century = Math.floor(year / 100);
+      const golden = year % 19;
+      const skippedLeap = Math.floor(century / 4);
+      const solarCorrection = Math.floor((century - Math.floor((century + 8) / 25) + 1) / 3);
+      const epact = (19 * golden + century - skippedLeap - solarCorrection + 15) % 30;
+      const weekdayOffset = (32 + 2 * (century % 4) + 2 * Math.floor(year / 4) - epact - (year % 4)) % 7;
+      const monthFactor = Math.floor((golden + 11 * epact + 22 * weekdayOffset) / 451);
+      const month = Math.floor((epact + weekdayOffset - 7 * monthFactor + 114) / 31);
+      const day = ((epact + weekdayOffset - 7 * monthFactor + 114) % 31) + 1;
+      return new Date(year, month - 1, day);
+    }
+
+    function getCarnivalDateKeys(year) {
+      const easter = getEasterSunday(year);
+      const carnivalTuesday = new Date(easter);
+      carnivalTuesday.setDate(carnivalTuesday.getDate() - 47);
+      carnivalTuesday.setHours(0, 0, 0, 0);
+      const start = new Date(carnivalTuesday);
+      start.setDate(start.getDate() - 3);
+      return Array.from({ length: 4 }, (_, index) => {
+        const cursor = new Date(start);
+        cursor.setDate(start.getDate() + index);
+        return localDateKey(cursor);
       });
     }
 
-    function evaluateAchievements() {
+    function hasCarnivalStreakAchievement() {
+      return getActivityYears().some(year => getCarnivalDateKeys(year).every(dateKey => hasActivityOnDate(dateKey)));
+    }
+
+    function getAchievementStats() {
       const today = todayKey();
-      const totalCompletedTasks = Object.values(taskStats).reduce((sum, day) => sum + (day.done || 0), 0);
-      const doneTodayTasks = taskStats[today]?.done || 0;
-      const doneTodayHabits = (dailyTaskLogs[today] || []).length;
-      const todayTasks = getTodayTasks();
-      const allTasksDone = todayTasks.length > 0 && todayTasks.every(task => task.done);
-      const dailyTasks = tasks.filter(t => t.repeatDaily);
-      const allHabitsDone = dailyTasks.length > 0 && dailyTasks.every(t => (dailyTaskLogs[today] || []).includes(t.id));
+      const snapshots = getAllDaySnapshots();
+      const snapshotList = Object.values(snapshots).sort((a, b) => String(a.date).localeCompare(String(b.date)));
       const level = getLevelFromXp(gameState.xp || 0);
+      const dailyTasks = tasks.filter(task => task.repeatDaily);
+      const totalCompletedTasks = Object.values(taskStats).reduce((sum, day) => sum + Number(day?.done || 0), 0);
+      const habitMaxStreak = dailyTasks.reduce((best, task) => Math.max(best, getDailyTaskStreak(task.id)), 0);
+      const habitStreak14Count = dailyTasks.filter(task => getDailyTaskStreak(task.id) >= 14).length;
+      const highestTasksDay = Object.values(taskStats).reduce((best, day) => Math.max(best, Number(day?.done || 0)), 0);
+      const workoutDays = Object.keys(fitnessLogs || {}).filter(key => Array.isArray(fitnessLogs[key]) && fitnessLogs[key].length > 0).length;
+      const timeblockDays = Object.keys(timeblockHistory || {}).filter(key => Boolean(timeblockHistory[key])).length;
+      const legendaryDays = Object.keys(gameState.legendaryDayLog || {}).length;
+      const weightWeeks = getWeightWeekStreak();
+      const unlockedWithoutCollector = (gameState.badges || []).filter(badge => badge.id !== 'collector').length;
+      const newYearLegendary = Object.keys(gameState.legendaryDayLog || {}).some(key => key.slice(5) === '01-01');
+      const mondayLegendary = Object.keys(gameState.legendaryDayLog || {}).some(key => new Date(`${key}T00:00:00`).getDay() === 1);
 
-      if (totalCompletedTasks >= 1) unlockBadge('first-task', 'Primeiro check', 'Concluiu sua primeira tarefa.', '✅');
-      if (doneTodayTasks >= 3) unlockBadge('task-trio-badge', 'Combo de foco', 'Fez 3 tarefas no mesmo dia.', '⚡');
-      if (doneTodayHabits >= 3) unlockBadge('habit-trio-badge', 'Ritual em alta', 'Registrou 3 hábitos hoje.', '🌿');
-      if ((gameState.dayStreak || 0) >= 3) unlockBadge('streak-3', 'Fogo aceso', 'Manteve atividade por 3 dias seguidos.', '🔥');
-      if (level >= 5) unlockBadge('level-5', 'Patente nova', 'Chegou ao nível 5.', '🚀');
+      return {
+        today,
+        level,
+        dayStreak: Number(gameState.dayStreak || 0),
+        totalCompletedTasks,
+        habitMaxStreak,
+        habitStreak14Count,
+        highestTasksDay,
+        workoutDays,
+        timeblockDays,
+        legendaryDays,
+        weightWeeks,
+        aiTasksCompleted: Number(gameState.aiTasksCompleted || 0),
+        punitiveExercisesCompleted: Number(gameState.punitiveExercisesCompleted || 0),
+        unlockedWithoutCollector,
+        currentSnapshot: snapshots[today] || buildDaySnapshot(today),
+        fullMorningDays: snapshotList.filter(item => item.morningRoutineComplete).length,
+        fullEveningDays: snapshotList.filter(item => item.eveningRoutineComplete).length,
+        fullEveningNightDays: snapshotList.filter(item => item.eveningNightComplete).length,
+        madrugadaTasksCompleted: snapshotList.reduce((sum, item) => sum + Number(item.nightDone || 0), 0),
+        speedrunnerDays: snapshotList.filter(item => item.doneTasks >= 20 && Number.isFinite(item.completionSpanMinutes) && item.completionSpanMinutes <= 240).length,
+        perfectionDays: legendaryDays,
+        carnivalFocus: hasCarnivalStreakAchievement(),
+        newYearLegendary,
+        mondayLegendary,
+      };
+    }
 
-      if (allTasksDone && allHabitsDone && gameState.lastPerfectDay !== today) {
+    const ACHIEVEMENT_DEFINITIONS = [
+      { id: 'first_step', title: 'Primeiro Passo', description: 'Complete sua primeira tarefa do dia.', icon: '1', category: 'beginner', rarity: 'common', target: 1, getValue: stats => stats.totalCompletedTasks },
+      { id: 'awake_alive', title: 'Acordou Vivo', description: 'Marque presença por 3 dias seguidos.', icon: '3D', category: 'beginner', rarity: 'common', target: 3, getValue: stats => stats.dayStreak },
+      { id: 'morning_routine', title: 'Rotina Matinal', description: 'Complete uma rotina matinal com pelo menos 3 tarefas.', icon: 'AM', category: 'beginner', rarity: 'common', target: 1, getValue: stats => stats.fullMorningDays },
+      { id: 'night_champions', title: 'Noite dos Campeões', description: 'Complete todas as tarefas da noite por 1 dia.', icon: 'PM', category: 'beginner', rarity: 'common', target: 1, getValue: stats => stats.fullEveningDays },
+      { id: 'first_level', title: 'Primeiro Nível', description: 'Chegue ao nível 5.', icon: 'L5', category: 'beginner', rarity: 'common', target: 5, getValue: stats => stats.level },
+      { id: 'habit_born', title: 'Hábito Nasceu', description: 'Crie e complete o mesmo hábito por 7 dias seguidos.', icon: '7D', category: 'beginner', rarity: 'rare', target: 7, getValue: stats => stats.habitMaxStreak },
+      { id: 'sacred_week', title: 'Semana Sagrada', description: 'Mantenha 7 dias de streak sem quebrar.', icon: '7', category: 'streak', rarity: 'rare', target: 7, getValue: stats => stats.dayStreak },
+      { id: 'iron_fortnight', title: 'Quinzena de Ferro', description: 'Mantenha 15 dias de streak.', icon: '15', category: 'streak', rarity: 'epic', target: 15, getValue: stats => stats.dayStreak },
+      { id: 'unstoppable_month', title: 'Mês Imparável', description: 'Mantenha 30 dias de streak.', icon: '30', category: 'streak', rarity: 'legendary', target: 30, getValue: stats => stats.dayStreak },
+      { id: 'focus_combo', title: 'Combo de Foco', description: 'Complete 10 tarefas no mesmo dia.', icon: '10', category: 'streak', rarity: 'rare', target: 10, getValue: stats => stats.highestTasksDay },
+      { id: 'habit_machine', title: 'Máquina de Hábitos', description: 'Mantenha 5 hábitos diferentes em streak simultâneo por 14 dias.', icon: '5H', category: 'streak', rarity: 'epic', target: 5, getValue: stats => stats.habitStreak14Count },
+      { id: 'legend_day', title: 'Dia Lendário', description: 'Complete todas as tarefas, hábitos e treino do dia em 100%.', icon: '100%', category: 'epic', rarity: 'epic', target: 1, getValue: stats => stats.legendaryDays },
+      { id: 'routine_legend', title: 'Lenda da Rotina', description: 'Chegue ao nível 50.', icon: 'L50', category: 'epic', rarity: 'legendary', target: 50, getValue: stats => stats.level },
+      { id: 'time_master', title: 'Mestre do Tempo', description: 'Use blocos de tempo em 30 dias diferentes.', icon: 'TB', category: 'epic', rarity: 'epic', target: 30, getValue: stats => stats.timeblockDays },
+      { id: 'gemini_student', title: 'Aluno do Gemini', description: 'Complete 50 tarefas criadas pela IA.', icon: 'AI', category: 'epic', rarity: 'epic', target: 50, getValue: stats => stats.aiTasksCompleted },
+      { id: 'body_mind', title: 'Corpo e Mente', description: 'Complete 20 treinos gerados pela IA.', icon: 'FIT', category: 'epic', rarity: 'epic', target: 20, getValue: stats => stats.workoutDays },
+      { id: 'total_transformation', title: 'Transformação Total', description: 'Registre perda ou ganho de peso por 8 semanas consecutivas.', icon: '8W', category: 'epic', rarity: 'legendary', target: 8, getValue: stats => stats.weightWeeks },
+      { id: 'productivity_god', title: 'Deus da Produtividade', description: 'Complete 1000 tarefas no total.', icon: '1K', category: 'epic', rarity: 'legendary', target: 1000, getValue: stats => stats.totalCompletedTasks },
+      { id: 'early_bird', title: 'Madrugador', description: 'Complete 5 tarefas da Madrugada.', icon: '5AM', category: 'secret', rarity: 'rare', isSecret: true, target: 5, getValue: stats => stats.madrugadaTasksCompleted },
+      { id: 'night_owl', title: 'Coruja Noturna', description: 'Complete todas as tarefas da Noite e Madrugada por 7 dias.', icon: 'OWL', category: 'secret', rarity: 'epic', isSecret: true, target: 7, getValue: stats => stats.fullEveningNightDays },
+      { id: 'punished_redeemed', title: 'Punido e Redimido', description: 'Complete 10 exercícios punitivos.', icon: 'PX', category: 'secret', rarity: 'epic', isSecret: true, target: 10, getValue: stats => stats.punitiveExercisesCompleted },
+      { id: 'perfectionist', title: 'Perfeccionista', description: 'Tenha 10 Dias Lendários no total.', icon: '10X', category: 'secret', rarity: 'legendary', isSecret: true, target: 10, getValue: stats => stats.perfectionDays },
+      { id: 'collector', title: 'Colecionador', description: 'Desbloqueie 20 conquistas diferentes.', icon: '20', category: 'secret', rarity: 'epic', isSecret: true, target: 20, getValue: stats => stats.unlockedWithoutCollector + (hasBadge('collector') ? 1 : 0) },
+      { id: 'speedrunner', title: 'Speedrunner', description: 'Complete 20 tarefas no mesmo dia em menos de 4 horas.', icon: '4H', category: 'secret', rarity: 'legendary', isSecret: true, target: 1, getValue: stats => stats.speedrunnerDays },
+      { id: 'new_year_new_me', title: 'Ano Novo, Eu Novo', description: 'Complete 100% do dia em um 01/01.', icon: 'NY', category: 'seasonal', rarity: 'legendary', isSeasonal: true, target: 1, getValue: stats => (stats.newYearLegendary ? 1 : 0) },
+      { id: 'carnival_focus', title: 'Carnaval de Foco', description: 'Mantenha streak durante o Carnaval.', icon: 'CAR', category: 'seasonal', rarity: 'rare', isSeasonal: true, target: 1, getValue: stats => (stats.carnivalFocus ? 1 : 0) },
+      { id: 'survivor_monday', title: 'Sobrevivente de Segunda', description: 'Complete a segunda-feira com 100%.', icon: '2F', category: 'seasonal', rarity: 'rare', isSeasonal: true, target: 1, getValue: stats => (stats.mondayLegendary ? 1 : 0) },
+    ];
+
+    const ACHIEVEMENT_CATEGORY_LABELS = {
+      beginner: 'Iniciante',
+      streak: 'Sequência',
+      epic: 'Épica',
+      secret: 'Secreta',
+      seasonal: 'Sazonal',
+      bonus: 'Bônus',
+    };
+
+    const ACHIEVEMENT_RARITY_LABELS = {
+      common: 'Comum',
+      rare: 'Rara',
+      epic: 'Épica',
+      legendary: 'Lendária',
+      bonus: 'Bônus',
+    };
+
+    function getAchievementCategoryLabel(category) {
+      return ACHIEVEMENT_CATEGORY_LABELS[category] || 'Especial';
+    }
+
+    function getAchievementRarityLabel(rarity) {
+      return ACHIEVEMENT_RARITY_LABELS[rarity] || 'Bônus';
+    }
+
+    function getAchievementCatalog(stats = getAchievementStats()) {
+      return ACHIEVEMENT_DEFINITIONS.map(definition => {
+        const rawValue = Math.max(0, Number(definition.getValue(stats) || 0));
+        const target = Math.max(1, Number(definition.target || 1));
+        const unlocked = hasBadge(definition.id);
+        return {
+          ...definition,
+          unlocked,
+          rawValue,
+          value: Math.min(rawValue, target),
+          target,
+          pct: Math.min(100, Math.round((Math.min(rawValue, target) / target) * 100)),
+          displayTitle: unlocked || !definition.isSecret ? definition.title : 'Conquista secreta',
+          displayDescription: unlocked || !definition.isSecret
+            ? definition.description
+            : 'Continue avançando para revelar este segredo do baú.',
+        };
+      });
+    }
+
+    function getDailyMissions(dateKey = todayKey()) {
+      const snapshot = getDaySnapshot(dateKey) || buildDaySnapshot(dateKey);
+      return [
+        { id: 'daily-five-tasks', label: 'Complete pelo menos 5 tarefas hoje', progress: Math.min(snapshot.doneTasks, 5), total: 5, reward: 60, crystals: 1 },
+        { id: 'daily-streak', label: 'Mantenha seu streak vivo hoje', progress: snapshot.hadAnyActivity ? 1 : 0, total: 1, reward: 40, crystals: 1 },
+        { id: 'daily-morning', label: 'Complete todas as tarefas do turno da Manhã', progress: snapshot.morningAssigned ? snapshot.morningDone : 0, total: snapshot.morningAssigned || 1, reward: 45, crystals: 1, optional: snapshot.morningAssigned === 0 },
+        { id: 'daily-habit', label: 'Faça pelo menos 1 hábito recorrente', progress: Math.min(snapshot.doneHabits, 1), total: 1, reward: 35, crystals: 1, optional: snapshot.totalHabits === 0 },
+        { id: 'daily-workout', label: 'Complete o treino de hoje', progress: snapshot.workoutDone ? 1 : 0, total: 1, reward: 70, crystals: 2, optional: !fitnessPlan },
+        { id: 'daily-legendary', label: 'Alcance Dia Lendário', progress: snapshot.legendary ? 1 : 0, total: 1, reward: 120, crystals: 3 },
+        { id: 'daily-ten-tasks', label: 'Complete 10 tarefas ou mais', progress: Math.min(snapshot.doneTasks, 10), total: 10, reward: 85, crystals: 2 },
+        { id: 'daily-ai-two', label: 'Use a IA para criar ou editar 2 tarefas', progress: Math.min(snapshot.aiActions, 2), total: 2, reward: 80, crystals: 2 },
+        { id: 'daily-weight', label: 'Registre seu peso hoje', progress: snapshot.weightLogged ? 1 : 0, total: 1, reward: 55, crystals: 1 },
+        { id: 'daily-punitive', label: 'Faça um exercício punitivo', progress: Math.min(snapshot.punitiveDone, 1), total: 1, reward: 45, crystals: 1 },
+      ];
+    }
+
+    function getWeeklyMissions() {
+      const weekKeys = getCurrentWeekKeys();
+      const weekSnapshots = weekKeys.map(key => getDaySnapshot(key)).filter(Boolean);
+      const weekTasks = weekKeys.reduce((sum, key) => sum + Number(taskStats[key]?.done || 0), 0);
+      const weekWorkouts = weekSnapshots.filter(item => item.workoutDone).length;
+      const weekLegendary = weekSnapshots.filter(item => item.legendary || Boolean(gameState.legendaryDayLog?.[item.date])).length;
+      const weekTimeblocks = weekSnapshots.filter(item => item.usedTimeblocks).length;
+      const weekActivity = weekKeys.filter(key => hasActivityOnDate(key)).length;
+      return [
+        { id: 'weekly-legendary-five', label: 'Complete 5 Dias Lendários na semana', progress: Math.min(weekLegendary, 5), total: 5, reward: 220, crystals: 4 },
+        { id: 'weekly-streak-seven', label: 'Mantenha streak de 7 dias', progress: Math.min(weekActivity, 7), total: 7, reward: 180, crystals: 3 },
+        { id: 'weekly-fifty-tasks', label: 'Complete 50 tarefas na semana', progress: Math.min(weekTasks, 50), total: 50, reward: 190, crystals: 3 },
+        { id: 'weekly-workout-four', label: 'Faça 4 treinos gerados pela IA', progress: Math.min(weekWorkouts, 4), total: 4, reward: 160, crystals: 3, optional: !fitnessPlan },
+        { id: 'weekly-timeblocks', label: 'Use blocos de tempo em pelo menos 5 dias', progress: Math.min(weekTimeblocks, 5), total: 5, reward: 150, crystals: 2 },
+      ];
+    }
+
+    function getMonthlyMissions(date = new Date()) {
+      const monthKey = getMonthKey(date);
+      const monthKeys = getCurrentMonthKeys();
+      const monthSnapshots = monthKeys.map(key => getDaySnapshot(key)).filter(Boolean);
+      const monthTasks = monthKeys.reduce((sum, key) => sum + Number(taskStats[key]?.done || 0), 0);
+      const monthLegendary = monthSnapshots.filter(item => item.legendary || Boolean(gameState.legendaryDayLog?.[item.date])).length;
+      const monthWorkouts = monthSnapshots.filter(item => item.workoutDone).length;
+      const monthUnlocks = (gameState.badges || []).filter(badge => (badge.unlockedAt || '').startsWith(monthKey)).length;
+      return [
+        { id: 'monthly-legendary-fifteen', label: 'Alcance Dia Lendário por 15 dias no mês', progress: Math.min(monthLegendary, 15), total: 15, reward: 420, crystals: 6 },
+        { id: 'monthly-three-hundred', label: 'Complete 300 tarefas no mês', progress: Math.min(monthTasks, 300), total: 300, reward: 340, crystals: 5 },
+        { id: 'monthly-streak-twenty', label: 'Mantenha streak de 20 dias ou mais', progress: Math.min(Number(gameState.dayStreak || 0), 20), total: 20, reward: 300, crystals: 5 },
+        { id: 'monthly-three-badges', label: 'Desbloqueie 3 novas conquistas', progress: Math.min(monthUnlocks, 3), total: 3, reward: 250, crystals: 4 },
+        { id: 'monthly-ten-workouts', label: 'Complete 10 treinos da IA', progress: Math.min(monthWorkouts, 10), total: 10, reward: 280, crystals: 4, optional: !fitnessPlan },
+      ];
+    }
+
+    function ensureMissionClaimBucket(period, key) {
+      if (!gameState.missionsClaimed[period] || typeof gameState.missionsClaimed[period] !== 'object') {
+        gameState.missionsClaimed[period] = {};
+      }
+      if (!Array.isArray(gameState.missionsClaimed[period][key])) gameState.missionsClaimed[period][key] = [];
+      return gameState.missionsClaimed[period][key];
+    }
+
+    function claimMissionSet(period, key, missions) {
+      const claimed = ensureMissionClaimBucket(period, key);
+      let changed = false;
+      missions.forEach(mission => {
+        if (mission.optional) return;
+        if (mission.progress < mission.total) return;
+        if (claimed.includes(mission.id)) return;
+        claimed.push(mission.id);
+        changed = true;
+        grantXp(mission.reward, `Missão concluída: ${mission.label}`);
+        grantCrystals(mission.crystals || 0, `Recompensa por ${mission.label}`);
+      });
+      if (changed) saveGameState();
+    }
+
+    function checkMissionRewards() {
+      if (!isGamificationEnabled()) return;
+      persistDaySnapshot(todayKey());
+      claimMissionSet('daily', todayKey(), getDailyMissions());
+      claimMissionSet('weekly', getWeekKey(), getWeeklyMissions());
+      claimMissionSet('monthly', getMonthKey(), getMonthlyMissions());
+    }
+
+    function evaluateAchievements() {
+      if (!isGamificationEnabled()) return;
+      const today = todayKey();
+      const todaySnapshot = persistDaySnapshot(today);
+
+      if (todaySnapshot.legendary && !gameState.legendaryDayLog?.[today]) {
+        gameState.legendaryDayLog[today] = new Date().toISOString();
         gameState.lastPerfectDay = today;
         saveGameState();
-        grantXp(40, 'Dia perfeito: tudo concluído');
-        unlockBadge('perfect-day', 'Dia lendário', 'Você zerou tarefas e hábitos do dia.', '🏆');
+        grantXp(90, 'Dia Lendário: você fechou 100% do dia');
+        grantCrystals(3, 'Bônus por fechar o dia completo');
+      }
+
+      const stats = getAchievementStats();
+      ACHIEVEMENT_DEFINITIONS.filter(item => item.id !== 'collector').forEach(definition => {
+        if (definition.getValue(stats) < definition.target) return;
+        unlockBadge(definition.id, definition.title, definition.description, definition.icon, {
+          category: definition.category,
+          rarity: definition.rarity,
+          isSecret: definition.isSecret,
+          isSeasonal: definition.isSeasonal,
+        });
+      });
+
+      const collectorDefinition = ACHIEVEMENT_DEFINITIONS.find(item => item.id === 'collector');
+      const collectorStats = getAchievementStats();
+      if (collectorDefinition && collectorStats.unlockedWithoutCollector >= 19) {
+        unlockBadge(collectorDefinition.id, collectorDefinition.title, collectorDefinition.description, collectorDefinition.icon, {
+          category: collectorDefinition.category,
+          rarity: collectorDefinition.rarity,
+          isSecret: collectorDefinition.isSecret,
+          isSeasonal: collectorDefinition.isSeasonal,
+        });
       }
     }
 
     function renderGamePanel() {
+      if (!isGamificationEnabled()) return;
       const progress = getLevelProgress();
       setEl('game-level', progress.level);
       setEl('game-streak', `${gameState.dayStreak || 0}d`);
@@ -530,7 +1224,7 @@
 
       const missionsEl = document.getElementById('game-missions');
       if (missionsEl) {
-        const claimed = gameState.missionsClaimed[todayKey()] || [];
+        const claimed = gameState.missionsClaimed.daily[todayKey()] || [];
         missionsEl.innerHTML = getDailyMissions().map(mission => {
           const done = claimed.includes(mission.id);
           const fullyCompleted = mission.progress >= mission.total;
@@ -572,6 +1266,98 @@
         </div>`).join('')
           : '<div class="inline-note">Conclua tarefas, hábitos e missões para liberar suas primeiras conquistas.</div>';
       }
+      renderGameExpansion(progress);
+    }
+
+    function renderGameExpansion(progress) {
+      const today = todayKey();
+      const achievementStats = getAchievementStats();
+      const achievementCatalog = getAchievementCatalog(achievementStats);
+      const unlockedCount = achievementCatalog.filter(item => item.unlocked).length;
+      const dailyMissions = getDailyMissions().filter(mission => !mission.optional);
+      const weeklyMissions = getWeeklyMissions().filter(mission => !mission.optional);
+      const monthlyMissions = getMonthlyMissions().filter(mission => !mission.optional);
+      const dailyClaimed = ensureMissionClaimBucket('daily', today);
+      const weeklyClaimed = ensureMissionClaimBucket('weekly', getWeekKey());
+      const monthlyClaimed = ensureMissionClaimBucket('monthly', getMonthKey());
+      const workoutKeys = Object.keys(fitnessLogs || {}).filter(key => Array.isArray(fitnessLogs[key]) && fitnessLogs[key].length > 0);
+      const legendaryKeys = Object.keys(gameState.legendaryDayLog || {});
+
+      const renderMissionDeck = (targetId, label, missions, claimed, gradient) => {
+        const el = document.getElementById(targetId);
+        if (!el) return;
+        el.innerHTML = missions.map(mission => {
+          const done = claimed.includes(mission.id);
+          const pct = Math.round((mission.progress / Math.max(mission.total, 1)) * 100);
+          return `<div class="mission-card ${done ? 'done' : ''}">
+            <div class="mission-card-top">
+              <div>
+                <div class="mission-type">${label}</div>
+                <div class="mission-label">${mission.label}</div>
+                <div class="mission-copy">${mission.progress}/${mission.total}${done ? ' · resgatada' : ''}</div>
+              </div>
+              <div class="mission-reward-box">
+                <strong>+${mission.reward} XP</strong>
+                <span>+${mission.crystals || 0} cristal</span>
+              </div>
+            </div>
+            <div class="progress-bar mt-3">
+              <div class="progress-fill" style="width:${done ? 100 : pct}%;background:${done ? 'var(--success)' : gradient}"></div>
+            </div>
+          </div>`;
+        }).join('');
+      };
+
+      setEl('game-crystals', String(gameState.crystals || 0));
+      setEl('game-current-title', progress.title);
+      setEl('game-legendary-days', String(achievementStats.legendaryDays));
+      setEl('game-collection-rate', `${unlockedCount}/${achievementCatalog.length}`);
+      const seasonalStatus = document.getElementById('game-seasonal-status');
+      if (seasonalStatus) seasonalStatus.textContent = today.slice(5) === '01-01'
+        ? 'Evento: Ano Novo'
+        : achievementStats.carnivalFocus
+          ? 'Evento: Carnaval'
+          : new Date().getDay() === 1
+            ? 'Evento: Segunda lendária'
+            : 'Baú ativo';
+      renderMissionDeck('game-missions-daily', 'Diária', dailyMissions, dailyClaimed, 'linear-gradient(90deg,var(--accent),var(--accent2))');
+      renderMissionDeck('game-missions-weekly', 'Semanal', weeklyMissions, weeklyClaimed, 'linear-gradient(90deg,var(--accent3),var(--accent2))');
+      renderMissionDeck('game-missions-monthly', 'Mensal', monthlyMissions, monthlyClaimed, 'linear-gradient(90deg,var(--accent),var(--accent3))');
+      const roadmapEl = document.getElementById('game-level-roadmap');
+      if (roadmapEl) roadmapEl.innerHTML = getLevelMilestones().map(item => `<div class="level-roadmap-item ${progress.level >= item.level ? 'done' : progress.level + 5 >= item.level ? 'near' : ''}"><div class="level-roadmap-level">Lv ${item.level}</div><div><div class="level-roadmap-title">${item.title}</div><div class="inline-note">${item.xp.toLocaleString('pt-BR')} XP</div></div></div>`).join('');
+      const highlightEl = document.getElementById('game-achievement-highlight');
+      if (highlightEl) {
+        const recent = (gameState.badges || [])[0];
+        const nextTarget = achievementCatalog.find(item => !item.unlocked && !item.isSecret) || achievementCatalog.find(item => !item.unlocked);
+        highlightEl.innerHTML = recent
+          ? `<div class="highlight-card"><div class="achievement-icon large">${recent.icon || 'T'}</div><div><div class="section-title" style="margin-bottom:6px">Última conquista</div><div style="font-size:18px;font-weight:700;margin-bottom:6px">${recent.title}</div><div class="inline-note">${recent.description}</div></div></div>`
+          : nextTarget
+            ? `<div class="highlight-card"><div class="achievement-icon large">${nextTarget.icon || 'T'}</div><div><div class="section-title" style="margin-bottom:6px">Próxima conquista</div><div style="font-size:18px;font-weight:700;margin-bottom:6px">${nextTarget.displayTitle}</div><div class="inline-note">${nextTarget.displayDescription}</div><div class="inline-note" style="margin-top:8px">${nextTarget.value}/${nextTarget.target}</div></div></div>`
+            : '<div class="reward-pill"><strong>Baú completo.</strong><span>Todas as conquistas do catálogo foram destravadas.</span></div>';
+      }
+      const rewardsEl = document.getElementById('game-rewards-panel');
+      if (rewardsEl) rewardsEl.innerHTML = `<div class="reward-pill"><strong>Título atual</strong><span>${progress.title}</span></div><div class="reward-pill"><strong>Cristais de foco</strong><span>${gameState.crystals || 0}</span></div><div class="reward-pill"><strong>Dias lendários</strong><span>${achievementStats.legendaryDays}</span></div><div class="reward-pill"><strong>Treinos concluídos</strong><span>${workoutKeys.length}</span></div>`;
+      const achievementsEl = document.getElementById('game-achievements');
+      if (achievementsEl) achievementsEl.innerHTML = achievementCatalog.map(item => `
+        <div class="achievement-card ${item.unlocked ? 'unlocked' : 'locked'} rarity-${item.rarity || 'bonus'}">
+          <div class="achievement-card-top">
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div class="achievement-icon">${item.icon || 'T'}</div>
+              <div>
+                <div style="font-size:15px;font-weight:700">${item.displayTitle}</div>
+                <div class="achievement-tags">
+                  <span class="tag">${getAchievementCategoryLabel(item.category)}</span>
+                  <span class="tag">${getAchievementRarityLabel(item.rarity)}</span>
+                </div>
+              </div>
+            </div>
+            <div class="achievement-status ${item.unlocked ? 'done' : 'locked'}">${item.unlocked ? 'Desbloqueada' : `${item.value}/${item.target}`}</div>
+          </div>
+          <p class="achievement-copy">${item.displayDescription}</p>
+          <div class="achievement-progress">
+            <div class="achievement-progress-fill" style="width:${item.unlocked ? 100 : item.pct}%"></div>
+          </div>
+        </div>`).join('');
     }
 
     function renderAutomationPanel() {
@@ -615,11 +1401,15 @@
     }
 
     function refreshUI() {
+      updateGamificationVisibility();
       renderDashboard();
+      renderGamePanel();
       renderTasks();
       renderExerciseChallenges();
       renderHeatmap();
       renderTimeBlocks();
+      renderSettingsPage();
+      if (document.getElementById('page-fitness')?.classList.contains('active')) renderFitnessPage();
       if (document.getElementById('page-stats')?.classList.contains('active')) renderStats();
     }
 
@@ -663,7 +1453,7 @@
       // Create a modal logic or reuse modal-blocking-exercise
       document.getElementById('blocking-ex-desc').innerHTML = `
         Atenção! Você não concluiu sua tarefa principal até as 23:59.<br><br>
-        <strong>Faça 30 segundos de polichinelos AGORA</strong> para salvar sua sequência (streak) do dia e ganhar +5 XP.
+        <strong>Faça 30 segundos de polichinelos AGORA</strong> para salvar sua sequência do dia e ganhar +5 XP.
       `;
       const listEl = document.getElementById('blocking-ex-list');
       listEl.innerHTML = `
@@ -676,11 +1466,18 @@
     function completePunitiveExercise() {
       closeModal('modal-blocking-exercise');
       grantXp(5, "Exercício de salvação");
+      gameState.punitiveExercisesCompleted = Number(gameState.punitiveExercisesCompleted || 0) + 1;
+      recordPunitiveExercise();
+      saveGameState();
       // Force setting today as active to avoid streak penalty tomorrow
       const today = todayKey();
       if (!taskStats[today]) taskStats[today] = { total: 0, done: 0 };
       taskStats[today].done += 1;
       save(STORAGE_KEYS.taskStats, taskStats);
+      persistDaySnapshot(today);
+      checkMissionRewards();
+      evaluateAchievements();
+      refreshUI();
       showToast("Dia salvo", "Seu streak não será quebrado hoje.", "success");
     }
 
@@ -753,20 +1550,27 @@
     function resetDayState({ manual = false, autoCycle = false } = {}) {
       const today = todayKey();
       const lastCycleDate = dailyReset.lastDate || today;
+      persistDaySnapshot(autoCycle ? lastCycleDate : today);
       
       tasks.forEach(task => {
         if (autoCycle) {
           if (task.repeatDaily) {
             createTaskExerciseChallenge(task, lastCycleDate);
             task.done = false;
+            clearTaskCompletion(task.id, lastCycleDate);
             if (task.datetime) task.datetime = getTaskEffectiveDateTime(task, today);
           } else if (isTaskForDate(task, lastCycleDate)) {
             createTaskExerciseChallenge(task, lastCycleDate);
+            clearTaskCompletion(task.id, lastCycleDate);
           }
         } else if (manual) {
-          if (isTaskForDate(task, today)) task.done = false;
+          if (isTaskForDate(task, today)) {
+            task.done = false;
+            clearTaskCompletion(task.id, today);
+          }
           if (task.repeatDaily) {
              task.done = false;
+             clearTaskCompletion(task.id, today);
              if (task.datetime) task.datetime = getTaskEffectiveDateTime(task, today);
           }
         }
@@ -800,6 +1604,9 @@
       save(STORAGE_KEYS.dailyReset, dailyReset);
       
       recalcActivityStreak();
+      persistDaySnapshot(today);
+      checkMissionRewards();
+      evaluateAchievements();
       renderAutomationPanel();
       refreshUI();
       
@@ -961,6 +1768,9 @@
       toggleSidebar(false);
     }
     function navigate(page) {
+      if (page === 'missions' && !isGamificationEnabled()) {
+        page = 'settings';
+      }
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       document.getElementById(`page-${page}`)?.classList.add('active');
@@ -973,9 +1783,11 @@
         renderExerciseChallenges();
         renderTimeBlocks();
       }
+      if (page === 'missions') renderGamePanel();
       if (page === 'habits') renderHeatmap();
       if (page === 'stats') renderStats();
       if (page === 'fitness') renderFitnessPage();
+      if (page === 'settings') renderSettingsPage();
     }
 
     // =============================================
@@ -1027,6 +1839,7 @@
       if (n) save(STORAGE_KEYS.name, n);
       else localStorage.removeItem(STORAGE_KEYS.name);
       updateUserName(n);
+      renderSettingsPage();
       closeModal('modal-name');
     }
 
@@ -1037,7 +1850,7 @@
       'Comece pelo mais difícil enquanto sua energia está alta.',
       'Uma tarefa de cada vez. Foco também é produtividade.',
       'Hábitos consistentes vencem motivação passageira.',
-      'Se não der para fazer perfeito, faça possível.',
+      'Se não der para fazer perfeito, faça o possível.',
       'Pausas curtas ajudam a manter ritmo ao longo do dia.',
       'Seu eu de amanhã agradece o que você organiza hoje.',
       'Pequenos avanços diários acumulam muito resultado.',
@@ -1134,7 +1947,7 @@
       const cardE = document.getElementById('dash-card-exercises');
       let showE = [];
       if (del && cardE && typeof fitnessPlan !== 'undefined' && fitnessPlan) {
-        const dayNames = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+        const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
         const todayDayName = dayNames[new Date().getDay()];
         const todayPlan = fitnessPlan.weeklyPlan?.find(d => d.day.startsWith(todayDayName.slice(0,3))) || fitnessPlan.todayWorkout;
         const doneTodayLog = fitnessLogs[today] || [];
@@ -1270,6 +2083,7 @@
         datetime: document.getElementById('task-datetime').value || getDefaultTaskDateTime(),
         repeatDaily: document.getElementById('task-repeat-daily').checked,
         hasExercise: document.getElementById('task-has-exercise').checked,
+        createdByAI: false,
         done: false, created: new Date().toISOString()
       };
       if (task.repeatDaily) task.datetime = getTaskEffectiveDateTime(task);
@@ -1281,6 +2095,7 @@
       document.getElementById('task-datetime').value = getDefaultTaskDateTime();
       syncTaskFormState();
       updateTodayTaskStats();
+      persistDaySnapshot(todayKey());
       refreshUI();
       checkNotificationEngine();
     }
@@ -1306,13 +2121,19 @@
       t.done = !t.done;
       if (t.done) {
         t.completedAt = new Date().toISOString();
+        recordTaskCompletion(id, today, t.completedAt);
       } else {
         t.completedAt = '';
+        clearTaskCompletion(id, today);
       }
       save(STORAGE_KEYS.tasks, tasks);
       if (!wasDone && t.done && !rewardLedger.tasks[today].includes(id)) {
         rewardLedger.tasks[today].push(id);
         save(STORAGE_KEYS.rewardLedger, rewardLedger);
+        if (t.createdByAI) {
+          gameState.aiTasksCompleted = Number(gameState.aiTasksCompleted || 0) + 1;
+          saveGameState();
+        }
         grantXp(getTaskXp(t), `Tarefa concluída: ${truncateText(t.text, 40)}`);
       }
       if (wasDone && !t.done && hadReward) {
@@ -1322,6 +2143,7 @@
       }
       updateTodayTaskStats();
       recalcActivityStreak();
+      persistDaySnapshot(today);
       checkMissionRewards();
       evaluateAchievements();
       refreshUI();
@@ -1329,7 +2151,8 @@
     }
 
     function deleteTask(id) {
-      showConfirm('Excluir tarefa?', 'Esta ação não pode ser desfeita.', () => {
+      showConfirm('Excluir tarefa?', 'Esta a??o n?o pode ser desfeita.', () => {
+        clearTaskCompletion(id);
         tasks = tasks.filter(t => t.id !== id);
         Object.keys(timeblocks).forEach(block => {
           timeblocks[block] = timeblocks[block].filter(taskId => taskId !== id);
@@ -1348,6 +2171,9 @@
         save(STORAGE_KEYS.taskExerciseLog, taskExerciseLog);
         save(STORAGE_KEYS.exerciseChallenges, exerciseChallenges);
         updateTodayTaskStats();
+        persistDaySnapshot(todayKey());
+        checkMissionRewards();
+        evaluateAchievements();
         refreshUI();
       });
     }
@@ -1377,6 +2203,9 @@
       save(STORAGE_KEYS.tasks, tasks);
       closeModal('modal-edit-task');
       updateTodayTaskStats();
+      persistDaySnapshot(todayKey());
+      checkMissionRewards();
+      evaluateAchievements();
       refreshUI();
       checkNotificationEngine();
     }
@@ -1496,7 +2325,7 @@
     function renderHeatmap() {
       const hm = document.getElementById('weekly-heatmap');
       if (!hm) return;
-      const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'SÃ¡b'];
+      const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
       const today = new Date();
       const dates = Array.from({ length: 7 }, (_, i) => {
         const d = new Date(today);
@@ -1504,7 +2333,7 @@
         return d;
       });
       const dailyTasks = tasks.filter(t => t.repeatDaily);
-      if (dailyTasks.length === 0) { hm.innerHTML = '<p class="text-muted text-sm">Adicione tarefas diÃ¡rias para ver o progresso contÃ­nuo.</p>'; return; }
+      if (dailyTasks.length === 0) { hm.innerHTML = '<p class="text-muted text-sm">Adicione tarefas diárias para ver o progresso contínuo.</p>'; return; }
       hm.innerHTML = dailyTasks.map(t => {
         const cells = dates.map(d => {
           const key = localDateKey(d);
@@ -1530,7 +2359,7 @@
       if (tbDate) tbDate.textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
 
       const headerConfig = {
-        morning: { slot: '06h-12h', label: 'Manha', time: '06:00 - 12:00', color: 'var(--warn)' },
+        morning: { slot: '06h-12h', label: 'Manhã', time: '06:00 - 12:00', color: 'var(--warn)' },
         afternoon: { slot: '12h-18h', label: 'Tarde', time: '12:00 - 18:00', color: 'var(--accent3)' },
         evening: { slot: '18h-22h', label: 'Noite', time: '18:00 - 22:00', color: 'var(--accent)' },
         night: { slot: '22h-06h', label: 'Madrugada', time: '22:00 - 06:00', color: 'var(--muted)' },
@@ -1541,7 +2370,7 @@
         header.innerHTML = `<span class="tag">${config.slot}</span><span class="block-label" style="color:${config.color}">${config.label}</span><span class="block-time">${config.time}</span>`;
       });
       const suggestedRoutineTitle = document.querySelector('#page-tasks #suggested-routine')?.previousElementSibling;
-      if (suggestedRoutineTitle) suggestedRoutineTitle.textContent = 'Sugestao de rotina';
+      if (suggestedRoutineTitle) suggestedRoutineTitle.textContent = 'Sugestão de rotina';
 
       // Render dropped tasks in each block
       ['morning', 'afternoon', 'evening', 'night'].forEach(block => {
@@ -1580,14 +2409,14 @@
       if (sr) {
         sr.innerHTML = `
       <div class="text-sm text-muted" style="line-height:1.8">
-        <div>🌅 <strong>07:00</strong> Acordar & café da manhã</div>
+        <div>🌅 <strong>07:00</strong> Acordar e café da manhã</div>
         <div>📧 <strong>08:00</strong> E-mails e tarefas urgentes</div>
-        <div>💻 <strong>10:00</strong> Foco profundo (trabalho remoto)</div>
+        <div>💻 <strong>10:00</strong> Foco profundo</div>
         <div>☀️ <strong>12:30</strong> Almoço e pausa</div>
         <div>💻 <strong>14:00</strong> Continuação do trabalho</div>
         <div>🏃 <strong>17:00</strong> Exercício físico</div>
-        <div>📖 <strong>19:00</strong> Leitura ou estudo</div>
-        <div>🧘 <strong>21:00</strong> Meditação & encerramento</div>
+        <div>📚 <strong>19:00</strong> Leitura ou estudo</div>
+        <div>🧘 <strong>21:00</strong> Meditação e encerramento</div>
         <div>😴 <strong>23:00</strong> Dormir</div>
       </div>`;
       }
@@ -1630,6 +2459,8 @@
       }
       timeblocks[block] = blockArr;
       save(STORAGE_KEYS.timeblocks, timeblocks);
+      timeblockHistory[todayKey()] = true;
+      save(STORAGE_KEYS.timeblockHistory, timeblockHistory);
       draggedTaskId = null;
       checkMissionRewards();
       refreshUI();
@@ -1651,13 +2482,20 @@
       });
       timeblocks[block] = [...(timeblocks[block] || []), taskId];
       save(STORAGE_KEYS.timeblocks, timeblocks);
+      timeblockHistory[todayKey()] = true;
+      save(STORAGE_KEYS.timeblockHistory, timeblockHistory);
       draggedTaskId = null;
+      persistDaySnapshot(todayKey());
       checkMissionRewards();
+      evaluateAchievements();
       refreshUI();
     }
     function removeFromBlock(taskId, block) {
       timeblocks[block] = timeblocks[block].filter(id => id !== taskId);
       save(STORAGE_KEYS.timeblocks, timeblocks);
+      persistDaySnapshot(todayKey());
+      checkMissionRewards();
+      evaluateAchievements();
       refreshUI();
     }
 
@@ -1682,20 +2520,34 @@
 
       const summary = document.getElementById('stats-summary');
       const level = getLevelFromXp(gameState.xp || 0);
+      const gamificationOn = isGamificationEnabled();
 
       const totalCompletedTasks = Object.values(taskStats).reduce((sum, day) => sum + (day.done || 0), 0);
       const allDays = Object.keys(taskStats).length || 1;
       const completionAvg = Math.round((totalCompletedTasks / (allDays * Math.max(tasks.filter(t => !t.repeatDaily).length, 1))) * 100);
+      const workoutDaysTotal = Object.keys(fitnessLogs || {}).filter(key => Array.isArray(fitnessLogs[key]) && fitnessLogs[key].length > 0).length;
+      const activeDays = Object.keys(taskStats || {}).filter(key => Number(taskStats[key]?.done || 0) > 0).length;
+      const timeblockDays = Object.keys(timeblockHistory || {}).length;
 
       if (summary) {
-        summary.innerHTML = [
-          { n: `${doneTodayTasks}/${todayTasks.length}`, l: 'Tarefas Hoje' },
-          { n: `${doneHabitsToday}/${totalHabits}`, l: 'Hábitos Hoje' },
-          { n: `${gameState.dayStreak || 0}d`, l: 'Sequência (Streak)' },
-          { n: `Lv ${level}`, l: 'Nível Atual' },
-          { n: `${totalCompletedTasks}`, l: 'Total Concluídas' },
-          { n: `${(gameState.badges || []).length}`, l: 'Conquistas' },
-        ].map(s => `<div class="stat-box" style="padding:16px"><div class="stat-number">${s.n}</div><div class="stat-label">${s.l}</div></div>`).join('');
+        const cards = gamificationOn
+          ? [
+              { n: `${doneTodayTasks}/${todayTasks.length}`, l: 'Tarefas Hoje' },
+              { n: `${doneHabitsToday}/${totalHabits}`, l: 'Hábitos Hoje' },
+              { n: `${gameState.dayStreak || 0}d`, l: 'Sequência' },
+              { n: `Lv ${level}`, l: 'Nível Atual' },
+              { n: `${totalCompletedTasks}`, l: 'Total Concluídas' },
+              { n: `${(gameState.badges || []).length}`, l: 'Conquistas' },
+            ]
+          : [
+              { n: `${doneTodayTasks}/${todayTasks.length}`, l: 'Tarefas Hoje' },
+              { n: `${doneHabitsToday}/${totalHabits}`, l: 'Hábitos Hoje' },
+              { n: `${activeDays}`, l: 'Dias Ativos' },
+              { n: `${timeblockDays}`, l: 'Dias com Blocos' },
+              { n: `${totalCompletedTasks}`, l: 'Total Concluídas' },
+              { n: `${workoutDaysTotal}`, l: 'Dias de Treino' },
+            ];
+        summary.innerHTML = cards.map(s => `<div class="stat-box" style="padding:16px"><div class="stat-number">${s.n}</div><div class="stat-label">${s.l}</div></div>`).join('');
       }
 
       // Build last 7 days
@@ -1767,6 +2619,8 @@
         <span class="mono text-muted text-sm">${score}pts</span>
       </div>`).join('');
       }
+      renderMonthlyProgress();
+      lucide.createIcons();
     }
 
     // =============================================
@@ -1792,9 +2646,16 @@
         notificationSettings,
         notificationLog,
         gameState,
+        appSettings,
         rewardLedger,
         taskExerciseLog,
         exerciseChallenges,
+        progressPhotos,
+        fitnessProfile,
+        fitnessPlan,
+        fitnessLogs,
+        fitnessWeightLog,
+        fitnessGameState,
         exportedAt: new Date().toISOString()
       };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1877,7 +2738,7 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // ── AI: histórico de conversa multi-turn ──────────────────────
+    // Histórico de conversa da IA
     let aiChatHistory = load(STORAGE_KEYS.aiChatHistory, []);
 
     function renderAIChatHistory() {
@@ -1924,11 +2785,12 @@
       save(STORAGE_KEYS.tasks, tasks);
     }
 
-    // ── Executa ações retornadas pela IA ──────────────────────────
+    // Executa ações retornadas pela IA
     function executeAIActions(actions) {
       if (!actions || !Array.isArray(actions)) return [];
       const log = [];
       const today = todayKey();
+      let aiMutationCount = 0;
 
       actions.forEach(action => {
         switch (action.type) {
@@ -1941,10 +2803,12 @@
               datetime: getDefaultTaskDateTime(),
               repeatDaily: action.repeatDaily || false,
               hasExercise: false,
+              createdByAI: true,
               done: false,
               created: new Date().toISOString()
             };
             tasks.unshift(t);
+            aiMutationCount += 1;
             log.push(`➕ Criada: <b>${action.text}</b>`);
             break;
           }
@@ -1954,6 +2818,7 @@
             tasks = tasks.filter(t => {
               const match = (action.id && t.id === action.id) ||
                             (action.text && t.text.toLowerCase().includes(action.text.toLowerCase()));
+              if (match) clearTaskCompletion(t.id, today);
               return !match;
             });
             const removed = before - tasks.length;
@@ -1967,6 +2832,8 @@
                             (action.text && t.text.toLowerCase().includes(action.text.toLowerCase()));
               if (match && !t.done) {
                 t.done = true;
+                t.completedAt = new Date().toISOString();
+                recordTaskCompletion(t.id, today, t.completedAt);
                 if (!Array.isArray(rewardLedger.tasks[today])) rewardLedger.tasks[today] = [];
                 if (!rewardLedger.tasks[today].includes(t.id)) {
                   rewardLedger.tasks[today].push(t.id);
@@ -1984,6 +2851,8 @@
                             (action.text && t.text.toLowerCase().includes(action.text.toLowerCase()));
               if (match && t.done) {
                 t.done = false;
+                t.completedAt = '';
+                clearTaskCompletion(t.id, today);
                 log.push(`↩️ Desmarcada: <b>${t.text}</b>`);
               }
             });
@@ -1999,6 +2868,7 @@
                 if (action.newText)     t.text        = action.newText;
                 if (action.priority)    t.priority    = action.priority;
                 if (action.repeatDaily !== undefined) t.repeatDaily = action.repeatDaily;
+                aiMutationCount += 1;
                 log.push(`✏️ Editada: <b>${old}</b> → <b>${t.text}</b>`);
               }
             });
@@ -2007,7 +2877,10 @@
 
           case 'clear_done': {
             const before = tasks.length;
-            tasks = tasks.filter(t => !t.done);
+            tasks = tasks.filter(t => {
+              if (t.done) clearTaskCompletion(t.id, today);
+              return !t.done;
+            });
             const removed = before - tasks.length;
             if (removed > 0) log.push(`🧹 ${removed} tarefa(s) concluída(s) removida(s)`);
             break;
@@ -2016,10 +2889,12 @@
       });
 
       if (log.length > 0) {
+        if (aiMutationCount > 0) recordAiAction(aiMutationCount, today);
         save(STORAGE_KEYS.tasks, tasks);
         save(STORAGE_KEYS.rewardLedger, rewardLedger);
         updateTodayTaskStats();
         recalcActivityStreak();
+        persistDaySnapshot(today);
         checkMissionRewards();
         evaluateAchievements();
         refreshUI();
@@ -2041,7 +2916,7 @@
       sendAIMessage(text, 'user');
       input.value = '';
 
-      // histórico multi-turn (últimas 10 trocas)
+      // Histórico multi-turno
       aiChatHistory.push({ role: 'user', parts: [{ text }] });
       if (aiChatHistory.length > 20) aiChatHistory = aiChatHistory.slice(-20);
       save(STORAGE_KEYS.aiChatHistory, aiChatHistory);
@@ -2139,7 +3014,7 @@ MANDATÓRIO: retorne JSON puro sem crases:
         const actions = JSON.parse(actionsStr.replace(/&quot;/g, '"').replace(/&#39;/g, "'"));
         const actionLog = executeAIActions(actions);
         btn.disabled = true;
-        btn.textContent = 'Ações Aplicadas ✅';
+        btn.textContent = 'Ações aplicadas ✅';
         btn.classList.replace('btn-primary', 'btn-success');
         if (actionLog.length > 0) {
           const logDiv = document.createElement('div');
@@ -2162,7 +3037,7 @@ MANDATÓRIO: retorne JSON puro sem crases:
       if (k) {
         localStorage.setItem('mr_gemini_key', k);
         closeModal('modal-ai-settings');
-        showConfirm('Cérebros Conectados! 🧠', 'Sua chave foi salva localmente. A IA agora tem acesso total à sua rotina!', () => {});
+        showConfirm('Cérebros conectados! 🧠', 'Sua chave foi salva localmente. A IA agora tem acesso total à sua rotina!', () => {});
       } else {
         localStorage.removeItem('mr_gemini_key');
         closeModal('modal-ai-settings');
@@ -2170,7 +3045,7 @@ MANDATÓRIO: retorne JSON puro sem crases:
     }
 
 
-    // ── Exercise Detail Modal ─────────────────────────────────────
+    // Exercise Detail Modal
     let _detailEx = null; // current exercise shown in detail modal
 
     function openExerciseDetail(dayIdx, exIdx) {
@@ -2194,7 +3069,7 @@ MANDATÓRIO: retorne JSON puro sem crases:
       chips.innerHTML = [
         { icon: '🔁', label: `${ex.sets} séries` },
         { icon: '💪', label: `${ex.reps} reps` },
-        { icon: '⏱️', label: `${ex.rest} descanso` },
+        { icon: '⏱️', label: `${ex.rest} de descanso` },
       ].map(c => `<span style="background:var(--surface3);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--text)">${c.icon} ${c.label}</span>`).join('');
 
       // Muscles
@@ -2229,7 +3104,7 @@ MANDATÓRIO: retorne JSON puro sem crases:
       if (ex.mistakes?.length) {
         mistakes.innerHTML = ex.mistakes.map(m =>
           `<div style="display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--text);line-height:1.5">
-            <span style="color:var(--danger);flex-shrink:0;font-size:16px;line-height:1.2">✗</span>${m}
+            <span style="color:var(--danger);flex-shrink:0;font-size:16px;line-height:1.2">✕</span>${m}
           </div>`
         ).join('');
         document.getElementById('exd-mistakes-section').style.display = 'block';
@@ -2252,7 +3127,7 @@ MANDATÓRIO: retorne JSON puro sem crases:
         btn.disabled = true;
         btn.style.opacity = '0.5';
       } else {
-        btn.innerHTML = '✓ Marcar como Feito · <b>+25 XP</b>';
+        btn.innerHTML = '✓ Marcar como feito · <b>+25 XP</b>';
         btn.disabled = false;
         btn.style.opacity = '1';
       }
@@ -2271,7 +3146,7 @@ MANDATÓRIO: retorne JSON puro sem crases:
       btn.style.opacity = '0.5';
     }
 
-    // ── Day picker helpers ────────────────────────────────────────
+    // Day picker helpers
     function toggleDayPick(btn) {
       btn.classList.toggle('selected');
       updateDaysCount();
@@ -2290,9 +3165,7 @@ MANDATÓRIO: retorne JSON puro sem crases:
       }
     }
 
-    // ══════════════════════════════════════════════════════════════
     //  FITNESS MODULE
-    // ══════════════════════════════════════════════════════════════
 
 
 
@@ -2349,6 +3222,7 @@ MANDATÓRIO: retorne JSON puro sem crases:
       if (isNew) {
         grantFitnessXp(50, 'Perfil fitness criado!');
         unlockFitnessBadge('profile_set', '📋 Perfil Configurado', 'Configurou seu perfil físico', '📋');
+        if (!isGamificationEnabled()) showToast('Perfil criado!', '', 'success');
       } else {
         showToast('Perfil atualizado!', '', 'success');
       }
@@ -2372,8 +3246,245 @@ MANDATÓRIO: retorne JSON puro sem crases:
       save(STORAGE_KEYS.fitnessWeightLog, fitnessWeightLog);
       if (fitnessProfile) { fitnessProfile.weight = weight; save(STORAGE_KEYS.fitnessProfile, fitnessProfile); }
       grantFitnessXp(10, 'Peso registrado!');
+      if (!isGamificationEnabled()) showToast('Peso registrado!', '', 'success');
+      persistDaySnapshot(date);
+      checkMissionRewards();
+      evaluateAchievements();
       closeModal('modal-weight-log');
+      refreshUI();
       renderFitnessPage();
+    }
+
+    function getSortedProgressPhotos() {
+      return [...progressPhotos].sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.createdAt || '').localeCompare(a.createdAt || ''));
+    }
+
+    function getMonthlyProgressData(limit = 12) {
+      const monthKeys = new Set([
+        ...Object.keys(taskStats || {}).map(key => key.slice(0, 7)),
+        ...Object.keys(fitnessLogs || {}).map(key => key.slice(0, 7)),
+        ...fitnessWeightLog.map(entry => String(entry.date || '').slice(0, 7)),
+        ...progressPhotos.map(photo => String(photo.date || '').slice(0, 7)),
+      ]);
+
+      return [...monthKeys]
+        .filter(Boolean)
+        .sort((a, b) => b.localeCompare(a))
+        .slice(0, limit)
+        .map(monthKey => {
+          const weights = fitnessWeightLog
+            .filter(entry => String(entry.date || '').startsWith(monthKey))
+            .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+          const photos = getSortedProgressPhotos().filter(photo => String(photo.date || '').startsWith(monthKey));
+          const taskKeys = Object.keys(taskStats || {}).filter(key => key.startsWith(monthKey));
+          const fitnessKeys = Object.keys(fitnessLogs || {}).filter(key => key.startsWith(monthKey));
+          const tasksDone = taskKeys.reduce((sum, key) => sum + Number(taskStats[key]?.done || 0), 0);
+          const workoutDays = fitnessKeys.filter(key => Array.isArray(fitnessLogs[key]) && fitnessLogs[key].length > 0).length;
+          const activeDays = taskKeys.filter(key => Number(taskStats[key]?.done || 0) > 0).length;
+          const weightStart = weights[0]?.weight ?? null;
+          const weightEnd = weights[weights.length - 1]?.weight ?? null;
+          const weightDelta = Number.isFinite(weightStart) && Number.isFinite(weightEnd)
+            ? Number((weightEnd - weightStart).toFixed(1))
+            : null;
+          return {
+            monthKey,
+            label: formatMonthLabel(monthKey),
+            photo: photos[0] || null,
+            photoCount: photos.length,
+            tasksDone,
+            workoutDays,
+            activeDays,
+            weightStart,
+            weightEnd,
+            weightDelta,
+          };
+        });
+    }
+
+    function renderProgressPhotoPreview(imageData = '') {
+      const wrap = document.getElementById('progress-photo-preview-wrap');
+      if (!wrap) return;
+      if (!imageData) {
+        wrap.innerHTML = `<div class="progress-photo-empty">Escolha uma foto para visualizar antes de salvar.</div>`;
+        return;
+      }
+      wrap.innerHTML = `<img src="${imageData}" alt="Prévia da foto de progresso" class="progress-photo-preview" />`;
+    }
+
+    function openProgressPhotoModal() {
+      pendingProgressPhotoData = '';
+      const dateInput = document.getElementById('progress-photo-date');
+      const noteInput = document.getElementById('progress-photo-note');
+      const fileInput = document.getElementById('progress-photo-file');
+      if (dateInput) dateInput.value = todayKey();
+      if (noteInput) noteInput.value = '';
+      if (fileInput) fileInput.value = '';
+      renderProgressPhotoPreview('');
+      openModal('modal-progress-photo');
+    }
+
+    function compressProgressPhoto(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const maxSide = 1080;
+            const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(img.width * scale));
+            canvas.height = Math.max(1, Math.round(img.height * scale));
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              reject(new Error('Não foi possível preparar a imagem.'));
+              return;
+            }
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL('image/jpeg', 0.84));
+          };
+          img.onerror = () => reject(new Error('A imagem selecionada não pôde ser lida.'));
+          img.src = reader.result;
+        };
+        reader.onerror = () => reject(new Error('Falha ao carregar a imagem.'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleProgressPhotoSelection(event) {
+      const file = event?.target?.files?.[0];
+      if (!file) {
+        pendingProgressPhotoData = '';
+        renderProgressPhotoPreview('');
+        return;
+      }
+      try {
+        pendingProgressPhotoData = await compressProgressPhoto(file);
+        renderProgressPhotoPreview(pendingProgressPhotoData);
+      } catch (error) {
+        pendingProgressPhotoData = '';
+        renderProgressPhotoPreview('');
+        showToast('Erro ao carregar foto', error.message, 'warn');
+      }
+    }
+
+    function saveProgressPhoto() {
+      const date = document.getElementById('progress-photo-date')?.value || todayKey();
+      const note = document.getElementById('progress-photo-note')?.value.trim() || '';
+      if (!pendingProgressPhotoData) {
+        showToast('Selecione uma foto', 'Escolha uma imagem antes de salvar.', 'warn');
+        return;
+      }
+      const newPhoto = {
+        id: uid(),
+        date,
+        note,
+        image: pendingProgressPhotoData,
+        createdAt: new Date().toISOString(),
+      };
+      progressPhotos.unshift(newPhoto);
+      progressPhotos = getSortedProgressPhotos();
+      try {
+        save(STORAGE_KEYS.progressPhotos, progressPhotos);
+      } catch (error) {
+        progressPhotos = progressPhotos.filter(photo => photo.id !== newPhoto.id);
+        showToast('Não foi possível salvar', 'O armazenamento local ficou sem espaço para essa foto.', 'warn');
+        return;
+      }
+      closeModal('modal-progress-photo');
+      pendingProgressPhotoData = '';
+      showToast('Foto salva', 'Seu progresso do mês foi registrado.', 'success');
+      refreshUI();
+      renderFitnessPage();
+      if (document.getElementById('page-stats')?.classList.contains('active')) renderStats();
+    }
+
+    function deleteProgressPhoto(id) {
+      const photo = progressPhotos.find(item => item.id === id);
+      if (!photo) return;
+      showConfirm('Remover foto?', `A foto de ${new Date(`${photo.date}T00:00:00`).toLocaleDateString('pt-BR')} será apagada do armazenamento local.`, () => {
+        progressPhotos = progressPhotos.filter(item => item.id !== id);
+        save(STORAGE_KEYS.progressPhotos, progressPhotos);
+        refreshUI();
+        renderFitnessPage();
+        if (document.getElementById('page-stats')?.classList.contains('active')) renderStats();
+        showToast('Foto removida', 'O registro visual foi apagado.', 'warn');
+      });
+    }
+
+    function renderProgressPhotoPanel() {
+      const panel = document.getElementById('fitness-progress-photo-panel');
+      if (!panel) return;
+      const latest = getSortedProgressPhotos()[0];
+      if (!latest) {
+        panel.innerHTML = `
+          <div class="progress-photo-upload">
+            <div class="progress-photo-empty">
+              Ainda não existe foto salva. Registre uma imagem por mês para acompanhar sua evolução visual.
+            </div>
+          </div>
+        `;
+        return;
+      }
+      const latestDate = new Date(`${latest.date}T00:00:00`).toLocaleDateString('pt-BR');
+      const monthly = getMonthlyProgressData(3);
+      panel.innerHTML = `
+        <div class="progress-photo-card">
+          <img src="${latest.image}" alt="Última foto de progresso" class="progress-photo-preview" />
+          <div class="progress-photo-meta">
+            <div>
+              <div class="settings-title">Último registro</div>
+              <div class="settings-copy">${latestDate} · ${formatMonthLabel(getMonthKey(`${latest.date}T00:00:00`))}</div>
+            </div>
+            <button class="btn btn-ghost" style="padding:8px 12px" onclick="deleteProgressPhoto('${latest.id}')">Remover</button>
+          </div>
+          ${latest.note ? `<div class="progress-photo-note">${escapeHtml(latest.note)}</div>` : ''}
+          <div class="progress-month-inline">
+            ${monthly.map(item => `<span class="tag">${item.label}</span>`).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderMonthlyProgress() {
+      const grid = document.getElementById('monthly-progress-grid');
+      if (!grid) return;
+      const months = getMonthlyProgressData(12);
+      if (!months.length) {
+        grid.innerHTML = '<div class="empty-state" style="padding:20px 12px">Adicione uma foto de progresso ou registre peso e treinos para montar a linha do tempo mensal.</div>';
+        return;
+      }
+      grid.innerHTML = `<div class="monthly-progress-grid">${months.map(item => {
+        const deltaLabel = item.weightDelta === null
+          ? 'Sem variação de peso'
+          : item.weightDelta === 0
+            ? 'Peso estável'
+            : item.weightDelta > 0
+              ? `+${item.weightDelta.toFixed(1)} kg`
+              : `${item.weightDelta.toFixed(1)} kg`;
+        const deltaTone = item.weightDelta === null ? 'var(--muted)' : item.weightDelta <= 0 ? 'var(--accent2)' : 'var(--warn)';
+        return `
+          <div class="month-card">
+            ${item.photo
+              ? `<img src="${item.photo.image}" alt="Foto de progresso de ${item.label}" class="month-card-image" />`
+              : `<div class="month-card-placeholder">Sem foto</div>`}
+            <div class="month-card-body">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                <div>
+                  <div class="settings-title">${item.label}</div>
+                  <div class="settings-copy">${item.photoCount || 0} foto${item.photoCount === 1 ? '' : 's'} · ${item.activeDays} dias ativos</div>
+                </div>
+                ${item.photo ? `<button class="icon-btn" onclick="deleteProgressPhoto('${item.photo.id}')" aria-label="Remover foto do mês"><i data-lucide="trash-2" style="width:15px;height:15px"></i></button>` : ''}
+              </div>
+              <div class="month-stats">
+                <div><strong>${item.tasksDone}</strong><span>Tarefas</span></div>
+                <div><strong>${item.workoutDays}</strong><span>Treinos</span></div>
+                <div><strong style="color:${deltaTone}">${deltaLabel}</strong><span>Peso</span></div>
+              </div>
+              ${item.photo?.note ? `<div class="progress-photo-note">${escapeHtml(item.photo.note)}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('')}</div>`;
     }
 
     async function generateFitnessPlan() {
@@ -2448,7 +3559,7 @@ Crie exatamente 7 dias (Seg a Dom). Adapte ao nível e objetivo. Preencha howTo 
         save(STORAGE_KEYS.fitnessPlan, fitnessPlan);
 
         grantXp(40, 'Plano de treino gerado!');
-        unlockBadge('first_plan', '📅 Primeiro Plano', 'Gerou seu primeiro plano de treino', '📅');
+        unlockBadge('first_plan', '📝 Primeiro Plano', 'Gerou seu primeiro plano de treino', '📝');
         showToast('Plano gerado! 🎉', 'Seu treino personalizado está pronto.', 'success');
         renderFitnessPage();
       } catch(e) {
@@ -2487,6 +3598,9 @@ Crie exatamente 7 dias (Seg a Dom). Adapte ao nível e objetivo. Preencha howTo 
 
       // Grant unified XP
       grantXp(xpAmount + 15, `Exercício concluído: ${exName}`);
+      persistDaySnapshot(today);
+      checkMissionRewards();
+      evaluateAchievements();
 
       // Show celebration modal
       document.getElementById('exdone-title').textContent = `${exName} ✓`;
@@ -2501,16 +3615,22 @@ Crie exatamente 7 dias (Seg a Dom). Adapte ao nível e objetivo. Preencha howTo 
     let fitnessWeightChartInst = null;
     function renderFitnessPage() {
       if (!document.getElementById('page-fitness')?.classList.contains('active')) return;
+      const gamificationOn = isGamificationEnabled();
+      const fitnessBanner = document.getElementById('fitness-game-banner');
+      const fitnessBadgesCard = document.getElementById('fitness-badges-card');
+      if (fitnessBanner) fitnessBanner.hidden = !gamificationOn;
+      if (fitnessBadgesCard) fitnessBadgesCard.hidden = !gamificationOn;
 
-      // Gamification banner
-      const prog = getLevelProgress();
-      document.getElementById('fitness-avatar').textContent     = '🏆';
-      document.getElementById('fitness-rank-title').textContent = prog.title;
-      document.getElementById('fitness-xp-label').textContent   = `${gameState.xp || 0} XP Coletivo`;
-      document.getElementById('fitness-level-label').textContent = `Nível ${prog.level}`;
-      document.getElementById('fitness-xp-next').textContent    = `${prog.current}/${prog.next} XP`;
-      document.getElementById('fitness-xp-bar').style.width     = prog.pct + '%';
-      document.getElementById('fitness-streak-label').textContent = `🔥 ${fitnessGameState.streak || 0} dias de treino consecutivos`;
+      if (gamificationOn) {
+        const prog = getLevelProgress();
+        document.getElementById('fitness-avatar').textContent     = '🏆';
+        document.getElementById('fitness-rank-title').textContent = prog.title;
+        document.getElementById('fitness-xp-label').textContent   = `${gameState.xp || 0} XP Coletivo`;
+        document.getElementById('fitness-level-label').textContent = `Nível ${prog.level}`;
+        document.getElementById('fitness-xp-next').textContent    = `${prog.current}/${prog.next} XP`;
+        document.getElementById('fitness-xp-bar').style.width     = prog.pct + '%';
+        document.getElementById('fitness-streak-label').textContent = `🔥 ${fitnessGameState.streak || 0} dias de treino consecutivos`;
+      }
 
       // Profile display
       const profileDiv = document.getElementById('fitness-profile-display');
@@ -2529,23 +3649,35 @@ Crie exatamente 7 dias (Seg a Dom). Adapte ao nível e objetivo. Preencha howTo 
             ${goalEmoji[fitnessProfile.goal]} Objetivo: <b style="color:var(--text)">${{lose_fat:'Perder gordura',gain_muscle:'Ganhar músculo',maintain:'Manter forma',endurance:'Resistência',general:'Saúde geral'}[fitnessProfile.goal]}</b>
             &nbsp;·&nbsp; ${Array.isArray(fitnessProfile.days) ? fitnessProfile.days.join(', ') : fitnessProfile.days + '×/sem'}
           </div>`;
+      } else if (profileDiv) {
+        profileDiv.innerHTML = '<p class="text-sm text-muted">Nenhum perfil configurado ainda.<br>Clique em <b>Meu Perfil</b> para começar.</p>';
       }
 
+      renderProgressPhotoPanel();
+
       // Weight chart
-      const wctx = document.getElementById('fitness-weight-chart')?.getContext('2d');
-      if (wctx && fitnessWeightLog.length >= 2) {
-        if (fitnessWeightChartInst) fitnessWeightChartInst.destroy();
-        fitnessWeightChartInst = new Chart(wctx, {
-          type: 'line',
-          data: {
-            labels: fitnessWeightLog.map(e => e.date.slice(5)),
-            datasets: [{ data: fitnessWeightLog.map(e => e.weight), borderColor: '#7c6df7', backgroundColor: 'rgba(124,109,247,0.1)', tension: 0.4, pointRadius: 4, fill: true }]
-          },
-          options: { plugins:{ legend:{ display:false } }, scales: { x:{ticks:{color:'#6b6b88',font:{size:10}}}, y:{ticks:{color:'#6b6b88',font:{size:10}}} }, responsive:true, maintainAspectRatio:false }
-        });
-      } else if (wctx) {
-        const wrap = document.getElementById('fitness-weight-chart-wrap');
-        if (wrap) wrap.innerHTML = '<p class="text-sm text-muted" style="padding:20px 0">Registre ao menos 2 pesos para ver o gráfico.</p>';
+      const weightWrap = document.getElementById('fitness-weight-chart-wrap');
+      if (weightWrap) {
+        if (fitnessWeightChartInst) {
+          fitnessWeightChartInst.destroy();
+          fitnessWeightChartInst = null;
+        }
+        if (fitnessWeightLog.length >= 2) {
+          weightWrap.innerHTML = '<canvas id="fitness-weight-chart"></canvas>';
+          const wctx = document.getElementById('fitness-weight-chart')?.getContext('2d');
+          if (wctx) {
+            fitnessWeightChartInst = new Chart(wctx, {
+              type: 'line',
+              data: {
+                labels: fitnessWeightLog.map(e => e.date.slice(5)),
+                datasets: [{ data: fitnessWeightLog.map(e => e.weight), borderColor: '#7c6df7', backgroundColor: 'rgba(124,109,247,0.1)', tension: 0.4, pointRadius: 4, fill: true }]
+              },
+              options: { plugins:{ legend:{ display:false } }, scales: { x:{ticks:{color:'#6b6b88',font:{size:10}}}, y:{ticks:{color:'#6b6b88',font:{size:10}}} }, responsive:true, maintainAspectRatio:false }
+            });
+          }
+        } else {
+          weightWrap.innerHTML = '<p class="text-sm text-muted" style="padding:20px 0">Registre ao menos 2 pesos para ver o gráfico.</p>';
+        }
       }
 
       // Today's workout
@@ -2609,12 +3741,16 @@ Crie exatamente 7 dias (Seg a Dom). Adapte ao nível e objetivo. Preencha howTo 
 
       // Badges
       const badgesDiv = document.getElementById('fitness-badges');
-      if ((fitnessGameState.badges || []).length > 0) {
+      if (gamificationOn && (fitnessGameState.badges || []).length > 0) {
         badgesDiv.innerHTML = fitnessGameState.badges.map(b => `
           <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px">
             <span style="font-size:22px">${b.icon}</span>
             <div><div style="font-size:13px;font-weight:600">${b.title}</div><div style="font-size:11px;color:var(--muted)">${b.desc}</div></div>
           </div>`).join('');
+      } else if (gamificationOn && badgesDiv) {
+        badgesDiv.innerHTML = '<p class="text-sm text-muted">Complete treinos para desbloquear conquistas.</p>';
+      } else if (badgesDiv) {
+        badgesDiv.innerHTML = '<p class="text-sm text-muted">Ative a gamificação nas configurações para acompanhar conquistas fitness.</p>';
       }
 
       lucide.createIcons();
@@ -2634,6 +3770,7 @@ Crie exatamente 7 dias (Seg a Dom). Adapte ao nível e objetivo. Preencha howTo 
     document.addEventListener('DOMContentLoaded', () => {
       initTheme();
       normalizeStorage();
+      updateGamificationVisibility();
       syncNotificationPermission();
       seedTaskDateTimeInputs();
       syncTaskFormState();
@@ -2647,6 +3784,7 @@ Crie exatamente 7 dias (Seg a Dom). Adapte ao nível e objetivo. Preencha howTo 
       renderTip();
       startClock();
       refreshUI();
+      renderSettingsPage();
       renderAIChatHistory();
       lucide.createIcons();
       renderFitnessPage();
@@ -2681,3 +3819,4 @@ Crie exatamente 7 dias (Seg a Dom). Adapte ao nível e objetivo. Preencha howTo 
       }, 60000);
     });
   
+

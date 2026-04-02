@@ -31,6 +31,7 @@
   </header>
 
   <div id="toast-stack" class="toast-stack"></div>
+  <div id="celebration-layer" class="celebration-layer" aria-hidden="true"></div>
 
   <!-- =============================================
      SIDEBAR NAVIGATION
@@ -46,9 +47,9 @@
       <i data-lucide="check-square" style="width:20px;height:20px;flex-shrink:0"></i>
       <span class="nav-label">Planejamento</span>
     </a>
-    <a class="nav-item" data-page="missions" onclick="navigate('missions')">
+    <a class="nav-item" id="nav-missions" data-page="missions" data-gamification-only="true" onclick="navigate('missions')">
       <i data-lucide="crosshair" style="width:20px;height:20px;flex-shrink:0"></i>
-      <span class="nav-label">MissÃµes</span>
+      <span class="nav-label">Missões</span>
     </a>
     
     <a class="nav-item" data-page="ai" onclick="navigate('ai')">
@@ -64,6 +65,11 @@
     <a class="nav-item" data-page="stats" onclick="navigate('stats')">
       <i data-lucide="bar-chart-2" style="width:20px;height:20px;flex-shrink:0"></i>
       <span class="nav-label">Estatísticas</span>
+    </a>
+
+    <a class="nav-item" data-page="settings" onclick="navigate('settings')">
+      <i data-lucide="settings-2" style="width:20px;height:20px;flex-shrink:0"></i>
+      <span class="nav-label">Configurações</span>
     </a>
 
     <div class="nav-bottom" style="width:100%">
@@ -224,76 +230,24 @@
       </div>
     </section>
 
-        <!-- ==================== MISSIONS ==================== -->
-    <section class="page" id="page-missions">
-      <div class="dashboard-hero mb-4">
-        <div>
-          <h1 class="page-title" style="margin-bottom:4px">MissÃµes e Conquistas ðŸ›¡ï¸</h1>
-          <p class="text-sm text-muted">Mantenha a consistÃªncia, ganhe XP e desbloqueie novas recompensas.</p>
-        </div>
-      </div>
-      
-      <div class="grid-2 mb-4">
-        <div class="card game-card">
-          <div class="flex items-center justify-between mb-3">
-            <div class="section-title" style="margin-bottom:0">Seu Perfil</div>
-            <span class="tag" id="game-rank-tag">Lv 1</span>
-          </div>
-          <div class="grid-3 mb-3">
-            <div class="stat-box">
-              <div class="stat-number" id="game-level">1</div>
-              <div class="stat-label">NÃ­vel</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-number" id="game-streak">0d</div>
-              <div class="stat-label">Streak</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-number" id="game-badges-count">0</div>
-              <div class="stat-label">Conquistas</div>
-            </div>
-          </div>
-          <div class="section-title" style="margin-bottom:8px">Progresso</div>
-          <div class="flex items-center justify-between gap-3 mb-3">
-            <span id="game-rank-title" class="text-sm font-bold">Aprendiz</span>
-            <span id="game-xp" class="mono text-sm text-muted">0/120 XP</span>
-          </div>
-          <div class="progress-bar mb-2">
-            <div class="progress-fill" id="game-level-bar" style="background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%"></div>
-          </div>
-          <p id="game-next-level" class="text-sm text-muted mt-2 mb-2"></p>
-        </div>
-        
-        <div class="card">
-           <div class="section-title" style="margin-bottom:16px">MissÃµes de Hoje</div>
-           <p class="text-sm text-muted mb-4">Cumpra essas metas diÃ¡rias para ganhar bÃ´nus de XP.</p>
-           <div id="game-missions" class="mission-list"></div>
-        </div>
-      </div>
-
-      <div class="card mb-4">
-         <div class="section-title" style="margin-bottom:16px">BaÃº de Conquistas</div>
-         <div id="game-achievements" class="achievement-list"></div>
-      </div>
-    </section>
-
-
     <!-- ==================== MISSIONS ==================== -->
-    <section class="page" id="page-missions">
-      <div class="dashboard-hero mb-4">
+    <section class="page" id="page-missions" data-gamification-only="true">
+      <div class="missions-hero mb-4">
         <div>
-          <h1 class="page-title" style="margin-bottom:4px">Missões e Conquistas 🛡️</h1>
-          <p class="text-sm text-muted">Mantenha a consistência, ganhe XP e desbloqueie novas recompensas.</p>
+          <p class="text-sm text-muted mono">Baú de Conquistas</p>
+          <h1 class="page-title" style="margin-bottom:8px">Missões, Níveis e Coleção</h1>
+          <p class="text-sm text-muted" style="max-width:620px">Acompanhe suas metas diárias, o ritmo da semana, o progresso do mês e o mapa de evolução do seu perfil.</p>
         </div>
+        <div class="missions-hero-badge">Modo de progressão</div>
       </div>
-      
+
       <div class="grid-2 mb-4">
         <div class="card game-card">
           <div class="flex items-center justify-between mb-3">
             <div class="section-title" style="margin-bottom:0">Seu Perfil</div>
             <span class="tag" id="game-rank-tag">Lv 1</span>
           </div>
-          <div class="grid-3 mb-3">
+          <div class="grid-4 compact-stats mb-3">
             <div class="stat-box">
               <div class="stat-number" id="game-level">1</div>
               <div class="stat-label">Nível</div>
@@ -306,6 +260,10 @@
               <div class="stat-number" id="game-badges-count">0</div>
               <div class="stat-label">Conquistas</div>
             </div>
+            <div class="stat-box">
+              <div class="stat-number" id="game-crystals">0</div>
+              <div class="stat-label">Cristais</div>
+            </div>
           </div>
           <div class="section-title" style="margin-bottom:8px">Progresso</div>
           <div class="flex items-center justify-between gap-3 mb-3">
@@ -315,19 +273,53 @@
           <div class="progress-bar mb-2">
             <div class="progress-fill" id="game-level-bar" style="background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%"></div>
           </div>
-          <p id="game-next-level" class="text-sm text-muted mt-2 mb-2"></p>
+          <p id="game-next-level" class="text-sm text-muted mt-2 mb-3"></p>
+          <div class="reward-pill-row">
+            <div class="reward-pill"><strong>Título</strong><span id="game-current-title">Aprendiz</span></div>
+            <div class="reward-pill"><strong>Dias Lendários</strong><span id="game-legendary-days">0</span></div>
+            <div class="reward-pill"><strong>Coleção</strong><span id="game-collection-rate">0/0</span></div>
+          </div>
         </div>
-        
+
         <div class="card">
-           <div class="section-title" style="margin-bottom:16px">Missões Diárias</div>
-           <p class="text-sm text-muted mb-4">Cumpra essas metas para ganhar bônus de XP.</p>
-           <div id="game-missions" class="mission-list"></div>
+          <div class="flex items-center justify-between mb-3">
+            <div class="section-title" style="margin-bottom:0">Trilha de Níveis</div>
+            <span class="tag" id="game-seasonal-status">Baú ativo</span>
+          </div>
+          <div id="game-level-roadmap" class="level-roadmap"></div>
+        </div>
+      </div>
+
+      <div class="grid-2 mb-4">
+        <div class="card">
+          <div class="section-title" style="margin-bottom:12px">Missões Diárias</div>
+          <div id="game-missions-daily" class="mission-list"></div>
+        </div>
+        <div class="card">
+          <div class="section-title" style="margin-bottom:12px">Missões Semanais</div>
+          <div id="game-missions-weekly" class="mission-list"></div>
         </div>
       </div>
 
       <div class="card mb-4">
-         <div class="section-title" style="margin-bottom:16px">Baú de Conquistas</div>
-         <div id="game-achievements" class="achievement-list"></div>
+        <div class="section-title" style="margin-bottom:12px">Missões Mensais</div>
+        <div id="game-missions-monthly" class="mission-list mission-grid"></div>
+      </div>
+
+      <div class="grid-2 mb-4">
+        <div class="card">
+          <div class="section-title" style="margin-bottom:12px">Radar de Conquistas</div>
+          <div id="game-achievement-highlight"></div>
+        </div>
+        <div class="card">
+          <div class="section-title" style="margin-bottom:12px">Recompensas e Títulos</div>
+          <div id="game-rewards-panel"></div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="section-title" style="margin-bottom:16px">Baú de Conquistas</div>
+        <div id="game-achievements" class="achievement-grid"></div>
       </div>
     </section>
 
@@ -400,11 +392,11 @@
       <div id="tasks-list"></div>
 
       <div class="card mt-4 mb-4">
-        <div class="section-title" style="margin-bottom:12px">Progresso ContÃ­nuo (Tarefas DiÃ¡rias)</div>
+        <div class="section-title" style="margin-bottom:12px">Progresso Contínuo (Tarefas Diárias)</div>
         <div id="weekly-heatmap"></div>
       </div>
       <div class="card mt-4 mb-4">
-        <div class="section-title" style="margin-bottom:12px">Progresso ContÃ­nuo (Tarefas DiÃ¡rias)</div>
+        <div class="section-title" style="margin-bottom:12px">Progresso Contínuo (Tarefas Diárias)</div>
         <div id="weekly-heatmap"></div>
       </div>
       <div class="planning-stack mt-4">
@@ -420,9 +412,9 @@
           <div>
             <div class="time-block morning">
               <div class="time-block-header">
-                <span style="font-size:20px">ðŸŒ…</span>
-                <span class="block-label" style="color:var(--warn)">ManhÃ£</span>
-                <span class="block-time">06:00 â€“ 12:00</span>
+                <span style="font-size:20px">🌅</span>
+                <span class="block-label" style="color:var(--warn)">Manhã</span>
+                <span class="block-time">06:00 - 12:00</span>
               </div>
               <div id="block-morning-tasks"></div>
               <div class="drop-zone" id="drop-morning" ondragover="allowDrop(event)" ondrop="dropTask(event,'morning')">
@@ -430,9 +422,9 @@
             </div>
             <div class="time-block afternoon">
               <div class="time-block-header">
-                <span style="font-size:20px">â˜€ï¸</span>
+                <span style="font-size:20px">☀️</span>
                 <span class="block-label" style="color:var(--accent3)">Tarde</span>
-                <span class="block-time">12:00 â€“ 18:00</span>
+                <span class="block-time">12:00 - 18:00</span>
               </div>
               <div id="block-afternoon-tasks"></div>
               <div class="drop-zone" id="drop-afternoon" ondragover="allowDrop(event)"
@@ -440,9 +432,9 @@
             </div>
             <div class="time-block evening">
               <div class="time-block-header">
-                <span style="font-size:20px">ðŸŒ†</span>
+                <span style="font-size:20px">🌆</span>
                 <span class="block-label" style="color:var(--accent)">Noite</span>
-                <span class="block-time">18:00 â€“ 22:00</span>
+                <span class="block-time">18:00 - 22:00</span>
               </div>
               <div id="block-evening-tasks"></div>
               <div class="drop-zone" id="drop-evening" ondragover="allowDrop(event)" ondrop="dropTask(event,'evening')">
@@ -450,9 +442,9 @@
             </div>
             <div class="time-block night">
               <div class="time-block-header">
-                <span style="font-size:20px">ðŸŒ™</span>
+                <span style="font-size:20px">🌙</span>
                 <span class="block-label" style="color:var(--muted)">Madrugada</span>
-                <span class="block-time">22:00 â€“ 06:00</span>
+                <span class="block-time">22:00 - 06:00</span>
               </div>
               <div id="block-night-tasks"></div>
               <div class="drop-zone" id="drop-night" ondragover="allowDrop(event)" ondrop="dropTask(event,'night')">
@@ -465,7 +457,7 @@
             <p class="text-sm text-muted mb-3">Arraste para os blocos de tempo ou use os atalhos no celular.</p>
             <div id="drag-tasks-list"></div>
             <div style="margin-top:16px">
-              <div class="section-title">SugestÃ£o de rotina</div>
+              <div class="section-title">Sugestão de rotina</div>
               <div id="suggested-routine"></div>
             </div>
           </div>
@@ -602,7 +594,7 @@
       </div>
 
       <!-- Gamification Banner -->
-      <div class="card mb-4" id="fitness-game-banner" style="background:linear-gradient(135deg,rgba(124,109,247,0.15),rgba(92,230,184,0.1));border:1px solid rgba(124,109,247,0.25)">
+      <div class="card mb-4" id="fitness-game-banner" data-gamification-only="true" style="background:linear-gradient(135deg,rgba(124,109,247,0.15),rgba(92,230,184,0.1));border:1px solid rgba(124,109,247,0.25)">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
           <div style="display:flex;align-items:center;gap:16px">
             <div style="font-size:36px" id="fitness-avatar">🥚</div>
@@ -650,6 +642,13 @@
             </div>
           </div>
           <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;flex-wrap:wrap">
+              <div class="section-title" style="margin-bottom:0">Foto de Progresso</div>
+              <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="openProgressPhotoModal()">+ Adicionar foto</button>
+            </div>
+            <div id="fitness-progress-photo-panel"></div>
+          </div>
+          <div class="card">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
               <div class="section-title" style="margin-bottom:0">Histórico de Peso</div>
               <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="openWeightLog()">+ Registrar</button>
@@ -673,7 +672,7 @@
       </div>
 
       <!-- Badges fitness -->
-      <div class="card">
+      <div class="card" id="fitness-badges-card" data-gamification-only="true">
         <div class="section-title" style="margin-bottom:16px">Conquistas Fitness 🏅</div>
         <div id="fitness-badges" style="display:flex;flex-wrap:wrap;gap:10px">
           <p class="text-sm text-muted">Complete treinos para desbloquear conquistas.</p>
@@ -699,6 +698,75 @@
       <div class="card mt-4">
         <div class="section-title">Melhores Dias da Semana</div>
         <div id="best-days"></div>
+      </div>
+      <div class="card mt-4">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+          <div class="section-title" style="margin-bottom:0">Progresso Mês a Mês</div>
+          <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="openProgressPhotoModal()">+ Foto do mês</button>
+        </div>
+        <div id="monthly-progress-grid"></div>
+      </div>
+    </section>
+
+    <section class="page" id="page-settings">
+      <div class="dashboard-hero mb-4" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+          <h1 class="page-title" style="margin-bottom:4px">Configurações</h1>
+          <p class="text-sm text-muted">Ajuste recursos opcionais, privacidade local e atalhos do app.</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="section-title">Recursos Opcionais</div>
+          <div class="settings-panel">
+            <div class="settings-item">
+              <div>
+                <div class="settings-title">Gamificação</div>
+                <div class="settings-copy">Ativa missões, conquistas, XP, níveis e cristais. Ao desligar, o histórico fica salvo para você reativar quando quiser.</div>
+              </div>
+              <label class="toggle-switch" for="settings-gamification-toggle">
+                <input type="checkbox" id="settings-gamification-toggle" onchange="toggleGamificationSetting(this.checked)">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="settings-status" id="settings-gamification-status"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Conta e Dados</div>
+          <div class="settings-panel">
+            <div class="settings-item compact">
+              <div>
+                <div class="settings-title">Nome exibido</div>
+                <div class="settings-copy" id="settings-current-name">Você</div>
+              </div>
+              <button class="btn btn-ghost" style="padding:8px 12px" onclick="openNameModal()">Alterar nome</button>
+            </div>
+            <div class="settings-item compact">
+              <div>
+                <div class="settings-title">Notificações</div>
+                <div class="settings-copy">Gerencie lembretes e alertas do navegador.</div>
+              </div>
+              <button class="btn btn-ghost" style="padding:8px 12px" onclick="toggleNotifications()">Alternar</button>
+            </div>
+            <div class="settings-item compact">
+              <div>
+                <div class="settings-title">Exportar backup</div>
+                <div class="settings-copy">Baixe seus dados locais, incluindo fotos de progresso e preferências.</div>
+              </div>
+              <button class="btn btn-primary" style="padding:8px 12px" onclick="exportData()">Exportar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="section-title">Privacidade Local</div>
+        <div class="settings-note">
+          Tudo continua salvo localmente no seu navegador: tarefas, hábitos, fotos de progresso, histórico de peso e preferências.
+        </div>
       </div>
     </section>
 
@@ -906,6 +974,39 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="modal-progress-photo">
+    <div class="modal card" style="max-width:460px;margin:0 16px;max-height:90vh;overflow-y:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <h2 class="section-title" style="margin:0">📸 Foto de Progresso</h2>
+        <button class="icon-btn" onclick="closeModal('modal-progress-photo')"><i data-lucide="x"></i></button>
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Data da foto</label>
+        <input type="date" id="progress-photo-date" class="input">
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Observação (opcional)</label>
+        <input type="text" id="progress-photo-note" class="input" placeholder="Ex: início do mês, definição melhorando...">
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Selecione a imagem</label>
+        <input type="file" id="progress-photo-file" class="input" accept="image/*" onchange="handleProgressPhotoSelection(event)">
+      </div>
+      <div id="progress-photo-preview-wrap" class="progress-photo-upload">
+        <div class="progress-photo-empty">
+          Escolha uma foto para visualizar antes de salvar.
+        </div>
+      </div>
+      <div class="settings-note" style="margin-top:12px">
+        A imagem fica salva localmente no seu navegador para acompanhar sua evolução mês a mês.
+      </div>
+      <div style="display:flex;gap:8px;margin-top:20px">
+        <button class="btn btn-primary" style="flex:1" onclick="saveProgressPhoto()">Salvar foto</button>
+        <button class="btn btn-ghost" onclick="closeModal('modal-progress-photo')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: Exercise Done -->
   <div class="modal-overlay" id="modal-exercise-done">
     <div class="modal card" style="max-width:360px;margin:0 16px;text-align:center">
@@ -1007,7 +1108,7 @@
       </div>
 
       <div class="flex gap-2">
-        <button class="btn btn-primary" style="flex:1" onclick="saveAiSettings()">Guardar Conexão</button>
+            <button class="btn btn-primary" style="flex:1" onclick="saveAiSettings()">Salvar conexão</button>
       </div>
     </div>
   </div>
