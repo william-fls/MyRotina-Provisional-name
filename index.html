@@ -30,7 +30,10 @@
     <button class="icon-btn mobile-only" type="button" onclick="toggleSidebar()" aria-label="Abrir menu">
       <i data-lucide="menu" style="width:18px;height:18px"></i>
     </button>
-    <div class="mobile-brand">Minha Rotina</div>
+    <div class="mobile-topbar-copy">
+      <div class="mobile-brand">Minha Rotina</div>
+      <div class="mobile-page-label" id="mobile-page-label">Dashboard</div>
+    </div>
     <div style="width:36px"></div>
   </header>
 
@@ -767,6 +770,29 @@
     </section>
 
   </main>
+
+  <nav class="mobile-dock" aria-label="Navegação rápida">
+    <button class="mobile-dock-item active" type="button" data-page="dashboard" onclick="navigate('dashboard')">
+      <i data-lucide="layout-dashboard" style="width:18px;height:18px"></i>
+      <span>Inicio</span>
+    </button>
+    <button class="mobile-dock-item" type="button" data-page="tasks" onclick="navigate('tasks')">
+      <i data-lucide="check-square" style="width:18px;height:18px"></i>
+      <span>Plano</span>
+    </button>
+    <button class="mobile-dock-item" type="button" data-page="ai" onclick="navigate('ai')">
+      <i data-lucide="bot" style="width:18px;height:18px"></i>
+      <span>IA</span>
+    </button>
+    <button class="mobile-dock-item" type="button" data-page="fitness" onclick="navigate('fitness')">
+      <i data-lucide="dumbbell" style="width:18px;height:18px"></i>
+      <span>Fit</span>
+    </button>
+    <button class="mobile-dock-item" type="button" data-page="settings" onclick="navigate('settings')">
+      <i data-lucide="settings-2" style="width:18px;height:18px"></i>
+      <span>Ajustes</span>
+    </button>
+  </nav>
 
   <!-- =============================================
      MODALS

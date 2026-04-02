@@ -199,14 +199,81 @@
       border-bottom: 1px solid var(--border);
     }
 
+    .mobile-topbar-copy {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      min-width: 0;
+      flex: 1;
+    }
+
     .mobile-brand {
       font-size: 16px;
       font-weight: 800;
       letter-spacing: -0.3px;
     }
 
+    .mobile-page-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
     .mobile-only {
       display: none !important;
+    }
+
+    .mobile-dock {
+      display: none;
+      position: fixed;
+      left: 10px;
+      right: 10px;
+      bottom: max(10px, env(safe-area-inset-bottom));
+      z-index: 130;
+      padding: 8px;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(17, 17, 24, 0.92);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 20px 42px rgba(0, 0, 0, 0.35);
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .mobile-dock-item {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      min-height: 58px;
+      border-radius: 16px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .mobile-dock-item.active {
+      color: var(--text);
+      background: rgba(var(--accent-rgb), 0.14);
+      border-color: rgba(var(--accent-rgb), 0.2);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .mobile-dock-item span {
+      line-height: 1;
     }
 
     .nav-logo {
@@ -1101,6 +1168,10 @@
         display: flex;
       }
 
+      .mobile-dock {
+        display: grid;
+      }
+
       .mobile-only {
         display: inline-flex !important;
       }
@@ -1138,6 +1209,7 @@
 
       .page {
         max-width: none;
+        padding-top: 16px;
       }
     }
 
@@ -1157,7 +1229,7 @@
       }
 
       .page {
-        padding: 14px 12px 92px 12px;
+        padding: 14px 12px 124px 12px;
         min-height: 100vh;
       }
 
@@ -1181,6 +1253,12 @@
       .habit-item {
         padding: 11px 12px;
       }
+
+      .task-title-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
       
       .task-check {
         width: 30px;
@@ -1202,7 +1280,12 @@
       }
 
       .modal {
-        padding: 20px 16px;
+        width: calc(100vw - 16px);
+        max-width: none;
+        max-height: min(88vh, 760px);
+        overflow-y: auto;
+        border-radius: 22px 22px 18px 18px;
+        padding: 18px 16px 20px;
       }
 
       .task-config-grid,
@@ -1241,11 +1324,48 @@
       .month-stats {
         grid-template-columns: 1fr;
       }
+
+      #weekly-calendar-grid {
+        gap: 8px;
+        min-width: 560px;
+      }
+
+      #weekly-calendar-card {
+        overflow-x: auto;
+      }
+
+      .filter-tabs {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+      }
+
+      .filter-tabs::-webkit-scrollbar {
+        display: none;
+      }
+
+      .filter-tab {
+        white-space: nowrap;
+        flex: 0 0 auto;
+      }
+
+      .pending-task-card,
+      .dashboard-now-card,
+      .settings-surface,
+      .missions-hero {
+        border-radius: 18px;
+      }
+
+      .dashboard-now-item {
+        align-items: center;
+      }
     }
 
     @media (max-width: 520px) {
       .page {
-        padding: 12px 10px 88px 10px;
+        padding: 12px 10px 122px 10px;
       }
 
       .card {
@@ -1284,6 +1404,7 @@
       }
 
       .btn {
+        min-height: 46px;
         width: 100%;
         justify-content: center;
       }
@@ -1292,6 +1413,45 @@
       .filter-tabs .filter-tab,
       .block-assign-btn {
         width: auto;
+      }
+
+      .block-assign-btn,
+      .filter-tab,
+      .theme-card-badge {
+        min-height: 38px;
+      }
+
+      input,
+      textarea,
+      select {
+        min-height: 46px;
+        font-size: 16px;
+      }
+
+      .option-toggle {
+        padding: 14px;
+      }
+
+      .mobile-dock {
+        left: 8px;
+        right: 8px;
+        bottom: max(8px, env(safe-area-inset-bottom));
+      }
+
+      .mobile-dock-item {
+        min-height: 56px;
+        font-size: 9px;
+      }
+
+      .modal-overlay {
+        align-items: flex-end;
+      }
+
+      .modal {
+        width: 100%;
+        border-radius: 20px 20px 0 0;
+        margin: 0;
+        max-height: 92vh;
       }
     }
 

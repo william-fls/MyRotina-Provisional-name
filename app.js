@@ -1249,14 +1249,29 @@
     function closeSidebar() {
       toggleSidebar(false);
     }
+    function updateMobileNavigation(page) {
+      const pageMap = {
+        dashboard: 'Dashboard',
+        tasks: 'Planejamento',
+        missions: 'Missões',
+        ai: 'Rotina A.I.',
+        fitness: 'Exercícios',
+        stats: 'Estatísticas',
+        settings: 'Configurações',
+      };
+      const label = document.getElementById('mobile-page-label');
+      if (label) label.textContent = pageMap[page] || 'Minha Rotina';
+      document.querySelectorAll('[data-page]').forEach(node => {
+        node.classList.toggle('active', node.getAttribute('data-page') === page);
+      });
+    }
     function navigate(page) {
       if (page === 'missions' && !isGamificationEnabled()) {
         page = 'settings';
       }
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       document.getElementById(`page-${page}`)?.classList.add('active');
-      document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
+      updateMobileNavigation(page);
       if (isMobileLayout()) closeSidebar();
       window.scrollTo({ top: 0, behavior: 'smooth' });
       if (page === 'dashboard') renderDashboard();
@@ -1448,6 +1463,7 @@
       renderTip();
       startClock();
       refreshUI();
+      updateMobileNavigation('dashboard');
       renderSettingsPage();
       renderAIChatHistory();
       lucide.createIcons();
