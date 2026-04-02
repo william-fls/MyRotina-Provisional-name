@@ -741,6 +741,7 @@
     }
 
     function renderSettingsPage() {
+      // Gamificação
       const toggle = document.getElementById('settings-gamification-toggle');
       if (toggle) toggle.checked = isGamificationEnabled();
       const status = document.getElementById('settings-gamification-status');
@@ -749,9 +750,19 @@
           ? 'Status atual: gamificação ligada.'
           : 'Status atual: gamificação desligada.';
       }
+      // Nome
       const currentName = document.getElementById('settings-current-name');
       if (currentName) {
         currentName.textContent = (load(STORAGE_KEYS.name, '') || 'Você').trim() || 'Você';
+      }
+      // Tema
+      const themeIcon = document.getElementById('theme-settings-icon');
+      const themeLabel = document.getElementById('theme-settings-label');
+      if (themeIcon && themeLabel) {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        themeIcon.setAttribute('data-lucide', currentTheme === 'dark' ? 'sun' : 'moon');
+        themeLabel.textContent = currentTheme === 'dark' ? 'Escuro (clique para mudar)' : 'Claro (clique para mudar)';
+        lucide.createIcons();
       }
     }
 

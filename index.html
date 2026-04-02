@@ -25,9 +25,7 @@
       <i data-lucide="menu" style="width:18px;height:18px"></i>
     </button>
     <div class="mobile-brand">Minha Rotina</div>
-    <button class="icon-btn mobile-only" type="button" onclick="toggleTheme()" aria-label="Alternar tema">
-      <i data-lucide="sun" id="theme-icon-mobile" style="width:18px;height:18px"></i>
-    </button>
+    <div style="width:36px"></div>
   </header>
 
   <div id="toast-stack" class="toast-stack"></div>
@@ -72,20 +70,7 @@
       <span class="nav-label">Configurações</span>
     </a>
 
-    <div class="nav-bottom" style="width:100%">
-      <a class="nav-item" onclick="toggleNotifications();closeSidebar()">
-        <i data-lucide="bell" style="width:20px;height:20px;flex-shrink:0"></i>
-        <span class="nav-label">Notificações</span>
-      </a>
-      <a class="nav-item" onclick="toggleTheme();closeSidebar()">
-        <i data-lucide="sun" id="theme-icon" style="width:20px;height:20px;flex-shrink:0"></i>
-        <span class="nav-label">Tema</span>
-      </a>
-      <a class="nav-item" onclick="exportData();closeSidebar()">
-        <i data-lucide="download" style="width:20px;height:20px;flex-shrink:0"></i>
-        <span class="nav-label">Exportar</span>
-      </a>
-    </div>
+    <div class="nav-bottom" style="width:100%"></div>
   </nav>
 
   <!-- =============================================
@@ -219,15 +204,6 @@
         </div>
       </div>
 
-      <!-- Reset Day -->
-      <div class="mt-4 responsive-actions">
-        <button class="btn btn-danger" onclick="confirmResetDay()">
-          <i data-lucide="refresh-ccw" style="width:16px;height:16px"></i> Resetar Dia
-        </button>
-        <button class="btn btn-ghost" onclick="openNameModal()">
-          <i data-lucide="user" style="width:16px;height:16px"></i> Alterar nome
-        </button>
-      </div>
     </section>
 
     <!-- ==================== MISSIONS ==================== -->
@@ -478,9 +454,6 @@
             <button class="icon-btn" onclick="clearAIChatHistory()" aria-label="Limpar chat" title="Limpar Histórico" style="background:var(--surface2);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border)">
                <i data-lucide="trash-2" style="width:20px;height:20px;color:var(--muted)"></i>
             </button>
-            <button class="icon-btn" onclick="openAiSettings()" aria-label="Configurações da IA" style="background:var(--surface2);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border)">
-               <i data-lucide="settings" style="width:20px;height:20px;color:var(--text)"></i>
-            </button>
          </div>
       </div>
       
@@ -712,60 +685,97 @@
       <div class="dashboard-hero mb-4" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
         <div>
           <h1 class="page-title" style="margin-bottom:4px">Configurações</h1>
-          <p class="text-sm text-muted">Ajuste recursos opcionais, privacidade local e atalhos do app.</p>
+          <p class="text-sm text-muted">Ajuste recursos, aparência, inteligência artificial e privacidade local.</p>
         </div>
       </div>
 
-      <div class="grid-2">
-        <div class="card">
-          <div class="section-title">Recursos Opcionais</div>
-          <div class="settings-panel">
-            <div class="settings-item">
-              <div>
-                <div class="settings-title">Gamificação</div>
-                <div class="settings-copy">Ativa missões, conquistas, XP, níveis e cristais. Ao desligar, o histórico fica salvo para você reativar quando quiser.</div>
-              </div>
-              <label class="toggle-switch" for="settings-gamification-toggle">
-                <input type="checkbox" id="settings-gamification-toggle" onchange="toggleGamificationSetting(this.checked)">
-                <span class="toggle-slider"></span>
-              </label>
+      <!-- APARÊNCIA -->
+      <div class="card mb-4">
+        <div class="section-title">Aparência</div>
+        <div class="settings-panel">
+          <div class="settings-item">
+            <div>
+              <div class="settings-title">Tema</div>
+              <div class="settings-copy">Alterne entre modo claro e escuro.</div>
             </div>
-            <div class="settings-status" id="settings-gamification-status"></div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="section-title">Conta e Dados</div>
-          <div class="settings-panel">
-            <div class="settings-item compact">
-              <div>
-                <div class="settings-title">Nome exibido</div>
-                <div class="settings-copy" id="settings-current-name">Você</div>
-              </div>
-              <button class="btn btn-ghost" style="padding:8px 12px" onclick="openNameModal()">Alterar nome</button>
-            </div>
-            <div class="settings-item compact">
-              <div>
-                <div class="settings-title">Notificações</div>
-                <div class="settings-copy">Gerencie lembretes e alertas do navegador.</div>
-              </div>
-              <button class="btn btn-ghost" style="padding:8px 12px" onclick="toggleNotifications()">Alternar</button>
-            </div>
-            <div class="settings-item compact">
-              <div>
-                <div class="settings-title">Exportar backup</div>
-                <div class="settings-copy">Baixe seus dados locais, incluindo fotos de progresso e preferências.</div>
-              </div>
-              <button class="btn btn-primary" style="padding:8px 12px" onclick="exportData()">Exportar</button>
-            </div>
+            <button class="btn btn-ghost" style="padding:8px 12px;display:flex;align-items:center;gap:6px" onclick="toggleTheme();renderSettingsPage()">
+              <i data-lucide="sun" id="theme-settings-icon" style="width:16px;height:16px"></i>
+              <span id="theme-settings-label">Escuro</span>
+            </button>
           </div>
         </div>
       </div>
 
-      <div class="card mt-4">
+      <!-- RECURSOS OPCIONAIS -->
+      <div class="card mb-4">
+        <div class="section-title">Recursos Opcionais</div>
+        <div class="settings-panel">
+          <div class="settings-item">
+            <div>
+              <div class="settings-title">Gamificação</div>
+              <div class="settings-copy">Ativa missões, conquistas, XP, níveis e cristais. Ao desligar, o histórico fica salvo para você reativar quando quiser.</div>
+            </div>
+            <label class="toggle-switch" for="settings-gamification-toggle">
+              <input type="checkbox" id="settings-gamification-toggle" onchange="toggleGamificationSetting(this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="settings-status" id="settings-gamification-status"></div>
+        </div>
+      </div>
+
+      <!-- INTELIGÊNCIA ARTIFICIAL -->
+      <div class="card mb-4">
+        <div class="section-title">Inteligência Artificial</div>
+        <div class="settings-panel">
+          <div class="settings-item compact">
+            <div>
+              <div class="settings-title">Motor de IA (Google Gemini)</div>
+              <div class="settings-copy">Configure sua chave de API para usar IA no app.</div>
+            </div>
+            <button class="btn btn-ghost" style="padding:8px 12px" onclick="openModal('modal-ai-settings-inline')">Configurar</button>
+          </div>
+        </div>
+        <div style="padding:12px;background:rgba(124, 109, 247, 0.1);border-radius:8px;border:1px solid rgba(124, 109, 247, 0.2);margin-top:12px">
+          <p class="text-xs" style="color:var(--accent);text-align:center;margin:0;line-height:1.4">
+            ℹ️ <b>Informação:</b> A chave da API é armazenada localmente no seu navegador e não é compartilhada conosco.
+          </p>
+        </div>
+      </div>
+
+      <!-- CONTA E DADOS -->
+      <div class="card mb-4">
+        <div class="section-title">Conta e Dados</div>
+        <div class="settings-panel">
+          <div class="settings-item compact">
+            <div>
+              <div class="settings-title">Nome exibido</div>
+              <div class="settings-copy" id="settings-current-name">Você</div>
+            </div>
+            <button class="btn btn-ghost" style="padding:8px 12px" onclick="openNameModal()">Alterar nome</button>
+          </div>
+          <div class="settings-item compact">
+            <div>
+              <div class="settings-title">Notificações do navegador</div>
+              <div class="settings-copy">Gerencie lembretes e alertas.</div>
+            </div>
+            <button class="btn btn-ghost" style="padding:8px 12px" onclick="toggleNotifications()">Alternar</button>
+          </div>
+          <div class="settings-item compact">
+            <div>
+              <div class="settings-title">Exportar backup</div>
+              <div class="settings-copy">Baixe seus dados locais (tarefas, hábitos, fotos, pesos, etc).</div>
+            </div>
+            <button class="btn btn-primary" style="padding:8px 12px" onclick="exportData()">Exportar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRIVACIDADE LOCAL -->
+      <div class="card">
         <div class="section-title">Privacidade Local</div>
         <div class="settings-note">
-          Tudo continua salvo localmente no seu navegador: tarefas, hábitos, fotos de progresso, histórico de peso e preferências.
+          🔒 Tudo continua salvo localmente no seu navegador: tarefas, hábitos, fotos de progresso, histórico de peso, configurações e chaves de API. Nada é compartilhado sem sua permissão.
         </div>
       </div>
     </section>
@@ -775,6 +785,51 @@
   <!-- =============================================
      MODALS
 ============================================= -->
+  
+  <!-- AI Settings Modal (usado embutido na página de settings) -->
+  <div class="modal-overlay" id="modal-ai-settings-inline" style="backdrop-filter:blur(4px)">
+    <div class="modal card" style="max-width:480px; margin: 0 16px;">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="section-title" style="margin:0;display:flex;align-items:center;gap:8px">
+          <i data-lucide="brain-circuit" style="width:20px;height:20px;color:var(--accent)"></i> 
+          Conectar Motor de IA
+        </h2>
+        <button class="icon-btn" onclick="closeModal('modal-ai-settings-inline')" style="color:var(--muted)">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      
+      <p class="text-sm mb-4" style="color:var(--muted); line-height:1.5">
+        Para conversar organicamente e gerar tarefas inteligentes, usamos a API oficial do <b>Google Gemini</b>. O processo é simples:
+      </p>
+
+      <div class="mb-5" style="background:var(--surface3); padding:16px; border-radius:12px;border:1px solid var(--border)">
+         <strong style="color:var(--text);font-size:13px;display:block;margin-bottom:8px">Passo 1: Obtenha uma chave grátis</strong>
+         <a href="https://aistudio.google.com/app/apikey" target="_blank" class="btn btn-ghost" style="color:var(--accent);font-size:13px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:600;width:100%;border:1px solid var(--accent);background:rgba(124, 109, 247, 0.1)">
+            Entrar no Google AI Studio <i data-lucide="external-link" style="width:14px;height:14px"></i>
+         </a>
+      </div>
+
+      <div class="form-group mb-5">
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;color:var(--text);font-weight:500">
+          <i data-lucide="lock" style="width:16px;height:16px"></i>
+          Passo 2: Cole sua API Key
+        </label>
+        <input type="password" id="ai-api-key" class="input" placeholder="AIzaSyA..." style="font-family:monospace;letter-spacing:1px">
+      </div>
+      
+      <div style="padding:12px;background:rgba(92, 230, 184, 0.1);border-radius:8px;border:1px solid rgba(92, 230, 184, 0.2);margin-bottom:20px">
+        <p class="text-xs" style="color:var(--success);text-align:center;margin:0;line-height:1.4">
+          🔐 <b>Fique seguro!</b> Códigos ou conversas não passam por nós. A chave trafega diretamente do seu navegador particular para o Google.
+        </p>
+      </div>
+
+      <div class="flex gap-2">
+            <button class="btn btn-primary" style="flex:1" onclick="saveAiSettings();closeModal('modal-ai-settings-inline')">Salvar conexão</button>
+      </div>
+    </div>
+  </div>
+  
   <!-- Confirm Modal -->
   <div class="modal-overlay" id="modal-confirm">
     <div class="modal">
@@ -1072,46 +1127,6 @@
   </div>
 
   <!-- MODAL: AI Settings -->
-
-  <div class="modal-overlay" id="modal-ai-settings">
-    <div class="modal card" style="max-width:440px; margin: 0 16px;">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="section-title" style="margin:0;display:flex;align-items:center;gap:8px">
-          <i data-lucide="brain-circuit" style="width:20px;height:20px;color:var(--accent)"></i> 
-          Motor de Inteligência Local
-        </h2>
-        <button class="icon-btn" onclick="closeModal('modal-ai-settings')" style="color:var(--muted)">
-          <i data-lucide="x"></i>
-        </button>
-      </div>
-      
-      <p class="text-sm mb-4" style="color:var(--muted); line-height:1.5">
-        Para conversar organicamente e gerar tarefas inteligentes, usamos a API oficial do <b>Google Gemini</b>. O processo é simples:
-      </p>
-
-      <div class="mb-5" style="background:var(--surface3); padding:16px; border-radius:12px;border:1px solid var(--border)">
-         <strong style="color:var(--text);font-size:13px;display:block;margin-bottom:8px">Passo 1: Obtenha uma chave grátis</strong>
-         <a href="https://aistudio.google.com/app/apikey" target="_blank" class="btn btn-ghost" style="color:var(--accent);font-size:13px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:600;width:100%;border:1px solid var(--accent);background:rgba(124, 109, 247, 0.1)">
-            Entrar no Google AI Studio <i data-lucide="external-link" style="width:14px;height:14px"></i>
-         </a>
-      </div>
-
-      <div class="form-group mb-5">
-        <label>Passo 2: Cole sua API Key exclusiva</label>
-        <input type="password" id="ai-api-key" class="input" placeholder="AIzaSyA..." style="font-family:monospace;letter-spacing:1px">
-      </div>
-      
-      <div style="padding:12px;background:rgba(92, 230, 184, 0.1);border-radius:8px;border:1px solid rgba(92, 230, 184, 0.2);margin-bottom:20px">
-        <p class="text-xs" style="color:var(--success);text-align:center;margin:0;line-height:1.4">
-          🔐 <b>Fique seguro!</b> Códigos ou conversas não passam por nós. A chave trafega diretamente do seu navegador particular para o Google.
-        </p>
-      </div>
-
-      <div class="flex gap-2">
-            <button class="btn btn-primary" style="flex:1" onclick="saveAiSettings()">Salvar conexão</button>
-      </div>
-    </div>
-  </div>
 
   <!--
 ==============================================
