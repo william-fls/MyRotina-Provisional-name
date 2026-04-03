@@ -115,6 +115,34 @@
       --chart-grid: rgba(244, 246, 248, 0.08);
     }
 
+    [data-theme="liquid-glass"] {
+      --bg: #040506;
+      --surface: rgba(11, 13, 16, 0.62);
+      --surface2: rgba(16, 19, 24, 0.56);
+      --surface3: rgba(22, 26, 32, 0.6);
+      --border: rgba(244, 246, 248, 0.2);
+      --text: #f4f6f8;
+      --muted: #98a0ab;
+      --accent: #d8dde5;
+      --accent2: #a5adb9;
+      --accent3: #ffffff;
+      --accent-rgb: 216, 221, 229;
+      --accent2-rgb: 165, 173, 185;
+      --accent3-rgb: 255, 255, 255;
+      --danger: #ff7a85;
+      --danger-rgb: 255, 122, 133;
+      --warn: #d9be7a;
+      --warn-rgb: 217, 190, 122;
+      --success: #9fc9b6;
+      --success-rgb: 159, 201, 182;
+      --surface-rgb: 11, 13, 16;
+      --text-rgb: 244, 246, 248;
+      --on-accent: #07090c;
+      --shadow: 0 16px 36px rgba(0, 0, 0, 0.46);
+      --glow: 0 0 16px rgba(255, 255, 255, 0.08);
+      --chart-grid: rgba(244, 246, 248, 0.08);
+    }
+
     [data-theme="violet-neon"] {
       --bg: #140f1d;
       --surface: #1a1526;
@@ -167,6 +195,61 @@
       --shadow: 0 12px 30px rgba(5, 14, 11, 0.42);
       --glow: 0 0 18px rgba(22, 163, 74, 0.16);
       --chart-grid: rgba(232, 245, 239, 0.06);
+    }
+
+    [data-theme="liquid-glass"] body {
+      background:
+        radial-gradient(1100px 680px at 8% -8%, rgba(255, 255, 255, 0.14), transparent 56%),
+        radial-gradient(860px 500px at 92% 0%, rgba(170, 178, 190, 0.1), transparent 58%),
+        linear-gradient(180deg, #040506, #07090d 48%, #05070a);
+    }
+
+    [data-theme="liquid-glass"] #sidebar,
+    [data-theme="liquid-glass"] #mobile-topbar,
+    [data-theme="liquid-glass"] .mobile-dock,
+    [data-theme="liquid-glass"] .card,
+    [data-theme="liquid-glass"] .modal,
+    [data-theme="liquid-glass"] .settings-surface,
+    [data-theme="liquid-glass"] .task-item,
+    [data-theme="liquid-glass"] .tip-bar,
+    [data-theme="liquid-glass"] .toast {
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03) 45%),
+        rgba(var(--surface-rgb), 0.56);
+      border-color: rgba(var(--text-rgb), 0.2);
+      backdrop-filter: blur(18px) saturate(135%);
+      -webkit-backdrop-filter: blur(18px) saturate(135%);
+      box-shadow: var(--shadow);
+    }
+
+    [data-theme="liquid-glass"] .toast.success {
+      background:
+        linear-gradient(145deg, rgba(var(--accent2-rgb), 0.22), rgba(255, 255, 255, 0.04) 52%),
+        rgba(var(--surface-rgb), 0.56);
+    }
+
+    [data-theme="liquid-glass"] .toast.warn {
+      background:
+        linear-gradient(145deg, rgba(var(--warn-rgb), 0.2), rgba(255, 255, 255, 0.04) 52%),
+        rgba(var(--surface-rgb), 0.56);
+    }
+
+    [data-theme="liquid-glass"] input,
+    [data-theme="liquid-glass"] textarea,
+    [data-theme="liquid-glass"] select {
+      background: rgba(var(--surface-rgb), 0.45);
+      border-color: rgba(var(--text-rgb), 0.18);
+    }
+
+    [data-theme="liquid-glass"] .btn-ghost {
+      background: rgba(var(--text-rgb), 0.04);
+      border-color: rgba(var(--text-rgb), 0.18);
+      color: var(--text);
+    }
+
+    [data-theme="liquid-glass"] .btn-ghost:hover {
+      background: rgba(var(--text-rgb), 0.1);
+      border-color: rgba(var(--text-rgb), 0.32);
     }
 
     * {

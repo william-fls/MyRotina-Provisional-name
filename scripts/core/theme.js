@@ -30,6 +30,13 @@ const THEME_PRESETS = [
     swatches: ['#040506', '#2A2F37', '#F4F6F8'],
   },
   {
+    id: 'liquid-glass',
+    name: 'Liquid Glass',
+    description: 'Vidro fosco com paleta dark tech em preto, cinza e branco.',
+    mode: 'dark',
+    swatches: ['#040506', '#2A2F37', '#F4F6F8'],
+  },
+  {
     id: 'violet-neon',
     name: 'Violet Neon',
     description: 'Toque criativo com roxo refinado e rosa equilibrado.',
