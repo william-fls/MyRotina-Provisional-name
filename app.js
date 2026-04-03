@@ -536,6 +536,7 @@
       return permission;
     }
 
+    const ASSET_VERSION = '2026-04-02-v4';
     let serviceWorkerReadyPromise = null;
 
     function ensureServiceWorkerReady() {
@@ -544,7 +545,7 @@
       }
       if (!serviceWorkerReadyPromise) {
         serviceWorkerReadyPromise = navigator.serviceWorker
-          .register('./sw.js')
+          .register(`./sw.js?v=${ASSET_VERSION}`, { updateViaCache: 'none' })
           .then(() => navigator.serviceWorker.ready)
           .catch(() => null);
       }

@@ -1,7 +1,7 @@
-const CACHE_NAME = 'minha-rotina-v3';
+const ASSET_VERSION = '2026-04-02-v4';
+const CACHE_NAME = `minha-rotina-${ASSET_VERSION}`;
 const OFFLINE_FALLBACK = './index.html';
-const APP_SHELL = [
-  './',
+const CORE_ASSETS = [
   './index.html',
   './style.css',
   './app.js',
@@ -16,6 +16,11 @@ const APP_SHELL = [
   './manifest.webmanifest',
   './icons/app-icon.svg',
   './icons/app-badge.svg',
+];
+const APP_SHELL = [
+  './',
+  ...CORE_ASSETS,
+  ...CORE_ASSETS.map(asset => `${asset}?v=${ASSET_VERSION}`),
 ];
 
 function shouldUseNetworkFirst(request) {
