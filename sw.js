@@ -1,4 +1,4 @@
-const ASSET_VERSION = '2026-04-02-v4';
+const ASSET_VERSION = '2026-04-03-v5';
 const CACHE_NAME = `minha-rotina-${ASSET_VERSION}`;
 const OFFLINE_FALLBACK = './index.html';
 const CORE_ASSETS = [

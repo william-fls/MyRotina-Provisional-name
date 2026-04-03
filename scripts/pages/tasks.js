@@ -10,6 +10,103 @@ function getTaskFormState(isEdit = false) {
   };
 }
 
+let taskComposerOpen = false;
+
+function ensureTaskComposerStructure() {
+  const composer = document.getElementById('task-composer');
+  if (!composer) return null;
+
+  let form = document.getElementById('task-composer-form');
+  let toggleBtn = document.getElementById('task-composer-toggle-btn');
+  if (!form || !toggleBtn) {
+    const legacyTitle = composer.querySelector(':scope > .section-title');
+    if (legacyTitle) legacyTitle.remove();
+
+    form = document.createElement('div');
+    form.id = 'task-composer-form';
+    form.className = 'task-composer-form';
+
+    const childrenToMove = Array.from(composer.childNodes);
+    childrenToMove.forEach(node => form.appendChild(node));
+
+    const head = document.createElement('div');
+    head.className = 'task-composer-head';
+    head.innerHTML = `
+      <div>
+        <div class="section-title" style="margin-bottom:4px">Nova rotina</div>
+        <p class="text-sm text-muted">Clique no botao para abrir o cadastro da rotina.</p>
+      </div>
+      <button class="btn btn-primary" id="task-composer-toggle-btn" type="button" onclick="toggleTaskComposer()">
+        <i data-lucide="plus" style="width:16px;height:16px"></i>
+        <span>Criar nova rotina</span>
+      </button>
+    `;
+
+    composer.innerHTML = '';
+    composer.appendChild(head);
+    composer.appendChild(form);
+
+    toggleBtn = head.querySelector('#task-composer-toggle-btn');
+  }
+
+  const addBtn = form.querySelector('button[onclick="addTask()"]');
+  if (addBtn && !form.querySelector('.task-composer-actions')) {
+    addBtn.type = 'button';
+    addBtn.innerHTML = '<i data-lucide="check" style="width:16px;height:16px"></i> Salvar rotina';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'btn btn-ghost';
+    closeBtn.type = 'button';
+    closeBtn.setAttribute('onclick', 'toggleTaskComposer(false)');
+    closeBtn.innerHTML = '<i data-lucide="x" style="width:16px;height:16px"></i> Fechar';
+
+    const actions = document.createElement('div');
+    actions.className = 'task-composer-actions';
+    addBtn.replaceWith(actions);
+    actions.appendChild(addBtn);
+    actions.appendChild(closeBtn);
+  }
+
+  return { composer, form, toggleBtn };
+}
+
+function setTaskComposerOpen(isOpen, { focusInput = true } = {}) {
+  const structure = ensureTaskComposerStructure();
+  if (!structure) return;
+
+  taskComposerOpen = Boolean(isOpen);
+  const { composer, form, toggleBtn } = structure;
+
+  if (composer) composer.dataset.open = taskComposerOpen ? 'true' : 'false';
+  form.hidden = !taskComposerOpen;
+  toggleBtn.innerHTML = taskComposerOpen
+    ? '<i data-lucide="chevron-up" style="width:16px;height:16px"></i><span>Ocultar cadastro</span>'
+    : '<i data-lucide="plus" style="width:16px;height:16px"></i><span>Criar nova rotina</span>';
+
+  if (taskComposerOpen) {
+    syncTaskFormState();
+    if (focusInput) {
+      const formState = getTaskFormState(false);
+      formState.textInput?.focus();
+    }
+  }
+  lucide.createIcons();
+}
+
+function toggleTaskComposer(forceState) {
+  if (typeof forceState === 'boolean') {
+    setTaskComposerOpen(forceState);
+    return;
+  }
+  setTaskComposerOpen(!taskComposerOpen);
+}
+
+function initTaskComposer() {
+  ensureTaskComposerStructure();
+  resetTaskComposer();
+  setTaskComposerOpen(false, { focusInput: false });
+}
+
 function removeTaskFromAllBlocks(taskId) {
   Object.keys(timeblocks).forEach(block => {
     timeblocks[block] = (timeblocks[block] || []).filter(id => id !== taskId);
@@ -65,6 +162,7 @@ function addTask() {
   save(STORAGE_KEYS.timeblockHistory, timeblockHistory);
 
   resetTaskComposer();
+  setTaskComposerOpen(false, { focusInput: false });
   updateTodayTaskStats();
   persistDaySnapshot(todayKey());
   refreshUI();
@@ -122,7 +220,7 @@ function toggleTask(id) {
 }
 
 function deleteTask(id) {
-  showConfirm('Excluir tarefa?', 'Esta acao nao pode ser desfeita.', () => {
+  showConfirm('Excluir tarefa?', 'Esta ação não pode ser desfeita.', () => {
     clearTaskCompletion(id);
     tasks = tasks.filter(t => t.id !== id);
     removeTaskFromAllBlocks(id);
@@ -217,7 +315,7 @@ function getFilteredTasks() {
 
 function getTaskBlockLabel(taskId) {
   const map = {
-    morning: 'Manha',
+    morning: 'Manhã',
     afternoon: 'Tarde',
     evening: 'Noite',
     night: 'Madrugada',
@@ -241,9 +339,9 @@ function renderTasks() {
     const schedule = hasTaskDateTime(t) ? `<span class="tag">${formatDT(getTaskEffectiveDateTime(t))}</span>` : '';
     const cadence = `<span class="tag">${getTaskStateLabel(t)}</span>`;
     const block = isTaskPeriodAssignable(t) && getTaskBlockLabel(t.id)
-      ? `<span class="tag">Periodo: ${getTaskBlockLabel(t.id)}</span>`
+      ? `<span class="tag">Período: ${getTaskBlockLabel(t.id)}</span>`
       : '';
-    const exercise = t.hasExercise ? `<span class="tag">Se falhar: ${getTaskExercisePlan(t).title}</span>` : '';
+    const exercise = t.hasExercise ? `<span class="tag">Punição: ${getTaskExercisePlan(t).title}</span>` : '';
     return `<div class="task-item ${t.done ? 'done' : ''}">
       <div class="task-check ${t.done ? 'checked' : ''}" onclick="toggleTask('${t.id}')">
         ${t.done ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
@@ -291,7 +389,7 @@ function renderHeatmap() {
   });
   const dailyTasks = tasks.filter(t => t.repeatDaily);
   if (dailyTasks.length === 0) {
-    hm.innerHTML = '<p class="text-muted text-sm">Adicione tarefas diarias para ver o progresso continuo.</p>';
+    hm.innerHTML = '<p class="text-muted text-sm">Adicione tarefas diárias para ver o progresso contínuo.</p>';
     return;
   }
   hm.innerHTML = dailyTasks.map(t => {
@@ -319,8 +417,8 @@ function renderTimeBlocks() {
   if (tbDate) tbDate.textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
 
   const headerConfig = {
-    morning: { slot: '06h-12h', label: 'Manha', time: '06:00 - 12:00', color: 'var(--warn)' },
-    afternoon: { slot: '12h-18h', label: 'Tarde', time: '12:00 - 18:00', color: 'var(--accent3)' },
+    morning: { slot: '06h-12h', label: 'Manhã', time: '06:00 - 12:00', color: 'var(--accent)' },
+    afternoon: { slot: '12h-18h', label: 'Tarde', time: '12:00 - 18:00', color: 'var(--accent2)' },
     evening: { slot: '18h-22h', label: 'Noite', time: '18:00 - 22:00', color: 'var(--accent)' },
     night: { slot: '22h-06h', label: 'Madrugada', time: '22:00 - 06:00', color: 'var(--muted)' },
   };
@@ -351,16 +449,16 @@ function renderTimeBlocks() {
   if (dgl) {
     const pending = tasks.filter(task => isTaskPeriodAssignable(task) && !task.done && !isInAnyBlock(task.id));
     if (pending.length === 0) {
-      dgl.innerHTML = '<p class="text-muted text-sm">Todas as tarefas sem data ja foram encaixadas em algum periodo.</p>';
+      dgl.innerHTML = '<p class="text-muted text-sm">Todas as tarefas sem data já foram encaixadas em algum período.</p>';
     } else {
       dgl.innerHTML = pending.map(task => `
         <div class="pending-task-card">
           <div class="pending-task-copy">
             <div class="pending-task-title">${badgeHTML(task.priority)} ${task.text}</div>
-            <div class="text-sm text-muted">Essas tarefas nao tem data fixa. Escolha um periodo para encaixar no dia.</div>
+            <div class="text-sm text-muted">Essas tarefas não têm data fixa. Escolha um período para encaixar no dia.</div>
           </div>
           <div class="block-assign">
-            <button class="block-assign-btn" type="button" onclick="moveTaskToBlock('${task.id}','morning')">Manha</button>
+            <button class="block-assign-btn" type="button" onclick="moveTaskToBlock('${task.id}','morning')">Manhã</button>
             <button class="block-assign-btn" type="button" onclick="moveTaskToBlock('${task.id}','afternoon')">Tarde</button>
             <button class="block-assign-btn" type="button" onclick="moveTaskToBlock('${task.id}','evening')">Noite</button>
             <button class="block-assign-btn" type="button" onclick="moveTaskToBlock('${task.id}','night')">Madrugada</button>
@@ -373,14 +471,14 @@ function renderTimeBlocks() {
   if (sr) {
     sr.innerHTML = `
       <div class="text-sm text-muted" style="line-height:1.8">
-        <div><strong>07:00</strong> Acordar e cafe da manha</div>
+        <div><strong>07:00</strong> Acordar e café da manhã</div>
         <div><strong>08:00</strong> E-mails e tarefas urgentes</div>
         <div><strong>10:00</strong> Foco profundo</div>
-        <div><strong>12:30</strong> Almoco e pausa</div>
-        <div><strong>14:00</strong> Continuacao do trabalho</div>
-        <div><strong>17:00</strong> Exercicio fisico</div>
+        <div><strong>12:30</strong> Almoço e pausa</div>
+        <div><strong>14:00</strong> Continuação do trabalho</div>
+        <div><strong>17:00</strong> Exercício físico</div>
         <div><strong>19:00</strong> Leitura ou estudo</div>
-        <div><strong>21:00</strong> Meditacao e encerramento</div>
+        <div><strong>21:00</strong> Meditação e encerramento</div>
         <div><strong>23:00</strong> Dormir</div>
       </div>`;
   }

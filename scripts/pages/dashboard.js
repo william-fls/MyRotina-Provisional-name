@@ -13,12 +13,189 @@ function getCurrentTimeBlock() {
 
 function getTimeBlockMeta(block) {
   const map = {
-    morning: { label: 'Manha', range: '06:00 - 12:00', accent: 'var(--warn)' },
-    afternoon: { label: 'Tarde', range: '12:00 - 18:00', accent: 'var(--accent3)' },
+    morning: { label: 'Manhã', range: '06:00 - 12:00', accent: 'var(--accent)' },
+    afternoon: { label: 'Tarde', range: '12:00 - 18:00', accent: 'var(--accent2)' },
     evening: { label: 'Noite', range: '18:00 - 22:00', accent: 'var(--accent)' },
     night: { label: 'Madrugada', range: '22:00 - 06:00', accent: 'var(--muted)' },
   };
   return map[block] || map.morning;
+}
+
+const DASHBOARD_CARD_ORDER_KEY = 'mr_dashboardCardOrder';
+const DASHBOARD_CARD_VISIBILITY_KEY = 'mr_dashboardCardVisibility';
+const DASHBOARD_CARD_ORDER_META = [
+  { id: 'tip', label: 'Dica do dia' },
+  { id: 'week', label: 'Esta semana' },
+  { id: 'overview-focus', label: 'Resumo + Foco do período' },
+  { id: 'lists', label: 'Listas rapidas' },
+];
+
+let dashboardCardOrderDraft = [];
+let dashboardCardVisibilityDraft = {};
+
+function getDefaultDashboardCardOrder() {
+  return DASHBOARD_CARD_ORDER_META.map(item => item.id);
+}
+
+function getDefaultDashboardCardVisibility() {
+  const defaults = {};
+  getDefaultDashboardCardOrder().forEach(id => { defaults[id] = true; });
+  return defaults;
+}
+
+function sanitizeDashboardCardOrder(order) {
+  const valid = new Set(getDefaultDashboardCardOrder());
+  const incoming = Array.isArray(order) ? order : [];
+  const deduped = [];
+  incoming.forEach(id => {
+    if (!valid.has(id) || deduped.includes(id)) return;
+    deduped.push(id);
+  });
+  getDefaultDashboardCardOrder().forEach(id => {
+    if (!deduped.includes(id)) deduped.push(id);
+  });
+  return deduped;
+}
+
+function sanitizeDashboardCardVisibility(visibility) {
+  const defaults = getDefaultDashboardCardVisibility();
+  const source = visibility && typeof visibility === 'object' ? visibility : {};
+  const safe = {};
+  Object.keys(defaults).forEach(id => {
+    safe[id] = source[id] !== false;
+  });
+  return safe;
+}
+
+function loadDashboardCardOrder() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(DASHBOARD_CARD_ORDER_KEY) || 'null');
+    return sanitizeDashboardCardOrder(raw);
+  } catch {
+    return getDefaultDashboardCardOrder();
+  }
+}
+
+function loadDashboardCardVisibility() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(DASHBOARD_CARD_VISIBILITY_KEY) || 'null');
+    return sanitizeDashboardCardVisibility(raw);
+  } catch {
+    return getDefaultDashboardCardVisibility();
+  }
+}
+
+function persistDashboardCardOrder(order) {
+  const safe = sanitizeDashboardCardOrder(order);
+  localStorage.setItem(DASHBOARD_CARD_ORDER_KEY, JSON.stringify(safe));
+  return safe;
+}
+
+function persistDashboardCardVisibility(visibility) {
+  const safe = sanitizeDashboardCardVisibility(visibility);
+  localStorage.setItem(DASHBOARD_CARD_VISIBILITY_KEY, JSON.stringify(safe));
+  return safe;
+}
+
+function countVisibleDashboardCards(visibility) {
+  return Object.values(sanitizeDashboardCardVisibility(visibility)).filter(Boolean).length;
+}
+
+function applyDashboardCardOrder(order) {
+  const container = document.getElementById('dashboard-cards-container');
+  if (!container) return;
+  const safe = sanitizeDashboardCardOrder(order || loadDashboardCardOrder());
+  const sections = Array.from(container.querySelectorAll('[data-dashboard-card]'));
+  const byId = new Map(sections.map(section => [section.dataset.dashboardCard, section]));
+  safe.forEach(id => {
+    const node = byId.get(id);
+    if (node) container.appendChild(node);
+  });
+}
+
+function applyDashboardCardVisibility(visibility) {
+  const safe = sanitizeDashboardCardVisibility(visibility || loadDashboardCardVisibility());
+  const sections = document.querySelectorAll('#dashboard-cards-container [data-dashboard-card]');
+  sections.forEach(section => {
+    const id = section.dataset.dashboardCard;
+    section.hidden = !safe[id];
+  });
+}
+
+function moveDashboardCardInDraft(index, delta) {
+  const nextIndex = index + delta;
+  if (nextIndex < 0 || nextIndex >= dashboardCardOrderDraft.length) return;
+  const nextOrder = [...dashboardCardOrderDraft];
+  const [item] = nextOrder.splice(index, 1);
+  nextOrder.splice(nextIndex, 0, item);
+  dashboardCardOrderDraft = nextOrder;
+  renderDashboardOrderEditor();
+}
+
+function toggleDashboardCardInDraft(id) {
+  const current = Boolean(dashboardCardVisibilityDraft[id]);
+  if (current && countVisibleDashboardCards(dashboardCardVisibilityDraft) <= 1) {
+    showToast('Mantenha 1 card ativo', 'A tela inicial precisa de pelo menos um card visível.', 'warn');
+    return;
+  }
+  dashboardCardVisibilityDraft = {
+    ...dashboardCardVisibilityDraft,
+    [id]: !current,
+  };
+  renderDashboardOrderEditor();
+}
+
+function renderDashboardOrderEditor() {
+  const list = document.getElementById('dashboard-order-list');
+  if (!list) return;
+  const labels = new Map(DASHBOARD_CARD_ORDER_META.map(item => [item.id, item.label]));
+  list.innerHTML = dashboardCardOrderDraft.map((id, index) => `
+    <div class="dashboard-order-item">
+      <div class="dashboard-order-meta">
+        <div class="dashboard-order-label">${labels.get(id) || id}</div>
+        <div class="dashboard-order-state">${dashboardCardVisibilityDraft[id] ? 'Ativo' : 'Oculto'}</div>
+      </div>
+      <div class="dashboard-order-actions">
+        <button class="btn ${dashboardCardVisibilityDraft[id] ? 'btn-success' : 'btn-ghost'} dashboard-order-toggle" type="button" onclick="toggleDashboardCardInDraft('${id}')">
+          ${dashboardCardVisibilityDraft[id] ? 'Ocultar' : 'Mostrar'}
+        </button>
+        <button class="icon-btn" type="button" onclick="moveDashboardCardInDraft(${index}, -1)" ${index === 0 ? 'disabled' : ''} aria-label="Subir">
+          <i data-lucide="chevron-up" style="width:16px;height:16px"></i>
+        </button>
+        <button class="icon-btn" type="button" onclick="moveDashboardCardInDraft(${index}, 1)" ${index === dashboardCardOrderDraft.length - 1 ? 'disabled' : ''} aria-label="Descer">
+          <i data-lucide="chevron-down" style="width:16px;height:16px"></i>
+        </button>
+      </div>
+    </div>
+  `).join('');
+  lucide.createIcons();
+}
+
+function openDashboardOrderModal() {
+  dashboardCardOrderDraft = [...loadDashboardCardOrder()];
+  dashboardCardVisibilityDraft = { ...loadDashboardCardVisibility() };
+  renderDashboardOrderEditor();
+  openModal('modal-dashboard-order');
+}
+
+function saveDashboardCardOrder() {
+  const savedOrder = persistDashboardCardOrder(dashboardCardOrderDraft);
+  const savedVisibility = persistDashboardCardVisibility(dashboardCardVisibilityDraft);
+  applyDashboardCardOrder(savedOrder);
+  applyDashboardCardVisibility(savedVisibility);
+  closeModal('modal-dashboard-order');
+  showToast('Layout atualizado', 'Ordem e visibilidade dos cards foram salvas.', 'success');
+}
+
+function resetDashboardCardOrder() {
+  dashboardCardOrderDraft = getDefaultDashboardCardOrder();
+  dashboardCardVisibilityDraft = getDefaultDashboardCardVisibility();
+  const savedOrder = persistDashboardCardOrder(dashboardCardOrderDraft);
+  const savedVisibility = persistDashboardCardVisibility(dashboardCardVisibilityDraft);
+  applyDashboardCardOrder(savedOrder);
+  applyDashboardCardVisibility(savedVisibility);
+  renderDashboardOrderEditor();
+  showToast('Layout padrão restaurado', 'Todos os cards voltaram para o estado original.', 'warn');
 }
 
 function renderCurrentBlockCard() {
@@ -42,7 +219,7 @@ function renderCurrentBlockCard() {
   if (!currentTasks.length) {
     list.innerHTML = `
       <div class="dashboard-now-empty">
-        Nenhuma tarefa sem data foi encaixada para este periodo. Voce pode organizar isso na aba Planejamento.
+        Nenhuma tarefa sem data foi encaixada para este período. Você pode organizar isso na aba Planejamento.
       </div>`;
     return;
   }
@@ -52,7 +229,7 @@ function renderCurrentBlockCard() {
       <button class="task-check" type="button" onclick="toggleTask('${task.id}')"></button>
       <div class="dashboard-now-copy">
         <div class="dashboard-now-task">${task.text}</div>
-        <div class="task-meta">${badgeHTML(task.priority)} <span class="tag">Periodo do dia</span></div>
+        <div class="task-meta">${badgeHTML(task.priority)} <span class="tag">Período do dia</span></div>
       </div>
     </div>
   `).join('');
@@ -62,6 +239,8 @@ function renderCurrentBlockCard() {
 // DASHBOARD
 // =============================================
 function renderDashboard() {
+  applyDashboardCardOrder(loadDashboardCardOrder());
+  applyDashboardCardVisibility(loadDashboardCardVisibility());
   syncDashboardClockVisibility();
   const today = todayKey();
   const todayTasks = getTodayTasks();
@@ -158,7 +337,7 @@ function renderDashboard() {
           <div class="task-content">
             <div class="task-title-row">
               <div class="task-text">${ex.name}</div>
-              <span class="task-state-tag" style="background:rgba(var(--success-rgb),0.12);color:var(--success)">Exercicio</span>
+            <span class="task-state-tag" style="background:rgba(var(--success-rgb),0.12);color:var(--success)">Exercício</span>
             </div>
             <div class="task-meta">${ex.sets} series x ${ex.reps} reps</div>
           </div>
@@ -233,7 +412,7 @@ function renderWeeklyCalendar() {
           opacity = '0.8';
           textColor = '#fff';
         } else {
-          statusColor = 'var(--accent3)';
+          statusColor = 'var(--accent2)';
           opacity = '0.7';
           textColor = '#fff';
         }
@@ -245,7 +424,7 @@ function renderWeeklyCalendar() {
     const borderStyle = isToday ? '2px solid var(--accent)' : '2px solid transparent';
     const dayNum = d.getDate();
     let titleStr = '';
-    if (isFuture) titleStr = 'Ainda nao chegou';
+    if (isFuture) titleStr = 'Ainda não chegou';
     else if (totalActivity > 0) titleStr = `${totalActivity} atividades feitas`;
     else titleStr = 'Nenhuma atividade registrada';
 

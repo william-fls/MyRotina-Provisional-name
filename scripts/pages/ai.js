@@ -135,8 +135,12 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        if (!response.ok) throw new Error('API recusou o acesso. Verifique sua chave.');
-        const data = await response.json();
+        let data = {};
+        try { data = await response.json(); } catch { }
+        if (!response.ok) {
+          const msg = data?.error?.message || 'API recusou o acesso. Verifique sua chave.';
+          throw new Error(msg);
+        }
         const rawResult = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!rawResult) throw new Error('Resposta em branco da IA.');
         return rawResult;
@@ -188,7 +192,7 @@
 
     function createAiMessageElement(text, sender = 'user', extraClass = '') {
       const wrapper = document.createElement('div');
-      const safeUserText = escapeHtml(text || '');
+      const safeUserText = escapeHtml(text || '').replace(/\n/g, '<br>');
       const messageContent = sender === 'user' ? safeUserText : (text || '');
       wrapper.className = `ai-message-row ${sender} ${extraClass}`.trim();
       wrapper.innerHTML = `
@@ -223,14 +227,37 @@
 
     // Histórico de conversa da IA
     let aiChatHistory = load(STORAGE_KEYS.aiChatHistory, []);
+    let aiRequestInFlight = false;
+
+    function normalizeAiHistoryEntry(entry) {
+      if (!entry || typeof entry !== 'object') return null;
+      const role = entry.role === 'user' ? 'user' : 'model';
+      const text = typeof entry?.parts?.[0]?.text === 'string'
+        ? entry.parts[0].text
+        : typeof entry.content === 'string'
+          ? entry.content
+          : '';
+      if (!text.trim()) return null;
+      return { role, parts: [{ text: text.trim() }] };
+    }
+
+    function normalizeAiHistoryStorage() {
+      const normalized = Array.isArray(aiChatHistory)
+        ? aiChatHistory.map(normalizeAiHistoryEntry).filter(Boolean)
+        : [];
+      aiChatHistory = normalized.slice(-20);
+      save(STORAGE_KEYS.aiChatHistory, aiChatHistory);
+    }
 
     function renderAIChatHistory() {
       const chat = document.getElementById('ai-chat-history');
       if (!chat) return;
+      normalizeAiHistoryStorage();
       chat.innerHTML = getAiIntroMarkup();
 
       aiChatHistory.forEach(msg => {
-        const text = msg.parts[0].text;
+        const text = msg?.parts?.[0]?.text || '';
+        if (!text) return;
         if (msg.role === 'user') {
           sendAIMessage(text, 'user');
         } else {
@@ -284,7 +311,7 @@
               return !match;
             });
             const removed = before - tasks.length;
-            if (removed > 0) log.push(`??? Removida: <b>${action.text || action.id}</b>`);
+            if (removed > 0) log.push(`Removida: <b>${action.text || action.id}</b>`);
             break;
           }
 
@@ -315,7 +342,7 @@
                 t.done = false;
                 t.completedAt = '';
                 clearTaskCompletion(t.id, today);
-                log.push(`?? Desmarcada: <b>${t.text}</b>`);
+                log.push(`Desmarcada: <b>${t.text}</b>`);
               }
             });
             break;
@@ -331,7 +358,7 @@
                 if (action.priority)    t.priority    = action.priority;
                 if (action.repeatDaily !== undefined) t.repeatDaily = action.repeatDaily;
                 aiMutationCount += 1;
-                log.push(`?? Editada: <b>${old}</b> ? <b>${t.text}</b>`);
+                log.push(`Editada: <b>${old}</b> -> <b>${t.text}</b>`);
               }
             });
             break;
@@ -344,7 +371,7 @@
               return !t.done;
             });
             const removed = before - tasks.length;
-            if (removed > 0) log.push(`?? ${removed} tarefa(s) concluída(s) removida(s)`);
+            if (removed > 0) log.push(`${removed} tarefa(s) concluída(s) removida(s)`);
             break;
           }
         }
@@ -366,13 +393,18 @@
 
     async function processAIInput() {
       const input = document.getElementById('ai-input');
+      const sendBtn = document.getElementById('ai-send-btn');
       const text = input.value.trim();
       if (!text) return;
+      if (aiRequestInFlight) {
+        showToast('A IA ainda esta respondendo', 'Aguarde a mensagem atual terminar.', 'warn');
+        return;
+      }
 
       const config = getActiveAiConfig();
       const configError = getAiConfigError(config);
       if (configError) {
-        sendAIMessage(`<b>${configError}</b><br><br>?? Clique em ?? na aba IA.`, 'bot');
+        sendAIMessage(`<b>${configError}</b><br><br>Abra "Configurar" para conectar sua IA.`, 'bot');
         return;
       }
 
@@ -385,11 +417,14 @@
       save(STORAGE_KEYS.aiChatHistory, aiChatHistory);
 
       const chat = document.getElementById('ai-chat-history');
+      if (!chat) return;
       const typingId = 'typing-' + Date.now();
       const typingEl = createAiMessageElement('<em>Pensando...</em>', 'bot', 'typing');
       typingEl.id = typingId;
       chat.appendChild(typingEl);
       scrollAiToEnd();
+      aiRequestInFlight = true;
+      if (sendBtn) sendBtn.disabled = true;
 
       try {
         // Snapshot das tarefas atuais para contexto
@@ -422,7 +457,7 @@ REGRAS:
 MANDATÓRIO: retorne JSON puro sem crases:
 {"message":"sua resposta em html","actions":[...]}`;
 
-        const rawResult = await requestAiJson({ systemPrompt: sysPrompt, history: aiChatHistory });
+        const rawResult = await requestAiJson({ systemPrompt: sysPrompt, history: aiChatHistory, userPrompt: text });
 
         document.getElementById(typingId)?.remove();
 
@@ -446,6 +481,9 @@ MANDATÓRIO: retorne JSON puro sem crases:
       } catch (err) {
         document.getElementById(typingId)?.remove();
         sendAIMessage(`<b>Erro:</b> ${err.message}`, 'bot');
+      } finally {
+        aiRequestInFlight = false;
+        if (sendBtn) sendBtn.disabled = false;
       }
     }
 
@@ -493,7 +531,7 @@ MANDATÓRIO: retorne JSON puro sem crases:
       renderAIChatHistory();
 
       if (key) {
-        showConfirm('Cérebros conectados! ??', `Sua chave do ${meta.label} foi salva localmente. A IA agora tem acesso total à sua rotina!`);
+        showConfirm('Cérebros conectados!', `Sua chave do ${meta.label} foi salva localmente. A IA agora tem acesso total à sua rotina!`);
       } else {
         showToast('Chave removida', `A conexão com ${meta.label} foi removida.`, 'warn');
       }

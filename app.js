@@ -193,10 +193,26 @@
     function normalizeAiSettings(raw) {
       const safe = raw && typeof raw === 'object' ? raw : {};
       const provider = AI_PROVIDER_META[safe.provider] ? safe.provider : DEFAULT_AI_SETTINGS.provider;
+      const sourceProviders = safe.providers && typeof safe.providers === 'object'
+        ? { ...safe.providers }
+        : {};
+      if (!Object.keys(sourceProviders).length) {
+        const legacyProvider = AI_PROVIDER_META[safe.provider] ? safe.provider : DEFAULT_AI_SETTINGS.provider;
+        const hasLegacyFlatConfig = typeof safe.key === 'string'
+          || typeof safe.model === 'string'
+          || typeof safe.baseUrl === 'string';
+        if (hasLegacyFlatConfig) {
+          sourceProviders[legacyProvider] = {
+            key: typeof safe.key === 'string' ? safe.key : '',
+            model: typeof safe.model === 'string' ? safe.model : '',
+            baseUrl: typeof safe.baseUrl === 'string' ? safe.baseUrl : '',
+          };
+        }
+      }
       const providers = {};
       Object.keys(AI_PROVIDER_META).forEach(id => {
         const meta = AI_PROVIDER_META[id];
-        const entry = safe.providers && typeof safe.providers === 'object' ? safe.providers[id] : null;
+        const entry = sourceProviders[id];
         providers[id] = {
           key: typeof entry?.key === 'string' ? entry.key : '',
           model: typeof entry?.model === 'string' && entry.model ? entry.model : (meta.defaultModel || ''),
@@ -269,12 +285,13 @@
           habits: {},
         }
         : { ...DEFAULT_REWARD_LEDGER };
+      const tasksById = new Map();
+      tasks.forEach(task => {
+        if (!tasksById.has(task.id)) tasksById.set(task.id, task);
+      });
       Object.keys(EMPTY_TIMEBLOCKS).forEach(block => {
-        if (!Array.isArray(timeblocks[block])) timeblocks[block] = [];
-        timeblocks[block] = timeblocks[block].filter(taskId => {
-          const task = tasks.find(item => item.id === taskId);
-          return isTaskPeriodAssignable(task);
-        });
+        const blockTasks = Array.isArray(timeblocks[block]) ? timeblocks[block] : [];
+        timeblocks[block] = blockTasks.filter(taskId => isTaskPeriodAssignable(tasksById.get(taskId)));
       });
       if (!Array.isArray(gameState.badges)) gameState.badges = [];
       if (!gameState.legendaryDayLog || typeof gameState.legendaryDayLog !== 'object') gameState.legendaryDayLog = {};
@@ -430,7 +447,7 @@
     }
 
     function getTaskStateLabel(task) {
-      if (task.repeatDaily) return 'Diaria';
+      if (task.repeatDaily) return 'Diária';
       if (hasTaskDateTime(task)) return 'Pontual';
       return 'Sem data';
     }
@@ -451,7 +468,7 @@
       if (!preview) return;
       if (dtInput && !dtInput.value && !noDateToggle?.checked) dtInput.value = getDefaultTaskDateTime();
       if (!hasExercise) {
-        preview.innerHTML = '<strong>Desafio desativado</strong><span>Ative para gerar um exercício quando a tarefa falhar.</span>';
+        preview.innerHTML = '<strong>Punição desativada</strong><span>Ative para gerar um exercício quando a tarefa falhar.</span>';
         return;
       }
       const plan = getTaskExercisePlan({ repeatDaily: repeat, priority });
@@ -536,7 +553,7 @@
       return permission;
     }
 
-    const ASSET_VERSION = '2026-04-02-v4';
+    const ASSET_VERSION = '2026-04-03-v5';
     let serviceWorkerReadyPromise = null;
 
     function ensureServiceWorkerReady() {
@@ -592,6 +609,9 @@
     function showToast(title, body = '', tone = 'default') {
       const stack = document.getElementById('toast-stack');
       if (!stack) return;
+      while (stack.children.length >= 3) {
+        stack.firstElementChild?.remove();
+      }
       const toast = document.createElement('div');
       toast.className = `toast ${tone}`;
       toast.innerHTML = `<div class="toast-title">${title}</div>${body ? `<div class="toast-body">${body}</div>` : ''}`;
@@ -648,7 +668,7 @@
       taskExerciseLog[challengeKey] = challenge.id;
       save(STORAGE_KEYS.exerciseChallenges, exerciseChallenges);
       save(STORAGE_KEYS.taskExerciseLog, taskExerciseLog);
-      showToast('Desafio criado', `${truncateText(task.text, 40)} virou ${plan.title.toLowerCase()}.`, 'warn');
+        showToast('Punição aplicada', `${truncateText(task.text, 40)} virou ${plan.title.toLowerCase()}.`, 'warn');
     }
 
     function buildLevelThresholds(maxLevel = 100) {
@@ -761,7 +781,7 @@
         piece.style.left = `${8 + Math.random() * 84}%`;
         piece.style.animationDelay = `${Math.random() * 0.25}s`;
         piece.style.animationDuration = `${1.2 + Math.random() * 0.8}s`;
-        piece.style.background = ['var(--accent)', 'var(--accent2)', 'var(--accent3)', 'var(--warn)'][i % 4];
+        piece.style.background = ['var(--accent)', 'var(--accent2)'][i % 2];
         piece.style.transform = `rotate(${Math.random() * 240}deg)`;
         layer.appendChild(piece);
       }
@@ -805,7 +825,7 @@
       grantXp(amount, reason || 'Progresso fitness');
     }
 
-    function unlockFitnessBadge(id, title, desc, icon = '??') {
+    function unlockFitnessBadge(id, title, desc, icon = '🏅') {
       if (!isGamificationEnabled()) return false;
       if (hasFitnessBadge(id)) return false;
       fitnessGameState.badges = Array.isArray(fitnessGameState.badges) ? fitnessGameState.badges : [];
@@ -899,7 +919,7 @@
       refreshUI();
       showToast(
         challenge.completedAt ? 'Exercício concluído' : 'Exercício reaberto',
-        challenge.completedAt ? 'Boa. O desafio de movimento foi registrado.' : 'O desafio voltou para a lista pendente.',
+        challenge.completedAt ? 'Boa. A punição de movimento foi registrada.' : 'A punição voltou para a lista pendente.',
         challenge.completedAt ? 'success' : 'warn'
       );
     }
@@ -915,7 +935,9 @@
     function checkPendingExercises() {
       const pending = exerciseChallenges.filter(c => !c.completedAt);
       if (pending.length > 0) {
-        document.getElementById('blocking-ex-desc').textContent = `Você tem ${pending.length} desafio(s) de movimento acumulado(s) por falhar tarefas anteriores.`;
+        const punicaoLabel = pending.length === 1 ? 'punição' : 'punições';
+        const acumuladaLabel = pending.length === 1 ? 'acumulada' : 'acumuladas';
+        document.getElementById('blocking-ex-desc').textContent = `Você tem ${pending.length} ${punicaoLabel} de movimento ${acumuladaLabel} por falhar tarefas anteriores.`;
         const listEl = document.getElementById('blocking-ex-list');
         listEl.innerHTML = pending.map(c => `
           <div style="padding:8px;border-bottom:1px solid var(--border)">
@@ -928,7 +950,6 @@
     }
     
     function triggerPunitiveModal() {
-      // Create a modal logic or reuse modal-blocking-exercise
       document.getElementById('blocking-ex-desc').innerHTML = `
         Atenção! Você não concluiu sua tarefa principal até as 23:59.<br><br>
         <strong>Faça 30 segundos de polichinelos AGORA</strong> para salvar sua sequência do dia e ganhar +5 XP.
@@ -947,7 +968,6 @@
       gameState.punitiveExercisesCompleted = Number(gameState.punitiveExercisesCompleted || 0) + 1;
       recordPunitiveExercise();
       saveGameState();
-      // Force setting today as active to avoid streak penalty tomorrow
       const today = todayKey();
       if (!taskStats[today]) taskStats[today] = { total: 0, done: 0 };
       taskStats[today].done += 1;
@@ -989,7 +1009,7 @@
       }
 
       if (!ordered.length) {
-        list.innerHTML = '<div class="empty-state"><p>Nenhum desafio de movimento pendente por enquanto.</p></div>';
+      list.innerHTML = '<div class="empty-state"><p>Nenhuma punição de movimento pendente por enquanto.</p></div>';
         return;
       }
 
@@ -1185,17 +1205,11 @@
       }
     }
 
-    async function sendTestNotification() {
-      const id = `test-${Date.now()}`;
-      const sent = await sendBrowserNotification(id, 'Teste de lembrete', 'Se você viu isso, as notificações estão funcionando.');
-      if (sent) showToast('Teste enviado', 'A notificação saiu no navegador.', 'success');
-      else showToast('Aviso interno', 'As notificações externas não estão ativas; use o botão para permitir no navegador.', 'warn');
-    }
-
     function checkReminderNotifications() {
       const now = Date.now();
+      const today = todayKey();
       const leadTime = (notificationSettings.reminderMinutes || 15) * 60 * 1000;
-      tasks.filter(task => !task.done && task.datetime && (task.repeatDaily || isTaskForDate(task, todayKey()))).forEach(task => {
+      tasks.filter(task => !task.done && task.datetime && (task.repeatDaily || isTaskForDate(task, today))).forEach(task => {
         const effectiveDateTime = getTaskEffectiveDateTime(task);
         const dueAt = new Date(effectiveDateTime).getTime();
         if (!Number.isFinite(dueAt)) return;
@@ -1275,17 +1289,31 @@
       updateMobileNavigation(page);
       if (isMobileLayout()) closeSidebar();
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      if (page === 'dashboard') renderDashboard();
-      if (page === 'tasks') {
-        renderTasks();
-        renderExerciseChallenges();
-        renderTimeBlocks();
+      switch (page) {
+        case 'dashboard':
+          renderDashboard();
+          break;
+        case 'tasks':
+          renderTasks();
+          renderExerciseChallenges();
+          renderTimeBlocks();
+          break;
+        case 'missions':
+          renderGamePanel();
+          break;
+        case 'habits':
+          renderHeatmap();
+          break;
+        case 'stats':
+          renderStats();
+          break;
+        case 'fitness':
+          renderFitnessPage();
+          break;
+        case 'settings':
+          renderSettingsPage();
+          break;
       }
-      if (page === 'missions') renderGamePanel();
-      if (page === 'habits') renderHeatmap();
-      if (page === 'stats') renderStats();
-      if (page === 'fitness') renderFitnessPage();
-      if (page === 'settings') renderSettingsPage();
     }
 
     // =============================================
@@ -1308,7 +1336,7 @@
         const greetEl = document.getElementById('greeting');
         if (greetEl) {
           const hr = now.getHours();
-          greetEl.textContent = hr < 12 ? 'Bom dia ??' : hr < 18 ? 'Boa tarde ???' : 'Boa noite ??';
+          greetEl.textContent = hr < 12 ? 'Bom dia!' : hr < 18 ? 'Boa tarde!' : 'Boa noite!';
         }
       }
       tick();
@@ -1427,6 +1455,7 @@
 
       if (e.key === 'Escape') {
         document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+        if (typeof toggleTaskComposer === 'function') toggleTaskComposer(false);
         closeSidebar();
       }
     });
@@ -1453,7 +1482,8 @@
       syncNotificationPermission();
       ensureServiceWorkerReady();
       seedTaskDateTimeInputs();
-      syncTaskFormState();
+      if (typeof initTaskComposer === 'function') initTaskComposer();
+      else syncTaskFormState();
       syncTaskFormState(true);
       initName();
       updateTodayTaskStats();

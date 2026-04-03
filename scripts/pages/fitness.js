@@ -1,100 +1,282 @@
-﻿function openExerciseDetail(dayIdx, exIdx) {
-      const plan = fitnessPlan?.weeklyPlan;
-      let ex = null;
-      if (plan && dayIdx !== undefined) {
-        ex = plan[dayIdx]?.exercises?.[exIdx];
-      }
-      if (!ex) return;
-      _detailEx = ex;
+    const FITNESS_ROUTINE_KEY = 'mr_fitnessRoutine';
+    const FITNESS_SELECTABLE_LOGS_KEY = 'mr_fitnessSelectableLogs';
+    const DEFAULT_FITNESS_ROUTINE = { mode: 'ai', presetId: 'essencial-3x' };
+    const DAY_ALIAS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
 
+    const SELECTABLE_EXERCISES = [
+      { id: 'sel-agachamento', name: 'Agachamento livre', sets: 3, reps: '12', rest: '45s', muscles: ['Quadriceps', 'Gluteos'], howTo: ['Afaste os pes na largura dos ombros.', 'Desca controlando o quadril para tras.', 'Suba empurrando o chao com os calcanhares.'], videoUrl: 'https://www.youtube.com/results?search_query=agachamento+livre+execucao+certa' },
+      { id: 'sel-flexao', name: 'Flexao de braco', sets: 3, reps: '10', rest: '60s', muscles: ['Peitoral', 'Triceps'], howTo: ['Alinhe punhos abaixo dos ombros.', 'Mantenha o corpo reto durante todo o movimento.', 'Desca ate proximo do chao e retorne.'], videoUrl: 'https://www.youtube.com/results?search_query=flexao+de+braco+execucao+certa' },
+      { id: 'sel-prancha', name: 'Prancha frontal', sets: 3, reps: '30s', rest: '45s', muscles: ['Core', 'Lombar'], howTo: ['Apoie antebracos e pontas dos pes.', 'Ative abdomen e gluteos.', 'Evite elevar ou afundar o quadril.'], videoUrl: 'https://www.youtube.com/results?search_query=prancha+frontal+execucao+certa' },
+      { id: 'sel-afundo', name: 'Afundo alternado', sets: 3, reps: '10 por perna', rest: '60s', muscles: ['Quadriceps', 'Gluteos'], howTo: ['De um passo a frente.', 'Desca ate formar angulos proximos de 90 graus.', 'Suba e alterne a perna.'], videoUrl: 'https://www.youtube.com/results?search_query=afundo+alternado+execucao+certa' },
+      { id: 'sel-polichinelo', name: 'Polichinelo', sets: 4, reps: '30s', rest: '30s', muscles: ['Cardio', 'Corpo inteiro'], howTo: ['Salte abrindo pernas e elevando bracos.', 'Retorne para a posicao inicial.', 'Mantenha ritmo constante.'], videoUrl: 'https://www.youtube.com/results?search_query=polichinelo+execucao+certa' },
+      { id: 'sel-elevacao', name: 'Elevacao de joelhos', sets: 3, reps: '20', rest: '30s', muscles: ['Cardio', 'Core'], howTo: ['Corra parado elevando os joelhos.', 'Mantenha tronco firme.', 'Respire de forma ritmada.'], videoUrl: 'https://www.youtube.com/results?search_query=elevacao+de+joelhos+execucao+certa' },
+    ];
+
+    const FITNESS_PRESET_PLANS = [
+      {
+        id: 'essencial-3x',
+        name: 'Essencial 3x',
+        description: 'Treino equilibrado para manter constancia na semana.',
+        weeklyPlan: [
+          { day: 'Segunda', focus: 'Forca geral', rest: false, exercises: [
+            { name: 'Agachamento livre', sets: 3, reps: '12', rest: '45s', muscles: ['Quadriceps', 'Gluteos'], howTo: ['Pes na largura dos ombros.', 'Desca com controle.', 'Suba contraindo gluteos.'], tip: 'Mantenha o peito aberto.' },
+            { name: 'Flexao de braco', sets: 3, reps: '10', rest: '60s', muscles: ['Peitoral', 'Triceps'], howTo: ['Apoie as maos abaixo dos ombros.', 'Desca com cotovelos em diagonal.', 'Suba sem perder alinhamento.'], tip: 'Ative o abdomen durante todo o exercicio.' },
+            { name: 'Prancha frontal', sets: 3, reps: '30s', rest: '45s', muscles: ['Core'], howTo: ['Apoie antebracos no chao.', 'Corpo alinhado da cabeca aos pes.', 'Segure o tempo indicado.'], tip: 'Respire pelo nariz para manter estabilidade.' },
+          ]},
+          { day: 'Terca', focus: 'Descanso', rest: true, exercises: [] },
+          { day: 'Quarta', focus: 'Pernas e cardio', rest: false, exercises: [
+            { name: 'Afundo alternado', sets: 3, reps: '10 por perna', rest: '60s', muscles: ['Quadriceps', 'Gluteos'], howTo: ['Passo a frente com tronco reto.', 'Desca ate 90 graus.', 'Suba e troque a perna.'], tip: 'Evite projetar o joelho da frente.' },
+            { name: 'Polichinelo', sets: 4, reps: '30s', rest: '30s', muscles: ['Cardio'], howTo: ['Abra e feche pernas e bracos.', 'Mantenha ritmo constante.', 'Respeite o tempo de descanso.'], tip: 'Aterrisse suave para proteger joelhos.' },
+          ]},
+          { day: 'Quinta', focus: 'Descanso', rest: true, exercises: [] },
+          { day: 'Sexta', focus: 'Core e postura', rest: false, exercises: [
+            { name: 'Prancha frontal', sets: 4, reps: '30s', rest: '40s', muscles: ['Core'], howTo: ['Antebracos no chao.', 'Corpo alinhado.', 'Segure sem prender a respiracao.'], tip: 'Contraia gluteos para reduzir carga lombar.' },
+            { name: 'Elevacao de joelhos', sets: 3, reps: '20', rest: '30s', muscles: ['Cardio', 'Core'], howTo: ['Corra parado com joelhos altos.', 'Mantenha tronco firme.', 'Controle a respiracao.'], tip: 'Suba os joelhos ate altura do quadril.' },
+          ]},
+          { day: 'Sabado', focus: 'Mobilidade leve', rest: false, exercises: [
+            { name: 'Alongamento dinamico', sets: 2, reps: '8 min', rest: '30s', muscles: ['Mobilidade'], howTo: ['Mobilize ombros, quadril e tornozelos.', 'Mantenha movimentos suaves.', 'Finaliza com respiracao profunda.'], tip: 'Movimentos sem dor e sem pressa.' },
+          ]},
+          { day: 'Domingo', focus: 'Descanso', rest: true, exercises: [] },
+        ],
+        generalTips: ['Priorize regularidade acima de intensidade.', 'Mantenha pausas curtas para preservar ritmo.', 'Hidrate-se antes e depois do treino.'],
+      },
+      {
+        id: 'condicionamento-5x',
+        name: 'Condicionamento 5x',
+        description: 'Maior frequencia para evolucao de resistencia.',
+        weeklyPlan: [
+          { day: 'Segunda', focus: 'Cardio base', rest: false, exercises: [
+            { name: 'Polichinelo', sets: 5, reps: '35s', rest: '25s', muscles: ['Cardio'], howTo: ['Abra e feche pernas e bracos de forma ritmada.', 'Mantenha postura ereta.'], tip: 'Comece moderado e acelere no fim.' },
+            { name: 'Prancha frontal', sets: 3, reps: '35s', rest: '40s', muscles: ['Core'], howTo: ['Apoie antebracos.', 'Mantenha corpo alinhado.', 'Respire com controle.'], tip: 'Nao deixe o quadril subir.' },
+          ]},
+          { day: 'Terca', focus: 'Membros inferiores', rest: false, exercises: [
+            { name: 'Agachamento livre', sets: 4, reps: '12', rest: '45s', muscles: ['Quadriceps', 'Gluteos'], howTo: ['Pes firmes no chao.', 'Desca com controle.', 'Suba empurrando calcanhares.'], tip: 'Joelhos acompanham a ponta dos pes.' },
+            { name: 'Afundo alternado', sets: 3, reps: '12 por perna', rest: '60s', muscles: ['Quadriceps', 'Gluteos'], howTo: ['Passo a frente.', 'Desca ate 90 graus.', 'Retorne e alterne.'], tip: 'Mantenha tronco neutro.' },
+          ]},
+          { day: 'Quarta', focus: 'Recuperacao ativa', rest: false, exercises: [
+            { name: 'Caminhada acelerada', sets: 1, reps: '20 min', rest: '---', muscles: ['Cardio'], howTo: ['Ritmo sustentado.', 'Passadas amplas e postura ereta.'], tip: 'Mantenha respiracao constante.' },
+          ]},
+          { day: 'Quinta', focus: 'Parte superior', rest: false, exercises: [
+            { name: 'Flexao de braco', sets: 4, reps: '10', rest: '60s', muscles: ['Peitoral', 'Triceps'], howTo: ['Maos alinhadas aos ombros.', 'Desca controlando.', 'Suba sem perder alinhamento.'], tip: 'Adapte com apoio no joelho se precisar.' },
+            { name: 'Prancha frontal', sets: 3, reps: '40s', rest: '40s', muscles: ['Core'], howTo: ['Antebracos apoiados.', 'Coluna neutra.', 'Segure com firmeza.'], tip: 'Ative o abdomen o tempo todo.' },
+          ]},
+          { day: 'Sexta', focus: 'Cardio intenso', rest: false, exercises: [
+            { name: 'Elevacao de joelhos', sets: 5, reps: '30s', rest: '25s', muscles: ['Cardio', 'Core'], howTo: ['Joelhos altos alternados.', 'Bracos acompanham o ritmo.'], tip: 'Pise leve para reduzir impacto.' },
+            { name: 'Polichinelo', sets: 3, reps: '40s', rest: '30s', muscles: ['Cardio'], howTo: ['Ritmo continuo.', 'Coordene bracos e pernas.'], tip: 'Controle o ritmo respiratorio.' },
+          ]},
+          { day: 'Sabado', focus: 'Descanso', rest: true, exercises: [] },
+          { day: 'Domingo', focus: 'Descanso', rest: true, exercises: [] },
+        ],
+        generalTips: ['Durma bem para recuperar energia.', 'Ajuste intensidade quando estiver muito cansado.', 'Mantenha constancia durante as 5 sessoes da semana.'],
+      },
+    ];
+
+    let fitnessRoutineState = null;
+    let fitnessSelectableLogs = null;
+
+    function normalizeDayString(value) {
+      return String(value || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function deepClone(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function normalizeFitnessRoutine(raw) {
+      const safe = raw && typeof raw === 'object' ? raw : {};
+      const mode = ['none', 'ai', 'preset'].includes(safe.mode) ? safe.mode : DEFAULT_FITNESS_ROUTINE.mode;
+      const fallbackPreset = FITNESS_PRESET_PLANS[0]?.id || '';
+      const presetId = FITNESS_PRESET_PLANS.some(plan => plan.id === safe.presetId) ? safe.presetId : (safe.presetId || fallbackPreset);
+      return { mode, presetId };
+    }
+
+    function loadFitnessRoutineState() {
+      if (!fitnessRoutineState) {
+        fitnessRoutineState = normalizeFitnessRoutine(load(FITNESS_ROUTINE_KEY, DEFAULT_FITNESS_ROUTINE));
+      }
+      return fitnessRoutineState;
+    }
+
+    function saveFitnessRoutineState() {
+      if (!fitnessRoutineState) return;
+      save(FITNESS_ROUTINE_KEY, fitnessRoutineState);
+    }
+
+    function loadFitnessSelectableLogs() {
+      if (!fitnessSelectableLogs || typeof fitnessSelectableLogs !== 'object') {
+        fitnessSelectableLogs = load(FITNESS_SELECTABLE_LOGS_KEY, {});
+      }
+      return fitnessSelectableLogs;
+    }
+
+    function saveFitnessSelectableLogs() {
+      if (!fitnessSelectableLogs || typeof fitnessSelectableLogs !== 'object') return;
+      save(FITNESS_SELECTABLE_LOGS_KEY, fitnessSelectableLogs);
+    }
+
+    function getPresetPlanById(presetId) {
+      return FITNESS_PRESET_PLANS.find(plan => plan.id === presetId) || FITNESS_PRESET_PLANS[0] || null;
+    }
+
+    function buildPlanFromPreset(preset) {
+      if (!preset) return null;
+      return {
+        source: 'preset',
+        presetId: preset.id,
+        generatedAt: new Date().toISOString(),
+        weeklyPlan: deepClone(preset.weeklyPlan || []),
+        todayWorkout: deepClone((preset.weeklyPlan || []).find(item => !item.rest) || { focus: 'Treino', exercises: [] }),
+        generalTips: deepClone(preset.generalTips || []),
+      };
+    }
+
+    function getWorkoutDaysInLast(windowDays = 7) {
+      let count = 0;
+      for (let i = 0; i < windowDays; i += 1) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const key = d.toISOString().slice(0, 10);
+        if (Array.isArray(fitnessLogs[key]) && fitnessLogs[key].length > 0) count += 1;
+      }
+      return count;
+    }
+
+    function findTodayWorkout(plan) {
+      if (!plan) return null;
+      const alias = DAY_ALIAS[new Date().getDay()];
+      const normalizedAlias = normalizeDayString(alias);
+      const fromWeek = (plan.weeklyPlan || []).find(item => normalizeDayString(item.day).startsWith(normalizedAlias));
+      return fromWeek || plan.todayWorkout || null;
+    }
+
+    function applyPresetPlan(presetId, { silent = false } = {}) {
+      const preset = getPresetPlanById(presetId);
+      if (!preset) return;
+      fitnessPlan = buildPlanFromPreset(preset);
+      save(STORAGE_KEYS.fitnessPlan, fitnessPlan);
+
+      const routine = loadFitnessRoutineState();
+      routine.mode = 'preset';
+      routine.presetId = preset.id;
+      saveFitnessRoutineState();
+
+      if (!silent) showToast('Plano predefinido aplicado', preset.name, 'success');
+      renderFitnessPage();
+    }
+
+    function applyPresetPlanFromSelect() {
+      const select = document.getElementById('fitness-preset-select');
+      if (!select) return;
+      applyPresetPlan(select.value);
+    }
+
+    function setFitnessRoutineMode(mode) {
+      const routine = loadFitnessRoutineState();
+      if (!['none', 'ai', 'preset'].includes(mode)) return;
+      routine.mode = mode;
+      if (!routine.presetId) routine.presetId = FITNESS_PRESET_PLANS[0]?.id || '';
+      saveFitnessRoutineState();
+
+      if (mode === 'preset') {
+        applyPresetPlan(routine.presetId, { silent: true });
+        return;
+      }
+
+      if (mode === 'none') {
+        showToast('Modo sem exercícios', 'O app vai ocultar os treinos da rotina.', 'warn');
+      } else {
+        showToast('Modo IA ativo', 'Você pode gerar um plano personalizado quando quiser.', 'success');
+      }
+      renderFitnessPage();
+    }
+
+    function completeSelectableExercise(exerciseId) {
+      const routine = loadFitnessRoutineState();
+      if (routine.mode === 'none') {
+        showToast('Modo sem exercícios', 'Altere o modo para concluir exercícios.', 'warn');
+        return;
+      }
+
+      const exercise = SELECTABLE_EXERCISES.find(item => item.id === exerciseId);
+      if (!exercise) return;
+
+      const logs = loadFitnessSelectableLogs();
       const today = todayKey();
-      const done = (fitnessLogs[today] || []).includes(ex.name);
+      const doneIds = Array.isArray(logs[today]) ? logs[today] : [];
+      if (doneIds.includes(exerciseId)) return;
 
-      document.getElementById('exd-name').textContent = ex.name;
-      document.getElementById('exd-focus-label').textContent =
-        (fitnessPlan?.weeklyPlan?.[dayIdx]?.focus || 'TREINO').toUpperCase();
+      doneIds.push(exerciseId);
+      logs[today] = doneIds;
+      saveFitnessSelectableLogs();
 
-      // Chips
-      const chips = document.getElementById('exd-chips');
-      chips.innerHTML = [
-        { icon: '??', label: `${ex.sets} séries` },
-        { icon: '??', label: `${ex.reps} reps` },
-        { icon: '??', label: `${ex.rest} de descanso` },
-      ].map(c => `<span style="background:var(--surface3);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--text)">${c.icon} ${c.label}</span>`).join('');
-
-      // Muscles
-      const muscles = document.getElementById('exd-muscles');
-      muscles.innerHTML = (ex.muscles || []).map(m =>
-        `<span style="background:rgba(var(--accent-rgb),0.12);color:var(--accent);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:600">${m}</span>`
-      ).join('');
-
-      // How to
-      const howto = document.getElementById('exd-howto');
-      const steps = ex.howTo || [];
-      if (steps.length > 0) {
-        howto.innerHTML = steps.map(s =>
-          `<li style="font-size:13px;color:var(--text);line-height:1.6;padding-left:4px">${s}</li>`
-        ).join('');
-        document.getElementById('exd-howto-section').style.display = 'block';
-      } else {
-        document.getElementById('exd-howto-section').style.display = 'none';
-      }
-
-      // Tip
-      const tipEl = document.getElementById('exd-tip');
-      if (ex.tip) {
-        tipEl.textContent = ex.tip;
-        document.getElementById('exd-tip-section').style.display = 'block';
-      } else {
-        document.getElementById('exd-tip-section').style.display = 'none';
-      }
-
-      // Mistakes
-      const mistakes = document.getElementById('exd-mistakes');
-      if (ex.mistakes?.length) {
-        mistakes.innerHTML = ex.mistakes.map(m =>
-          `<div style="display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--text);line-height:1.5">
-            <span style="color:var(--danger);flex-shrink:0;font-size:16px;line-height:1.2">?</span>${m}
-          </div>`
-        ).join('');
-        document.getElementById('exd-mistakes-section').style.display = 'block';
-      } else {
-        document.getElementById('exd-mistakes-section').style.display = 'none';
-      }
-
-      // Variation
-      if (ex.variation) {
-        document.getElementById('exd-variation').textContent = ex.variation;
-        document.getElementById('exd-variation-section').style.display = 'block';
-      } else {
-        document.getElementById('exd-variation-section').style.display = 'none';
-      }
-
-      // Complete button state
-      const btn = document.getElementById('exd-complete-btn');
-      if (done) {
-        btn.textContent = '? Já concluído!';
-        btn.disabled = true;
-        btn.style.opacity = '0.5';
-      } else {
-        btn.innerHTML = '? Marcar como feito · <b>+25 XP</b>';
-        btn.disabled = false;
-        btn.style.opacity = '1';
-      }
-
-      openModal('modal-exercise-detail');
-      lucide.createIcons();
+      completeExercise(`${exercise.name} (selecionável)`, 20, { showModal: false });
+      showToast('Exercício concluído', `${exercise.name} registrado no dia.`, 'success');
+      renderFitnessPage();
     }
 
-    function completeFromDetail() {
-      if (!_detailEx) return;
-      completeExercise(_detailEx.name, 25);
-      // Update button state
-      const btn = document.getElementById('exd-complete-btn');
-      btn.textContent = '? Já concluído!';
-      btn.disabled = true;
-      btn.style.opacity = '0.5';
+    function hydrateRoutineUi() {
+      const routine = loadFitnessRoutineState();
+      const presetWrap = document.getElementById('fitness-preset-wrap');
+      const presetSelect = document.getElementById('fitness-preset-select');
+      const modeNote = document.getElementById('fitness-mode-note');
+      const aiButton = document.getElementById('fitness-ai-generate-btn');
+      const selectableCard = document.getElementById('fitness-selectable-card');
+
+      document.querySelectorAll('.fitness-mode-btn').forEach(button => {
+        const isActive = button.id === `fitness-mode-${routine.mode}`;
+        button.classList.toggle('active', isActive);
+        button.classList.toggle('btn-primary', isActive);
+        button.classList.toggle('btn-ghost', !isActive);
+      });
+
+      if (presetSelect) {
+        presetSelect.innerHTML = FITNESS_PRESET_PLANS
+          .map(plan => `<option value="${plan.id}">${plan.name}</option>`)
+          .join('');
+        presetSelect.value = routine.presetId || FITNESS_PRESET_PLANS[0]?.id || '';
+      }
+
+      if (presetWrap) presetWrap.hidden = routine.mode !== 'preset';
+      if (aiButton) aiButton.style.display = routine.mode === 'ai' ? 'inline-flex' : 'none';
+      if (selectableCard) selectableCard.hidden = routine.mode !== 'ai';
+
+      if (modeNote) {
+        if (routine.mode === 'none') modeNote.textContent = 'Rotina sem exercícios ativa. Nenhum treino será sugerido.';
+        if (routine.mode === 'ai') modeNote.textContent = 'Plano inteligente: gere seu treino com IA de acordo com seu perfil.';
+        if (routine.mode === 'preset') modeNote.textContent = 'Plano predefinido ativo. Você pode trocar o preset quando quiser.';
+      }
     }
+
+    function renderSelectableExercises() {
+      const list = document.getElementById('fitness-selectable-list');
+      const summary = document.getElementById('fitness-selectable-summary');
+      if (!list) return;
+
+      const logs = loadFitnessSelectableLogs();
+      const doneIds = new Set(Array.isArray(logs[todayKey()]) ? logs[todayKey()] : []);
+      if (summary) summary.textContent = `${doneIds.size}/${SELECTABLE_EXERCISES.length} feitos hoje`;
+
+      list.innerHTML = SELECTABLE_EXERCISES.map(exercise => {
+        const done = doneIds.has(exercise.id);
+        return `
+          <div class="fitness-selectable-item ${done ? 'done' : ''}">
+            <div class="fitness-selectable-copy">
+              <div class="fitness-selectable-name">${exercise.name}</div>
+              <div class="fitness-selectable-meta">${exercise.sets} séries x ${exercise.reps} repetições - descanso ${exercise.rest}</div>
+            </div>
+            <div class="fitness-selectable-actions">
+              <button class="btn ${done ? 'btn-ghost' : 'btn-primary'}" style="padding:8px 12px" ${done ? 'disabled' : `onclick="completeSelectableExercise('${exercise.id}')"`}>
+                ${done ? 'Concluído' : 'Concluir'}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
 
     // Day picker helpers
     function toggleDayPick(btn) {
@@ -171,7 +353,7 @@
 
       if (isNew) {
         grantFitnessXp(50, 'Perfil fitness criado!');
-        unlockFitnessBadge('profile_set', '?? Perfil Configurado', 'Configurou seu perfil físico', '??');
+        unlockFitnessBadge('profile_set', 'Perfil configurado', 'Configurou seu perfil físico', '👤');
         if (!isGamificationEnabled()) showToast('Perfil criado!', '', 'success');
       } else {
         showToast('Perfil atualizado!', '', 'success');
@@ -451,7 +633,7 @@
         return;
       }
 
-      const btn = document.querySelector('#page-fitness .btn-primary');
+      const btn = document.getElementById('fitness-ai-generate-btn');
       if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader" style="width:14px;height:14px;margin-right:4px;animation:spin 1s linear infinite"></i>Gerando...'; lucide.createIcons(); }
 
       const goalLabels = { lose_fat:'perda de gordura', gain_muscle:'ganho muscular', maintain:'manutenção', endurance:'resistência', general:'saúde geral' };
@@ -478,6 +660,7 @@ Retorne JSON puro sem crases:
         "sets": 3,
         "reps": "12",
         "rest": "60s",
+        "videoUrl": "https://www.youtube.com/results?search_query=supino+reto+execucao+certa",
         "tip": "dica curta de execução",
         "muscles": ["Peitoral", "Tríceps", "Ombro anterior"],
         "howTo": ["Passo 1 detalhado", "Passo 2 detalhado", "Passo 3 detalhado"],
@@ -496,13 +679,18 @@ Crie exatamente 7 dias (Seg a Dom). Adapte ao nível e objetivo. Preencha howTo 
         const raw = await requestAiJson({ userPrompt: prompt });
         const parsed = parseAiJson(raw);
         if (!parsed) throw new Error('Não foi possível interpretar o JSON da IA.');
+        const routine = loadFitnessRoutineState();
+        routine.mode = 'ai';
+        saveFitnessRoutineState();
         fitnessPlan = parsed;
+        fitnessPlan.source = 'ai';
+        delete fitnessPlan.presetId;
         fitnessPlan.generatedAt = new Date().toISOString();
         save(STORAGE_KEYS.fitnessPlan, fitnessPlan);
 
         grantXp(40, 'Plano de treino gerado!');
-        unlockBadge('first_plan', '?? Primeiro Plano', 'Gerou seu primeiro plano de treino', '??');
-        showToast('Plano gerado! ??', 'Seu treino personalizado está pronto.', 'success');
+        unlockBadge('first_plan', 'Primeiro plano', 'Gerou seu primeiro plano de treino', '🏁');
+        showToast('Plano gerado!', 'Seu treino personalizado está pronto.', 'success');
         renderFitnessPage();
       } catch(e) {
         showToast('Erro ao gerar plano', e.message, 'warn');
@@ -511,7 +699,8 @@ Crie exatamente 7 dias (Seg a Dom). Adapte ao nível e objetivo. Preencha howTo 
       }
     }
 
-    function completeExercise(exName, xpAmount) {
+    function completeExercise(exName, xpAmount, options = {}) {
+      const showModal = options.showModal !== false;
       const today = todayKey();
       if (!fitnessLogs[today]) fitnessLogs[today] = [];
       if (fitnessLogs[today].includes(exName)) return;
@@ -529,34 +718,54 @@ Crie exatamente 7 dias (Seg a Dom). Adapte ao nível e objetivo. Preencha howTo 
       save(STORAGE_KEYS.fitnessGameState, fitnessGameState);
 
       // Streak badges
-      if (fitnessGameState.streak >= 7)  unlockBadge('streak_7',  '?? Semana Inteira',   '7 dias consecutivos de treino', '??');
-      if (fitnessGameState.streak >= 30) unlockBadge('streak_30', '? Mês Implacável',   '30 dias consecutivos de treino', '?');
+      if (fitnessGameState.streak >= 7)  unlockBadge('streak_7',  'Semana inteira',   '7 dias consecutivos de treino', '🔥');
+      if (fitnessGameState.streak >= 30) unlockBadge('streak_30', 'Mês implacável',   '30 dias consecutivos de treino', '⚡');
 
       // Count total exercises done
       const totalDone = Object.values(fitnessLogs).flat().length;
-      if (totalDone >= 10)  unlockBadge('ex_10',  '?? 10 Exercícios',    'Completou 10 exercícios', '??');
-      if (totalDone >= 50)  unlockBadge('ex_50',  '?? 50 Exercícios',    'Completou 50 exercícios', '??');
-      if (totalDone >= 100) unlockBadge('ex_100', '?? 100 Exercícios',   'Completou 100 exercícios', '??');
+      if (totalDone >= 10)  unlockBadge('ex_10',  '10 exercícios',    'Completou 10 exercícios', '💪');
+      if (totalDone >= 50)  unlockBadge('ex_50',  '50 exercícios',    'Completou 50 exercícios', '🏋️');
+      if (totalDone >= 100) unlockBadge('ex_100', '100 exercícios',   'Completou 100 exercícios', '👑');
+      const weekWorkoutDays = getWorkoutDaysInLast(7);
+      if (weekWorkoutDays >= 4) unlockBadge('wk_4', 'Ritmo Semanal', 'Completou 4 dias de treino em 7 dias', 'WK');
+      if (weekWorkoutDays >= 6) unlockBadge('wk_6', 'Semana Forte', 'Completou 6 dias de treino em 7 dias', 'WK+');
 
-      // Grant unified XP
-      grantXp(xpAmount + 15, `Exercício concluído: ${exName}`);
+      // Grant unified XP silently (sem toast de XP nesta etapa)
+      grantXp(xpAmount + 15);
       persistDaySnapshot(today);
       checkMissionRewards();
       evaluateAchievements();
 
       // Show celebration modal
-      document.getElementById('exdone-title').textContent = `${exName} ?`;
-      document.getElementById('exdone-body').textContent  = 'Ótimo trabalho! Continue assim.';
-      document.getElementById('exdone-xp').textContent    = `+${xpAmount + 15} XP Global`;
-      const emojis = ['??','??','?','???','??','??'];
-      document.getElementById('exdone-emoji').textContent = emojis[Math.floor(Math.random()*emojis.length)];
-      openModal('modal-exercise-done');
+      if (showModal) {
+        document.getElementById('exdone-title').textContent = `${exName} concluído`;
+        document.getElementById('exdone-body').textContent  = 'Ótimo trabalho! Continue assim.';
+        const emojis = ['💪','🔥','🏆','🎯','⚡','🚀'];
+        document.getElementById('exdone-emoji').textContent = emojis[Math.floor(Math.random()*emojis.length)];
+        openModal('modal-exercise-done');
+      }
       refreshUI();
     }
 
     let fitnessWeightChartInst = null;
     function renderFitnessPage() {
       if (!document.getElementById('page-fitness')?.classList.contains('active')) return;
+      const routine = loadFitnessRoutineState();
+      if (routine.mode === 'preset') {
+        if (!routine.presetId) routine.presetId = FITNESS_PRESET_PLANS[0]?.id || '';
+        const shouldApplyPreset = !fitnessPlan || fitnessPlan.source !== 'preset' || fitnessPlan.presetId !== routine.presetId;
+        if (shouldApplyPreset) {
+          const preset = getPresetPlanById(routine.presetId);
+          if (preset) {
+            fitnessPlan = buildPlanFromPreset(preset);
+            save(STORAGE_KEYS.fitnessPlan, fitnessPlan);
+          }
+        }
+      }
+      hydrateRoutineUi();
+      const selectableCard = document.getElementById('fitness-selectable-card');
+      const showSelectableFallback = routine.mode === 'ai' && !fitnessPlan;
+      if (selectableCard) selectableCard.hidden = !showSelectableFallback;
       const gamificationOn = isGamificationEnabled();
       const themeStyles = getComputedStyle(document.documentElement);
       const accent = themeStyles.getPropertyValue('--accent').trim() || '#7c6df7';
@@ -569,21 +778,25 @@ Crie exatamente 7 dias (Seg a Dom). Adapte ao nível e objetivo. Preencha howTo 
 
       if (gamificationOn) {
         const prog = getLevelProgress();
-        document.getElementById('fitness-avatar').textContent     = '??';
+        document.getElementById('fitness-avatar').textContent     = '🏋️';
         document.getElementById('fitness-rank-title').textContent = prog.title;
         document.getElementById('fitness-xp-label').textContent   = `${gameState.xp || 0} XP Coletivo`;
         document.getElementById('fitness-level-label').textContent = `Nível ${prog.level}`;
         document.getElementById('fitness-xp-next').textContent    = `${prog.current}/${prog.next} XP`;
         document.getElementById('fitness-xp-bar').style.width     = prog.pct + '%';
-        document.getElementById('fitness-streak-label').textContent = `?? ${fitnessGameState.streak || 0} dias de treino consecutivos`;
+        document.getElementById('fitness-streak-label').textContent = `🔥 ${fitnessGameState.streak || 0} dias de treino consecutivos`;
+        const weekGoal = Math.max(3, Math.min(6, Array.isArray(fitnessProfile?.days) ? (fitnessProfile.days.length || 4) : 4));
+        const weekDone = getWorkoutDaysInLast(7);
+        const weekGoalLabel = document.getElementById('fitness-week-goal-label');
+        if (weekGoalLabel) weekGoalLabel.textContent = `Meta semanal: ${Math.min(weekDone, weekGoal)}/${weekGoal} treinos`;
       }
 
       // Profile display
       const profileDiv = document.getElementById('fitness-profile-display');
       if (fitnessProfile) {
         const bmi = (fitnessProfile.weight / ((fitnessProfile.height/100)**2)).toFixed(1);
-        const bmiLabel = bmi < 18.5 ? 'Abaixo do peso' : bmi < 25 ? 'Normal ?' : bmi < 30 ? 'Sobrepeso' : 'Obesidade';
-        const goalEmoji = { lose_fat:'??', gain_muscle:'??', maintain:'??', endurance:'??', general:'??' };
+        const bmiLabel = bmi < 18.5 ? 'Abaixo do peso' : bmi < 25 ? 'Normal' : bmi < 30 ? 'Sobrepeso' : 'Obesidade';
+        const goalEmoji = { lose_fat:'🔥', gain_muscle:'💪', maintain:'⚖️', endurance:'🏃', general:'❤️' };
         profileDiv.innerHTML = `
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
             <div class="stat-box"><div class="stat-number" style="font-size:20px">${fitnessProfile.age}</div><div class="stat-label">Idade</div></div>
@@ -629,60 +842,79 @@ Crie exatamente 7 dias (Seg a Dom). Adapte ao nível e objetivo. Preencha howTo 
       // Today's workout
       const todayDiv = document.getElementById('fitness-today-plan');
       const today = todayKey();
-      const dayNames = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-      const todayDayName = dayNames[new Date().getDay()];
+      const weekDiv = document.getElementById('fitness-weekly-plan');
+      const planTag = document.getElementById('fitness-plan-tag');
+      const doneToday = fitnessLogs[today] || [];
 
-      if (fitnessPlan) {
-        const todayPlan = fitnessPlan.weeklyPlan?.find(d => d.day.startsWith(todayDayName.slice(0,3))) || fitnessPlan.todayWorkout;
-        const doneToday = fitnessLogs[today] || [];
+      if (routine.mode === 'none') {
+        if (todayDiv) {
+          todayDiv.innerHTML = `<div class="empty-state"><p>Modo sem exercícios ativo.<br>Ative IA ou plano predefinido para ver os treinos.</p></div>`;
+        }
+        if (weekDiv) {
+          weekDiv.innerHTML = '<p class="text-sm text-muted">Sem plano semanal no modo sem exercícios.</p>';
+        }
+        if (planTag) planTag.style.display = 'none';
+      } else if (fitnessPlan) {
+        const todayPlan = findTodayWorkout(fitnessPlan);
 
         if (!todayPlan || todayPlan.rest) {
           todayDiv.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted)">
-            <div style="font-size:40px;margin-bottom:8px">??</div>
+            <div style="font-size:40px;margin-bottom:8px">🛌</div>
             <div style="font-weight:600">Dia de Descanso</div>
             <div style="font-size:12px;margin-top:4px">Recuperação é parte do treino!</div>
           </div>`;
         } else {
-          const todayDayIdx = fitnessPlan.weeklyPlan ? fitnessPlan.weeklyPlan.indexOf(todayPlan) : -1;
           const exList = (todayPlan.exercises || []).map((ex, exIdx) => {
             const done = doneToday.includes(ex.name);
             return `<div style="display:flex;align-items:flex-start;gap:12px;padding:12px;border-radius:10px;background:${done?'rgba(var(--success-rgb),0.08)':'var(--surface2)'};border:1px solid ${done?'rgba(var(--success-rgb),0.2)':'var(--border)'};margin-bottom:8px;transition:all 0.2s">
               <button onclick="${done ? '' : `completeExercise('${ex.name.replace(/'/g,"\\'")}', 25)`}" style="width:28px;height:28px;border-radius:50%;border:2px solid ${done?'var(--accent2)':'var(--border)'};background:${done?'var(--accent2)':'transparent'};cursor:${done?'default':'pointer'};flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;transition:all 0.2s">
-                ${done ? '?' : ''}
+                ${done ? '✓' : ''}
               </button>
-              <div style="flex:1;cursor:pointer" onclick="openExerciseDetail(${todayDayIdx}, ${exIdx})">
+              <div style="flex:1" >
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
                   <div style="font-weight:600;font-size:14px;${done?'text-decoration:line-through;opacity:0.5':''}">${ex.name}</div>
-                  <span style="font-size:10px;color:var(--muted);white-space:nowrap;display:flex;align-items:center;gap:3px"><i data-lucide="info" style="width:12px;height:12px"></i> detalhes</span>
                 </div>
-                <div style="font-size:12px;color:var(--muted);margin-top:2px">${ex.sets} séries × ${ex.reps} reps · descanso ${ex.rest}</div>
+                  <div style="font-size:12px;color:var(--muted);margin-top:2px">${ex.sets} séries x ${ex.reps} reps - descanso ${ex.rest}</div>
                 ${ex.muscles?.length ? `<div style="display:flex;gap:4px;margin-top:5px;flex-wrap:wrap">${ex.muscles.slice(0,3).map(m=>`<span style="font-size:10px;background:rgba(var(--accent-rgb),0.1);color:var(--accent);border-radius:10px;padding:2px 7px">${m}</span>`).join('')}</div>` : ''}
               </div>
             </div>`;
           }).join('');
-          todayDiv.innerHTML = `<div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:10px">?? ${todayPlan.focus || 'Treino de Hoje'}</div>${exList}`;
+          todayDiv.innerHTML = `<div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:10px">🎯 ${todayPlan.focus || 'Treino de Hoje'}</div>${exList}`;
         }
       }
 
       // Weekly plan
-      const weekDiv = document.getElementById('fitness-weekly-plan');
-      const planTag = document.getElementById('fitness-plan-tag');
-      if (fitnessPlan?.weeklyPlan) {
-        planTag.style.display = 'inline-block';
+      if (routine.mode !== 'none' && fitnessPlan?.weeklyPlan) {
+        if (planTag) {
+          planTag.style.display = 'inline-block';
+          planTag.textContent = routine.mode === 'preset' || fitnessPlan.source === 'preset' ? 'Predefinido' : 'IA';
+        }
         weekDiv.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px">` +
           fitnessPlan.weeklyPlan.map(d => `
             <div style="background:${d.rest?'var(--surface2)':'rgba(var(--accent-rgb),0.08)'};border:1px solid ${d.rest?'var(--border)':'rgba(var(--accent-rgb),0.2)'};border-radius:12px;padding:12px;text-align:center">
               <div style="font-size:11px;color:var(--muted);margin-bottom:4px">${d.day}</div>
-              <div style="font-size:13px;font-weight:700;color:${d.rest?'var(--muted)':'var(--text)'}">${d.rest ? '?? Descanso' : d.focus}</div>
+              <div style="font-size:13px;font-weight:700;color:${d.rest?'var(--muted)':'var(--text)'}">${d.rest ? '🛌 Descanso' : d.focus}</div>
               ${!d.rest ? `<div style="font-size:10px;color:var(--muted);margin-top:4px">${d.exercises?.length || 0} exercícios</div>` : ''}
             </div>`).join('') + '</div>';
 
         if (fitnessPlan.generalTips?.length) {
           weekDiv.innerHTML += `<div style="margin-top:16px;padding:12px;background:rgba(var(--success-rgb),0.08);border:1px solid rgba(var(--success-rgb),0.2);border-radius:10px">
-            <div style="font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:8px">?? Dicas do seu plano</div>
-            ${fitnessPlan.generalTips.map(t => `<div style="font-size:12px;color:var(--muted);margin-bottom:4px">• ${t}</div>`).join('')}
+            <div style="font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:8px">Dicas do plano</div>
+            ${fitnessPlan.generalTips.map(t => `<div style="font-size:12px;color:var(--muted);margin-bottom:4px">- ${t}</div>`).join('')}
           </div>`;
         }
+      } else if (routine.mode !== 'none') {
+        if (todayDiv && !fitnessPlan) {
+          todayDiv.innerHTML = `<div class="empty-state"><p>Nenhum treino disponível.<br>${routine.mode === 'ai' ? 'Configure seu perfil e clique em Gerar com IA.' : 'Selecione um plano predefinido para começar.'}</p></div>`;
+        }
+        if (weekDiv) {
+          weekDiv.innerHTML = `<p class="text-sm text-muted">${routine.mode === 'ai' ? 'Gere um plano com IA para ver sua semana de treinos.' : 'Selecione um preset para montar seu plano semanal.'}</p>`;
+        }
+        if (planTag) planTag.style.display = 'none';
+      }
+
+      if (showSelectableFallback) {
+        renderSelectableExercises();
       }
 
       // Badges

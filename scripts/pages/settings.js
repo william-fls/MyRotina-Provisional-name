@@ -111,7 +111,7 @@ function renderSettingsPage() {
   const themePill = document.getElementById('settings-theme-pill');
   if (themePill) themePill.textContent = currentTheme.name;
   const themeCopy = document.getElementById('settings-theme-copy');
-  if (themeCopy) themeCopy.textContent = `Escolha uma aparência pronta para o app. Tema atual: ${currentTheme.name}.`;
+  if (themeCopy) themeCopy.textContent = `Escolha uma aparencia pronta com ate 2 cores principais (maximo 3 tons visuais). Tema atual: ${currentTheme.name}.`;
   renderThemeOptions();
 
   const notificationEnv = getNotificationEnvironment();

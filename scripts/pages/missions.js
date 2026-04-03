@@ -564,8 +564,8 @@
             ? 'Evento: Segunda lendária'
             : 'Baú ativo';
       renderMissionDeck('game-missions-daily', 'Diária', dailyMissions, dailyClaimed, 'linear-gradient(90deg,var(--accent),var(--accent2))');
-      renderMissionDeck('game-missions-weekly', 'Semanal', weeklyMissions, weeklyClaimed, 'linear-gradient(90deg,var(--accent3),var(--accent2))');
-      renderMissionDeck('game-missions-monthly', 'Mensal', monthlyMissions, monthlyClaimed, 'linear-gradient(90deg,var(--accent),var(--accent3))');
+      renderMissionDeck('game-missions-weekly', 'Semanal', weeklyMissions, weeklyClaimed, 'linear-gradient(90deg,var(--accent),var(--accent2))');
+      renderMissionDeck('game-missions-monthly', 'Mensal', monthlyMissions, monthlyClaimed, 'linear-gradient(90deg,var(--accent2),var(--accent))');
       const roadmapEl = document.getElementById('game-level-roadmap');
       if (roadmapEl) roadmapEl.innerHTML = getLevelMilestones().map(item => `<div class="level-roadmap-item ${progress.level >= item.level ? 'done' : progress.level + 5 >= item.level ? 'near' : ''}"><div class="level-roadmap-level">Lv ${item.level}</div><div><div class="level-roadmap-title">${item.title}</div><div class="inline-note">${item.xp.toLocaleString('pt-BR')} XP</div></div></div>`).join('');
       const highlightEl = document.getElementById('game-achievement-highlight');
@@ -608,7 +608,7 @@
       const notifyEnabled = notificationEnv.enabled;
       const dailyResetEl = document.getElementById('daily-reset-status');
       const notificationEl = document.getElementById('notification-status');
-      const nextResetText = 'As tarefas diárias voltam automaticamente. Quando uma tarefa marcada falha, ela pode gerar um desafio de movimento em vez de perder XP.';
+      const nextResetText = 'As tarefas diárias voltam automaticamente. Quando uma tarefa marcada falha, ela pode gerar uma punição de movimento em vez de perder XP.';
       const lastResetText = dailyReset.lastDate
         ? new Date(`${dailyReset.lastDate}T00:00:00`).toLocaleDateString('pt-BR')
         : 'Ainda não registrado';
