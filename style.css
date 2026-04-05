@@ -2478,10 +2478,10 @@
       align-items: flex-start;
       justify-content: space-between;
       gap: 18px;
-      padding: 18px;
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      background: var(--surface);
+      padding: 16px 18px;
+      border-radius: 14px;
+      border: 1px solid rgba(var(--text-rgb), 0.1);
+      background: linear-gradient(180deg, rgba(var(--surface-rgb), 0.95), rgba(var(--surface-rgb), 0.75));
       box-shadow: none;
     }
 
@@ -2553,8 +2553,8 @@
     .settings-surface {
       padding: 16px;
       border-radius: 14px;
-      border: 1px solid var(--border);
-      background: var(--surface);
+      border: 1px solid rgba(var(--text-rgb), 0.1);
+      background: linear-gradient(180deg, rgba(var(--surface-rgb), 0.86), rgba(var(--surface-rgb), 0.74));
     }
 
     .settings-section-head {
@@ -2572,8 +2572,8 @@
       gap: 16px;
       padding: 12px;
       border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--surface);
+      border: 1px solid rgba(var(--text-rgb), 0.1);
+      background: rgba(var(--surface-rgb), 0.45);
     }
 
     .dashboard-now-card {
@@ -2789,8 +2789,8 @@
       line-height: 1.5;
       padding: 12px 14px;
       border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--surface2);
+      border: 1px solid rgba(var(--text-rgb), 0.1);
+      background: rgba(var(--surface-rgb), 0.4);
     }
 
     .settings-note-card {
@@ -2799,8 +2799,46 @@
       line-height: 1.6;
       padding: 12px 14px;
       border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--surface);
+      border: 1px solid rgba(var(--text-rgb), 0.1);
+      background: rgba(var(--surface-rgb), 0.34);
+    }
+
+    .beta-note {
+      border-color: rgba(var(--warn-rgb), 0.35);
+      background: rgba(var(--warn-rgb), 0.1);
+      color: var(--warn);
+      font-weight: 600;
+    }
+
+    .settings-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .settings-form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .settings-form-field.full {
+      grid-column: 1 / -1;
+    }
+
+    .settings-form-field label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .settings-action-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
     }
 
     .toggle-switch {
@@ -2857,6 +2895,13 @@
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
+    }
+
+    @media (max-width: 900px) {
+      .settings-form-grid,
+      .settings-action-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     .fitness-mode-btn {

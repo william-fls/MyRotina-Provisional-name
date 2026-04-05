@@ -425,10 +425,6 @@
             <div class="section-title">Tarefas Pendentes</div>
             <p class="text-sm text-muted mb-3">Apenas tarefas sem data aparecem aqui. Escolha um período para encaixar cada uma.</p>
             <div id="drag-tasks-list"></div>
-            <div style="margin-top:16px">
-              <div class="section-title">Sugestão de rotina</div>
-              <div id="suggested-routine"></div>
-            </div>
           </div>
         </div>
       </div>
@@ -643,13 +639,9 @@
     <section class="page" id="page-settings">
       <div class="settings-hero mb-4">
         <div class="settings-hero-copy">
-          <div class="settings-kicker">Central de Controle</div>
+          <div class="settings-kicker">Ajustes</div>
           <h1 class="page-title" style="margin-bottom:6px">Configurações</h1>
-          <p class="text-sm text-muted">Personalize a experiência, controle alertas e deixe o app com a sua cara.</p>
-        </div>
-        <div class="settings-hero-badges">
-          <span class="settings-pill-card">Local-first</span>
-          <span class="settings-pill-card soft">Tudo salvo no seu navegador</span>
+          <p class="text-sm text-muted">Menos distracoes, mais controle.</p>
         </div>
       </div>
 
@@ -690,7 +682,7 @@
               <div class="settings-item compact">
                 <div>
                   <div class="settings-title">Cards da tela inicial</div>
-                  <div class="settings-copy">Reordene, mostre ou oculte cards do dashboard.</div>
+                  <div class="settings-copy">Organize os cards do dashboard.</div>
                 </div>
                 <button class="btn btn-ghost" style="padding:8px 12px" onclick="openDashboardOrderModal()">
                   Organizar cards
@@ -700,13 +692,14 @@
               <div class="settings-item">
                 <div>
                   <div class="settings-title">Gamificação</div>
-                  <div class="settings-copy">Ativa missões, conquistas, XP, níveis e cristais sem perder o histórico salvo.</div>
+                  <div class="settings-copy">Ative missoes, conquistas, XP, niveis e cristais.</div>
                 </div>
                 <label class="toggle-switch" for="settings-gamification-toggle">
                   <input type="checkbox" id="settings-gamification-toggle" onchange="toggleGamificationSetting(this.checked)">
                   <span class="toggle-slider"></span>
                 </label>
               </div>
+              <div class="settings-note beta-note">Beta teste: essa area pode mudar e ainda apresentar instabilidades.</div>
               <div class="settings-status" id="settings-gamification-status"></div>
             </div>
           </div>
@@ -722,12 +715,9 @@
               <div class="settings-item compact">
                 <div>
                   <div class="settings-title">Motor atual · <span id="settings-ai-provider">Gemini</span></div>
-                  <div class="settings-copy">Configure chave, modelo e provedor para usar IA no chat e nos treinos.</div>
+                  <div class="settings-copy">Configure o provedor de IA.</div>
                 </div>
                 <button class="btn btn-ghost" style="padding:8px 12px" onclick="openAiSettings()">Configurar</button>
-              </div>
-              <div class="settings-note-card">
-                Sua chave fica salva localmente no navegador e não é enviada para nós.
               </div>
             </div>
           </div>
@@ -753,7 +743,7 @@
               <div class="settings-item compact">
                 <div>
                   <div class="settings-title">Notificações do app</div>
-                  <div class="settings-copy" id="settings-notification-status">Gerencie lembretes e alertas.</div>
+                  <div class="settings-copy" id="settings-notification-status">Ative ou pause alertas.</div>
                 </div>
                 <div class="settings-inline-actions">
                   <span class="settings-pill-card" id="settings-notification-pill">Desligadas</span>
@@ -762,17 +752,53 @@
                   </button>
                 </div>
               </div>
-              <div class="settings-note-card" id="settings-mobile-note">
-                No celular, instalar o app na tela inicial deixa os alertas mais estáveis.
+              <div class="settings-note-card" id="settings-mobile-note"></div>
+
+              <div class="settings-item compact">
+                <div>
+                  <div class="settings-title">Sincronizacao automatica (celular e PC)</div>
+                  <div class="settings-copy">Use os mesmos dados nos dois dispositivos.</div>
+                </div>
+              </div>
+              <div class="settings-status" id="settings-sync-status">Desativada. Preencha os dados e clique em Ativar sync.</div>
+              <div class="settings-note-card">
+                <div class="settings-form-grid">
+                  <div class="settings-form-field full">
+                    <label for="sync-project-url">URL do projeto</label>
+                    <input id="sync-project-url" class="input" type="text" placeholder="https://SEU-PROJETO.supabase.co">
+                  </div>
+                  <div class="settings-form-field full">
+                    <label for="sync-api-key">Chave de API</label>
+                    <input id="sync-api-key" class="input" type="password" autocomplete="off" placeholder="Cole sua anon key">
+                  </div>
+                  <div class="settings-form-field">
+                    <label for="sync-space-id">Codigo de vinculacao</label>
+                    <input id="sync-space-id" class="input" type="text" placeholder="ex: rotina-casa">
+                  </div>
+                  <div class="settings-form-field">
+                    <label for="sync-interval-seconds">Intervalo (segundos)</label>
+                    <input id="sync-interval-seconds" class="input" type="number" min="15" max="600" step="1" value="45">
+                  </div>
+                </div>
+                <div class="settings-action-grid" style="margin-top:12px">
+                  <button class="btn btn-ghost" type="button" onclick="saveSyncSettings(false)">Salvar</button>
+                  <button class="btn btn-primary" type="button" onclick="saveSyncSettings(true)">Ativar sync</button>
+                  <button class="btn btn-ghost" type="button" onclick="syncNow()">Sincronizar agora</button>
+                  <button class="btn btn-danger" type="button" onclick="disableAutoSync()">Desativar</button>
+                </div>
               </div>
 
               <div class="settings-item compact">
                 <div>
-                  <div class="settings-title">Exportar backup</div>
-                  <div class="settings-copy">Baixe seus dados locais: tarefas, hábitos, fotos, pesos e configurações.</div>
+                  <div class="settings-title">Backup manual (opcional)</div>
+                  <div class="settings-copy">Exporte ou importe arquivo JSON.</div>
                 </div>
-                <button class="btn btn-ghost" style="padding:8px 12px" onclick="exportData()">Exportar</button>
+                <div class="settings-inline-actions">
+                  <button class="btn btn-ghost" style="padding:8px 12px" onclick="exportData()">Exportar</button>
+                  <button class="btn btn-primary" style="padding:8px 12px" onclick="triggerImportData()">Importar</button>
+                </div>
               </div>
+              <input type="file" id="import-backup-file" accept=".json,application/json" hidden onchange="importDataFromFile(event)">
             </div>
           </div>
 
@@ -783,9 +809,13 @@
                 <div class="section-title" style="margin-bottom:0">Seus dados continuam seus</div>
               </div>
             </div>
-            <div class="settings-note">
-              Tudo continua salvo localmente no seu navegador: tarefas, hábitos, fotos de progresso, histórico de peso,
-              configurações e chaves de API. Nada é compartilhado sem sua permissão.
+            <div class="settings-note">Seus dados ficam locais neste navegador.</div>
+            <div class="settings-item compact" style="margin-top:14px">
+              <div>
+                <div class="settings-title">Excluir todos os dados locais</div>
+                <div class="settings-copy">Remove tudo deste navegador e reinicia o app do zero.</div>
+              </div>
+              <button class="btn btn-danger" style="padding:8px 12px" onclick="clearAllData()">Excluir tudo</button>
             </div>
           </div>
         </div>

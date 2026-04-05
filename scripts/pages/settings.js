@@ -94,8 +94,8 @@ function renderSettingsPage() {
   if (toggle) toggle.checked = gamificationEnabled;
   const status = document.getElementById('settings-gamification-status');
   if (status) status.textContent = gamificationEnabled
-    ? 'Status atual: gamificação ligada.'
-    : 'Status atual: gamificação desligada.';
+    ? 'Status: gamificacao ligada.'
+    : 'Status: gamificacao desligada.';
 
   const currentName = document.getElementById('settings-current-name');
   if (currentName) currentName.textContent = (load(STORAGE_KEYS.name, '') || 'Você').trim() || 'Você';
@@ -104,14 +104,14 @@ function renderSettingsPage() {
   if (clockToggle) clockToggle.checked = isDashboardClockEnabled();
   const clockStatus = document.getElementById('settings-clock-status');
   if (clockStatus) clockStatus.textContent = isDashboardClockEnabled()
-    ? 'Relógio visível no topo da tela principal.'
-    : 'Relógio escondido para deixar o painel mais compacto.';
+    ? 'Relogio visivel no topo do dashboard.'
+    : 'Relogio oculto no dashboard.';
 
   const currentTheme = getThemePreset(getCurrentThemeId());
   const themePill = document.getElementById('settings-theme-pill');
   if (themePill) themePill.textContent = currentTheme.name;
   const themeCopy = document.getElementById('settings-theme-copy');
-  if (themeCopy) themeCopy.textContent = `Escolha uma aparencia pronta com ate 2 cores principais (maximo 3 tons visuais). Tema atual: ${currentTheme.name}.`;
+  if (themeCopy) themeCopy.textContent = `Tema atual: ${currentTheme.name}.`;
   renderThemeOptions();
 
   const notificationEnv = getNotificationEnvironment();
@@ -133,7 +133,9 @@ function renderSettingsPage() {
         : notificationEnv.enabled ? 'Pausar alertas' : 'Ativar alertas';
   }
 
+  if (typeof renderSyncSettings === 'function') renderSyncSettings();
   syncAiProviderLabels();
   syncDashboardClockVisibility();
   lucide.createIcons();
 }
+

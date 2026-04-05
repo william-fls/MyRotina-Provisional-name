@@ -466,22 +466,6 @@ function renderTimeBlocks() {
         </div>`).join('');
     }
   }
-
-  const sr = document.getElementById('suggested-routine');
-  if (sr) {
-    sr.innerHTML = `
-      <div class="text-sm text-muted" style="line-height:1.8">
-        <div><strong>07:00</strong> Acordar e café da manhã</div>
-        <div><strong>08:00</strong> E-mails e tarefas urgentes</div>
-        <div><strong>10:00</strong> Foco profundo</div>
-        <div><strong>12:30</strong> Almoço e pausa</div>
-        <div><strong>14:00</strong> Continuação do trabalho</div>
-        <div><strong>17:00</strong> Exercício físico</div>
-        <div><strong>19:00</strong> Leitura ou estudo</div>
-        <div><strong>21:00</strong> Meditação e encerramento</div>
-        <div><strong>23:00</strong> Dormir</div>
-      </div>`;
-  }
   lucide.createIcons();
 }
 

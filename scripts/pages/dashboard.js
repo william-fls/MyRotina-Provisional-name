@@ -88,12 +88,14 @@ function loadDashboardCardVisibility() {
 function persistDashboardCardOrder(order) {
   const safe = sanitizeDashboardCardOrder(order);
   localStorage.setItem(DASHBOARD_CARD_ORDER_KEY, JSON.stringify(safe));
+  if (typeof markSyncDirty === 'function') markSyncDirty();
   return safe;
 }
 
 function persistDashboardCardVisibility(visibility) {
   const safe = sanitizeDashboardCardVisibility(visibility);
   localStorage.setItem(DASHBOARD_CARD_VISIBILITY_KEY, JSON.stringify(safe));
+  if (typeof markSyncDirty === 'function') markSyncDirty();
   return safe;
 }
 

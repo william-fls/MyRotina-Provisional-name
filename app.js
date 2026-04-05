@@ -30,12 +30,24 @@
       exerciseChallenges: 'mr_exerciseChallenges',
       aiChatHistory: 'mr_aiChatHistory',
       aiSettings: 'mr_aiSettings',
+      syncConfig: 'mr_syncConfig',
+      syncMeta: 'mr_syncMeta',
+      syncDeviceId: 'mr_syncDeviceId',
     };
 
     function load(key, def) {
       try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch { return def; }
     }
-    function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+    function isSyncInternalKey(key) {
+      return key === STORAGE_KEYS.syncConfig
+        || key === STORAGE_KEYS.syncMeta
+        || key === STORAGE_KEYS.syncDeviceId;
+    }
+
+    function save(key, val) {
+      localStorage.setItem(key, JSON.stringify(val));
+      if (!isSyncInternalKey(key)) markSyncDirty();
+    }
 
     let tasks = load(STORAGE_KEYS.tasks, []);
     let habits = load(STORAGE_KEYS.habits, []);
@@ -74,9 +86,16 @@
     let progressPhotos = load(STORAGE_KEYS.progressPhotos, []);
     let appSettings = load(STORAGE_KEYS.appSettings, { gamificationEnabled: true });
     let aiSettings = load(STORAGE_KEYS.aiSettings, null);
+    let syncConfig = load(STORAGE_KEYS.syncConfig, null);
+    let syncMeta = load(STORAGE_KEYS.syncMeta, null);
+    let syncDeviceId = load(STORAGE_KEYS.syncDeviceId, '');
     let editingTaskId = null;
     let currentFilter = 'all';
     let pendingProgressPhotoData = '';
+    let syncLoopTimer = null;
+    let syncSoonTimer = null;
+    let syncInFlight = false;
+    let suppressSyncDirty = false;
 
     function localDateKey(date = new Date()) {
       const safe = new Date(date);
@@ -110,6 +129,25 @@
       daySnapshots: {},
     };
     const DEFAULT_REWARD_LEDGER = { tasks: {}, habits: {} };
+    const DEFAULT_SYNC_CONFIG = {
+      enabled: false,
+      provider: 'supabase',
+      projectUrl: '',
+      apiKey: '',
+      spaceId: '',
+      intervalSeconds: 45,
+    };
+    const DEFAULT_SYNC_META = {
+      localDirty: false,
+      localUpdatedAt: '',
+      lastSyncAt: '',
+      lastPushAt: '',
+      lastPullAt: '',
+      lastRemoteUpdatedAt: '',
+      lastLocalChecksum: '',
+      lastRemoteChecksum: '',
+      lastError: '',
+    };
     const AI_PROVIDER_META = {
       gemini: {
         label: 'Google Gemini',
@@ -190,6 +228,102 @@
       },
     };
 
+    function clampSyncInterval(value) {
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed)) return DEFAULT_SYNC_CONFIG.intervalSeconds;
+      return Math.max(15, Math.min(600, Math.round(parsed)));
+    }
+
+    function normalizeSyncProjectUrl(value) {
+      let projectUrl = String(value || '').trim();
+      if (!projectUrl) return '';
+      if (!/^https?:\/\//i.test(projectUrl)) projectUrl = `https://${projectUrl}`;
+      return projectUrl.replace(/\/+$/, '');
+    }
+
+    function sanitizeSyncSpaceId(value) {
+      return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]+/g, '-')
+        .replace(/-{2,}/g, '-')
+        .replace(/^[-_]+|[-_]+$/g, '')
+        .slice(0, 64);
+    }
+
+    function normalizeSyncConfig(raw) {
+      const safe = raw && typeof raw === 'object' ? raw : {};
+      return {
+        ...DEFAULT_SYNC_CONFIG,
+        ...safe,
+        enabled: Boolean(safe.enabled),
+        provider: 'supabase',
+        projectUrl: normalizeSyncProjectUrl(safe.projectUrl),
+        apiKey: typeof safe.apiKey === 'string' ? safe.apiKey.trim() : '',
+        spaceId: sanitizeSyncSpaceId(safe.spaceId),
+        intervalSeconds: clampSyncInterval(safe.intervalSeconds),
+      };
+    }
+
+    function normalizeSyncMeta(raw) {
+      const safe = raw && typeof raw === 'object' ? raw : {};
+      return {
+        ...DEFAULT_SYNC_META,
+        ...safe,
+        localDirty: Boolean(safe.localDirty),
+      };
+    }
+
+    function markSyncDirty() {
+      if (suppressSyncDirty) return;
+      if (!syncMeta || typeof syncMeta !== 'object') return;
+      syncMeta.localDirty = true;
+      syncMeta.localUpdatedAt = new Date().toISOString();
+      save(STORAGE_KEYS.syncMeta, syncMeta);
+      scheduleAutoSync(2000);
+    }
+
+    function formatSyncTimestamp(iso) {
+      if (!iso) return 'nunca';
+      const parsed = new Date(iso);
+      if (Number.isNaN(parsed.getTime())) return 'nunca';
+      return parsed.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+    }
+
+    function renderSyncSettings() {
+      const statusEl = document.getElementById('settings-sync-status');
+      const urlInput = document.getElementById('sync-project-url');
+      const keyInput = document.getElementById('sync-api-key');
+      const spaceInput = document.getElementById('sync-space-id');
+      const intervalInput = document.getElementById('sync-interval-seconds');
+      if (!statusEl && !urlInput && !keyInput && !spaceInput && !intervalInput) return;
+
+      const ready = Boolean(syncConfig.projectUrl && syncConfig.apiKey && syncConfig.spaceId);
+      if (urlInput) urlInput.value = syncConfig.projectUrl || '';
+      if (keyInput) keyInput.value = syncConfig.apiKey || '';
+      if (spaceInput) spaceInput.value = syncConfig.spaceId || '';
+      if (intervalInput) intervalInput.value = String(syncConfig.intervalSeconds || DEFAULT_SYNC_CONFIG.intervalSeconds);
+
+      if (!statusEl) return;
+      if (!syncConfig.enabled) {
+        statusEl.textContent = 'Desativada. Preencha os dados e clique em Ativar sync.';
+        return;
+      }
+      if (!ready) {
+        statusEl.textContent = 'Ative somente após preencher URL, chave e código de vínculo.';
+        return;
+      }
+      if (syncMeta.lastError) {
+        statusEl.textContent = `Ativa com erro: ${syncMeta.lastError}`;
+        return;
+      }
+      statusEl.textContent = `Ativa. Última sincronização: ${formatSyncTimestamp(syncMeta.lastSyncAt)}.`;
+    }
+
+    function isAutoSyncReady() {
+      return Boolean(syncConfig.enabled && syncConfig.projectUrl && syncConfig.apiKey && syncConfig.spaceId);
+    }
+
     function normalizeAiSettings(raw) {
       const safe = raw && typeof raw === 'object' ? raw : {};
       const provider = AI_PROVIDER_META[safe.provider] ? safe.provider : DEFAULT_AI_SETTINGS.provider;
@@ -251,8 +385,11 @@
     // STORAGE NORMALIZATION
     // =============================================
     function normalizeStorage() {
-      migrateLegacyHabitsToTasks();
-      tasks = Array.isArray(tasks) ? tasks : [];
+      const previousSuppress = suppressSyncDirty;
+      suppressSyncDirty = true;
+      try {
+        migrateLegacyHabitsToTasks();
+        tasks = Array.isArray(tasks) ? tasks : [];
 
       habits = Array.isArray(habits) ? habits : [];
       habitLogs = habitLogs && typeof habitLogs === 'object' ? habitLogs : {};
@@ -268,6 +405,10 @@
         ? { ...DEFAULT_APP_SETTINGS, ...appSettings }
         : { ...DEFAULT_APP_SETTINGS };
       aiSettings = normalizeAiSettings(aiSettings);
+      syncConfig = normalizeSyncConfig(syncConfig);
+      syncMeta = normalizeSyncMeta(syncMeta);
+      if (!syncMeta.localUpdatedAt) syncMeta.localUpdatedAt = new Date().toISOString();
+      if (!syncDeviceId || typeof syncDeviceId !== 'string') syncDeviceId = uid();
       const legacyGeminiKey = localStorage.getItem('mr_gemini_key');
       if (legacyGeminiKey && !aiSettings.providers.gemini.key) {
         aiSettings.providers.gemini.key = legacyGeminiKey;
@@ -384,6 +525,12 @@
       save(STORAGE_KEYS.taskExerciseLog, taskExerciseLog);
       save(STORAGE_KEYS.exerciseChallenges, exerciseChallenges);
       save(STORAGE_KEYS.progressPhotos, progressPhotos);
+      save(STORAGE_KEYS.syncConfig, syncConfig);
+      save(STORAGE_KEYS.syncMeta, syncMeta);
+      save(STORAGE_KEYS.syncDeviceId, syncDeviceId);
+      } finally {
+        suppressSyncDirty = previousSuppress;
+      }
     }
 
     function uid() { return Math.random().toString(36).slice(2, 10); }
@@ -1384,13 +1531,267 @@
       'Revise o dia no fim da tarde e ajuste o que ficou pendente.',
       'Quando travar, comece pela menor próxima ação.',
     ];
-    function exportData() {
-      const data = {
+
+    function getSyncHeaders(includeJson = false) {
+      const headers = {
+        apikey: syncConfig.apiKey,
+        Authorization: `Bearer ${syncConfig.apiKey}`,
+      };
+      if (includeJson) headers['Content-Type'] = 'application/json';
+      return headers;
+    }
+
+    function checksumFromString(input) {
+      let hash = 2166136261;
+      for (let i = 0; i < input.length; i += 1) {
+        hash ^= input.charCodeAt(i);
+        hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+      }
+      return (hash >>> 0).toString(16).padStart(8, '0');
+    }
+
+    function snapshotHasMeaningfulData(snapshot) {
+      if (!snapshot || typeof snapshot !== 'object') return false;
+      if (Array.isArray(snapshot.tasks) && snapshot.tasks.length > 0) return true;
+      if (Array.isArray(snapshot.habits) && snapshot.habits.length > 0) return true;
+      if (Array.isArray(snapshot.progressPhotos) && snapshot.progressPhotos.length > 0) return true;
+      if (Array.isArray(snapshot.aiChatHistory) && snapshot.aiChatHistory.length > 0) return true;
+      if (Array.isArray(snapshot.fitnessWeightLog) && snapshot.fitnessWeightLog.length > 0) return true;
+      if (snapshot.fitnessProfile && typeof snapshot.fitnessProfile === 'object') return true;
+      if (snapshot.fitnessPlan && typeof snapshot.fitnessPlan === 'object') return true;
+      if (typeof snapshot.name === 'string' && snapshot.name.trim()) return true;
+      const objectKeys = [
+        snapshot.habitLogs,
+        snapshot.dailyTaskLogs,
+        snapshot.taskStats,
+        snapshot.fitnessLogs,
+      ];
+      if (objectKeys.some(entry => entry && typeof entry === 'object' && Object.keys(entry).length > 0)) return true;
+      if (snapshot.timeblocks && typeof snapshot.timeblocks === 'object') {
+        const hasTaskInBlock = Object.values(snapshot.timeblocks).some(block => Array.isArray(block) && block.length > 0);
+        if (hasTaskInBlock) return true;
+      }
+      return false;
+    }
+
+    function buildSyncEnvelope() {
+      const snapshot = buildBackupSnapshot();
+      const raw = JSON.stringify(snapshot);
+      return {
+        app: 'Minha Rotina',
+        version: 2,
+        updatedAt: syncMeta.localUpdatedAt || new Date().toISOString(),
+        updatedBy: syncDeviceId || 'device',
+        checksum: checksumFromString(raw),
+        data: snapshot,
+      };
+    }
+
+    async function readSyncErrorMessage(response, actionLabel) {
+      let detail = '';
+      try {
+        detail = (await response.text()).replace(/\s+/g, ' ').trim();
+      } catch {}
+      const shortDetail = detail ? ` ${detail.slice(0, 180)}` : '';
+      return `Falha na ${actionLabel} (${response.status}).${shortDetail}`;
+    }
+
+    async function fetchRemoteSyncEnvelope() {
+      const endpoint = `${syncConfig.projectUrl}/rest/v1/mr_sync_states?id=eq.${encodeURIComponent(syncConfig.spaceId)}&select=id,payload,updated_at&limit=1`;
+      const response = await fetch(endpoint, { headers: getSyncHeaders(false) });
+      if (!response.ok) throw new Error(await readSyncErrorMessage(response, 'leitura'));
+      const rows = await response.json();
+      const row = Array.isArray(rows) ? rows[0] : null;
+      if (!row) return null;
+      return {
+        envelope: row.payload && typeof row.payload === 'object' ? row.payload : null,
+        updatedAt: row.updated_at || '',
+      };
+    }
+
+    async function pushRemoteSyncEnvelope(envelope) {
+      const endpoint = `${syncConfig.projectUrl}/rest/v1/mr_sync_states?on_conflict=id`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          ...getSyncHeaders(true),
+          Prefer: 'resolution=merge-duplicates,return=representation',
+        },
+        body: JSON.stringify([{ id: syncConfig.spaceId, payload: envelope }]),
+      });
+      if (!response.ok) throw new Error(await readSyncErrorMessage(response, 'gravação'));
+      const rows = await response.json().catch(() => []);
+      return Array.isArray(rows) ? rows[0] : null;
+    }
+
+    function scheduleAutoSync(delayMs = 0) {
+      if (!isAutoSyncReady()) return;
+      if (syncSoonTimer) clearTimeout(syncSoonTimer);
+      syncSoonTimer = setTimeout(() => {
+        runCloudSync({ reason: 'change' });
+      }, Math.max(0, delayMs));
+    }
+
+    function restartAutoSyncLoop() {
+      if (syncLoopTimer) clearInterval(syncLoopTimer);
+      syncLoopTimer = null;
+      if (!isAutoSyncReady()) return;
+      const intervalMs = clampSyncInterval(syncConfig.intervalSeconds) * 1000;
+      syncLoopTimer = setInterval(() => {
+        runCloudSync({ reason: 'interval' });
+      }, intervalMs);
+      scheduleAutoSync(1200);
+    }
+
+    async function runCloudSync({ manual = false, reason = 'manual' } = {}) {
+      if (!isAutoSyncReady()) {
+        if (manual) showToast('Sync indisponível', 'Preencha URL, chave e código de vínculo para sincronizar.', 'warn');
+        return false;
+      }
+      if (syncInFlight) return false;
+      syncInFlight = true;
+      try {
+        const now = new Date().toISOString();
+        const localEnvelope = buildSyncEnvelope();
+        const localChecksum = localEnvelope.checksum;
+        const localUpdatedAtMs = new Date(syncMeta.localUpdatedAt || localEnvelope.updatedAt || now).getTime();
+        const remote = await fetchRemoteSyncEnvelope();
+
+        if (!remote || !remote.envelope) {
+          const pushed = await pushRemoteSyncEnvelope(localEnvelope);
+          const remoteTime = pushed?.updated_at || now;
+          syncMeta.localDirty = false;
+          syncMeta.lastPushAt = remoteTime;
+          syncMeta.lastSyncAt = remoteTime;
+          syncMeta.lastRemoteUpdatedAt = remoteTime;
+          syncMeta.lastLocalChecksum = localChecksum;
+          syncMeta.lastRemoteChecksum = localChecksum;
+          syncMeta.lastError = '';
+          save(STORAGE_KEYS.syncMeta, syncMeta);
+          if (manual) showToast('Sincronizado', 'Progresso enviado para a nuvem.', 'success');
+          return true;
+        }
+
+        const remoteEnvelope = remote.envelope || {};
+        const remoteRaw = JSON.stringify(remoteEnvelope.data || {});
+        const remoteChecksum = remoteEnvelope.checksum || checksumFromString(remoteRaw);
+        const remoteUpdatedAt = remoteEnvelope.updatedAt || remote.updatedAt || '';
+        const remoteUpdatedAtMs = new Date(remoteUpdatedAt || now).getTime();
+        const localHasData = snapshotHasMeaningfulData(localEnvelope.data);
+        const remoteHasData = snapshotHasMeaningfulData(remoteEnvelope.data || {});
+
+        if (remoteChecksum === localChecksum) {
+          syncMeta.localDirty = false;
+          syncMeta.lastSyncAt = now;
+          syncMeta.lastRemoteUpdatedAt = remoteUpdatedAt || syncMeta.lastRemoteUpdatedAt;
+          syncMeta.lastLocalChecksum = localChecksum;
+          syncMeta.lastRemoteChecksum = remoteChecksum;
+          syncMeta.lastError = '';
+          save(STORAGE_KEYS.syncMeta, syncMeta);
+          if (manual) showToast('Sincronizado', 'Tudo em dia entre seus dispositivos.', 'success');
+          return true;
+        }
+
+        const neverSyncedOnDevice = !syncMeta.lastSyncAt;
+        const preferRemoteBootstrap = neverSyncedOnDevice
+          && !syncMeta.localDirty
+          && !localHasData
+          && remoteHasData;
+        const shouldPullRemote = preferRemoteBootstrap
+          || (Number.isFinite(remoteUpdatedAtMs) && (!Number.isFinite(localUpdatedAtMs) || remoteUpdatedAtMs > localUpdatedAtMs));
+        if (shouldPullRemote) {
+          applyImportedBackup(remoteEnvelope.data || {}, { showSuccessToast: false });
+          syncMeta.localDirty = false;
+          syncMeta.localUpdatedAt = remoteUpdatedAt || now;
+          syncMeta.lastPullAt = now;
+          syncMeta.lastSyncAt = now;
+          syncMeta.lastRemoteUpdatedAt = remoteUpdatedAt || now;
+          syncMeta.lastLocalChecksum = remoteChecksum;
+          syncMeta.lastRemoteChecksum = remoteChecksum;
+          syncMeta.lastError = '';
+          save(STORAGE_KEYS.syncMeta, syncMeta);
+          if (manual) showToast('Sincronizado', 'Atualizações remotas aplicadas neste dispositivo.', 'success');
+          return true;
+        }
+
+        const pushed = await pushRemoteSyncEnvelope(localEnvelope);
+        const pushedAt = pushed?.updated_at || now;
+        syncMeta.localDirty = false;
+        syncMeta.lastPushAt = pushedAt;
+        syncMeta.lastSyncAt = pushedAt;
+        syncMeta.lastRemoteUpdatedAt = pushedAt;
+        syncMeta.lastLocalChecksum = localChecksum;
+        syncMeta.lastRemoteChecksum = localChecksum;
+        syncMeta.lastError = '';
+        save(STORAGE_KEYS.syncMeta, syncMeta);
+        if (manual) showToast('Sincronizado', 'Progresso atualizado na nuvem.', 'success');
+        return true;
+      } catch (error) {
+        syncMeta.lastError = error?.message || 'Erro na sincronização automática.';
+        save(STORAGE_KEYS.syncMeta, syncMeta);
+        if (manual) showToast('Erro na sync', syncMeta.lastError, 'warn');
+        return false;
+      } finally {
+        syncInFlight = false;
+        if (reason !== 'change' || manual) renderSyncSettings();
+      }
+    }
+
+    function saveSyncSettings(enableNow = false) {
+      const urlInput = document.getElementById('sync-project-url');
+      const keyInput = document.getElementById('sync-api-key');
+      const spaceInput = document.getElementById('sync-space-id');
+      const intervalInput = document.getElementById('sync-interval-seconds');
+      const nextConfig = normalizeSyncConfig({
+        ...syncConfig,
+        projectUrl: urlInput?.value || '',
+        apiKey: keyInput?.value || '',
+        spaceId: spaceInput?.value || '',
+        intervalSeconds: intervalInput?.value || syncConfig.intervalSeconds,
+        enabled: enableNow ? true : syncConfig.enabled,
+      });
+
+      if (enableNow && (!nextConfig.projectUrl || !nextConfig.apiKey || !nextConfig.spaceId)) {
+        showToast('Campos obrigatórios', 'Preencha URL, chave e código de vínculo para ativar a sync.', 'warn');
+        return;
+      }
+
+      syncConfig = nextConfig;
+      syncMeta.lastError = '';
+      if (!syncMeta.localUpdatedAt) syncMeta.localUpdatedAt = new Date().toISOString();
+      save(STORAGE_KEYS.syncConfig, syncConfig);
+      save(STORAGE_KEYS.syncMeta, syncMeta);
+      restartAutoSyncLoop();
+      renderSyncSettings();
+      showToast(
+        enableNow ? 'Sync automática ativada' : 'Configuração salva',
+        enableNow ? 'Seu progresso será sincronizado entre celular e PC.' : 'As informações de sincronização foram atualizadas.',
+        'success'
+      );
+      if (enableNow) runCloudSync({ manual: true, reason: 'activate' });
+    }
+
+    function disableAutoSync() {
+      syncConfig.enabled = false;
+      save(STORAGE_KEYS.syncConfig, syncConfig);
+      restartAutoSyncLoop();
+      renderSyncSettings();
+      showToast('Sync automática desativada', 'Este dispositivo voltou a funcionar apenas localmente.', 'warn');
+    }
+
+    function syncNow() {
+      runCloudSync({ manual: true, reason: 'manual' });
+    }
+
+    function buildBackupSnapshot() {
+      return {
         tasks,
         habits,
         habitLogs,
+        dailyTaskLogs,
         taskStats,
         timeblocks,
+        timeblockHistory,
         dailyReset,
         notificationSettings,
         notificationLog,
@@ -1405,13 +1806,231 @@
         fitnessLogs,
         fitnessWeightLog,
         fitnessGameState,
-        exportedAt: new Date().toISOString()
+        aiSettings,
+        aiChatHistory: load(STORAGE_KEYS.aiChatHistory, []),
+        name: load(STORAGE_KEYS.name, ''),
+        theme: getCurrentThemeId(),
+        dashboardCardOrder: typeof loadDashboardCardOrder === 'function' ? loadDashboardCardOrder() : null,
+        dashboardCardVisibility: typeof loadDashboardCardVisibility === 'function' ? loadDashboardCardVisibility() : null,
+        legacyGeminiKey: localStorage.getItem('mr_gemini_key') || '',
       };
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    }
+
+    function buildBackupPayload() {
+      return {
+        app: 'Minha Rotina',
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        data: buildBackupSnapshot(),
+      };
+    }
+
+    function exportData() {
+      const payload = buildBackupPayload();
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = `minha-rotina-${todayKey()}.json`;
-      a.click(); URL.revokeObjectURL(url);
+      a.href = url;
+      a.download = `minha-rotina-${todayKey()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Backup exportado', 'Arquivo pronto para usar no celular ou no PC.', 'success');
+    }
+
+    function triggerImportData() {
+      document.getElementById('import-backup-file')?.click();
+    }
+
+    function extractBackupSnapshot(rawPayload) {
+      if (!rawPayload || typeof rawPayload !== 'object') return null;
+      if (rawPayload.data && typeof rawPayload.data === 'object') return rawPayload.data;
+      return rawPayload;
+    }
+
+    function applyImportedBackup(snapshot, { showSuccessToast = true } = {}) {
+      const source = snapshot && typeof snapshot === 'object' ? snapshot : {};
+      const previousSuppress = suppressSyncDirty;
+      suppressSyncDirty = true;
+      try {
+        tasks = Array.isArray(source.tasks) ? source.tasks : [];
+        habits = Array.isArray(source.habits) ? source.habits : [];
+        habitLogs = source.habitLogs && typeof source.habitLogs === 'object' ? source.habitLogs : {};
+        dailyTaskLogs = source.dailyTaskLogs && typeof source.dailyTaskLogs === 'object' ? source.dailyTaskLogs : {};
+        taskStats = source.taskStats && typeof source.taskStats === 'object' ? source.taskStats : {};
+        timeblocks = source.timeblocks && typeof source.timeblocks === 'object' ? source.timeblocks : { ...EMPTY_TIMEBLOCKS };
+        timeblockHistory = source.timeblockHistory && typeof source.timeblockHistory === 'object' ? source.timeblockHistory : {};
+        dailyReset = source.dailyReset && typeof source.dailyReset === 'object'
+          ? source.dailyReset
+          : { lastDate: '', totalResets: 0 };
+        notificationSettings = source.notificationSettings && typeof source.notificationSettings === 'object'
+          ? { ...DEFAULT_NOTIFICATION_SETTINGS, ...source.notificationSettings }
+          : { ...DEFAULT_NOTIFICATION_SETTINGS };
+        notificationLog = source.notificationLog && typeof source.notificationLog === 'object' ? source.notificationLog : {};
+        gameState = source.gameState && typeof source.gameState === 'object'
+          ? { ...DEFAULT_GAME_STATE, ...source.gameState }
+          : { ...DEFAULT_GAME_STATE };
+        appSettings = source.appSettings && typeof source.appSettings === 'object'
+          ? { ...DEFAULT_APP_SETTINGS, ...source.appSettings }
+          : { ...DEFAULT_APP_SETTINGS };
+        rewardLedger = source.rewardLedger && typeof source.rewardLedger === 'object'
+          ? source.rewardLedger
+          : { ...DEFAULT_REWARD_LEDGER };
+        taskExerciseLog = source.taskExerciseLog && typeof source.taskExerciseLog === 'object' ? source.taskExerciseLog : {};
+        exerciseChallenges = Array.isArray(source.exerciseChallenges) ? source.exerciseChallenges : [];
+        progressPhotos = Array.isArray(source.progressPhotos) ? source.progressPhotos : [];
+        fitnessProfile = source.fitnessProfile && typeof source.fitnessProfile === 'object' ? source.fitnessProfile : null;
+        fitnessPlan = source.fitnessPlan && typeof source.fitnessPlan === 'object' ? source.fitnessPlan : null;
+        fitnessLogs = source.fitnessLogs && typeof source.fitnessLogs === 'object' ? source.fitnessLogs : {};
+        fitnessWeightLog = Array.isArray(source.fitnessWeightLog) ? source.fitnessWeightLog : [];
+        fitnessGameState = source.fitnessGameState && typeof source.fitnessGameState === 'object'
+          ? source.fitnessGameState
+          : { xp: 0, streak: 0, lastTrainingDate: '', badges: [] };
+        aiSettings = source.aiSettings && typeof source.aiSettings === 'object' ? source.aiSettings : null;
+
+        const importedChat = Array.isArray(source.aiChatHistory) ? source.aiChatHistory : [];
+        save(STORAGE_KEYS.aiChatHistory, importedChat);
+        if (typeof aiChatHistory !== 'undefined') aiChatHistory = importedChat;
+
+        const importedName = typeof source.name === 'string' ? source.name.trim() : '';
+        if (importedName) save(STORAGE_KEYS.name, importedName);
+        else localStorage.removeItem(STORAGE_KEYS.name);
+
+        const importedTheme = typeof source.theme === 'string' ? source.theme : DEFAULT_THEME_ID;
+        applyTheme(importedTheme, { persist: true });
+
+        if (Array.isArray(source.dashboardCardOrder) && typeof persistDashboardCardOrder === 'function') {
+          persistDashboardCardOrder(source.dashboardCardOrder);
+        }
+        if (source.dashboardCardVisibility && typeof source.dashboardCardVisibility === 'object'
+          && typeof persistDashboardCardVisibility === 'function') {
+          persistDashboardCardVisibility(source.dashboardCardVisibility);
+        }
+        if (typeof source.legacyGeminiKey === 'string' && source.legacyGeminiKey) {
+          localStorage.setItem('mr_gemini_key', source.legacyGeminiKey);
+        } else {
+          localStorage.removeItem('mr_gemini_key');
+        }
+
+        normalizeStorage();
+      } finally {
+        suppressSyncDirty = previousSuppress;
+      }
+      syncMeta.localDirty = false;
+      syncMeta.localUpdatedAt = new Date().toISOString();
+      save(STORAGE_KEYS.syncMeta, syncMeta);
+      syncNotificationPermission();
+      syncAiProviderLabels();
+      updateGamificationVisibility();
+      syncDashboardClockVisibility();
+      if (typeof updateTodayTaskStats === 'function') updateTodayTaskStats();
+      if (typeof checkNewDay === 'function') checkNewDay();
+      if (typeof recalcActivityStreak === 'function') recalcActivityStreak();
+      if (typeof checkMissionRewards === 'function') checkMissionRewards();
+      if (typeof evaluateAchievements === 'function') evaluateAchievements();
+      renderTip();
+      refreshUI();
+      if (typeof renderAIChatHistory === 'function') renderAIChatHistory();
+      if (typeof renderFitnessPage === 'function') renderFitnessPage();
+      if (typeof renderSettingsPage === 'function') renderSettingsPage();
+      if (showSuccessToast) {
+        showToast('Progresso vinculado', 'Dados sincronizados com sucesso neste dispositivo.', 'success');
+      }
+    }
+
+    async function importDataFromFile(event) {
+      const input = event?.target;
+      const file = input?.files?.[0];
+      if (!file) return;
+      try {
+        const rawText = await file.text();
+        const parsed = JSON.parse(rawText);
+        const snapshot = extractBackupSnapshot(parsed);
+        if (!snapshot || typeof snapshot !== 'object') throw new Error('Formato inválido');
+        showConfirm(
+          'Vincular progresso neste dispositivo?',
+          'Isso vai substituir os dados atuais deste navegador pelos dados do arquivo selecionado.',
+          () => applyImportedBackup(snapshot)
+        );
+      } catch {
+        showToast('Importação falhou', 'Arquivo inválido ou corrompido. Verifique o backup e tente novamente.', 'danger');
+      } finally {
+        if (input) input.value = '';
+      }
+    }
+
+    function clearAllDataNow() {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('mr_')) localStorage.removeItem(key);
+      });
+
+      tasks = [];
+      habits = [];
+      habitLogs = {};
+      dailyTaskLogs = {};
+      taskStats = {};
+      timeblocks = { ...EMPTY_TIMEBLOCKS };
+      timeblockHistory = {};
+      dailyReset = { lastDate: '', totalResets: 0 };
+      notificationSettings = { ...DEFAULT_NOTIFICATION_SETTINGS };
+      notificationLog = {};
+      gameState = { ...DEFAULT_GAME_STATE };
+      appSettings = { ...DEFAULT_APP_SETTINGS };
+      rewardLedger = { ...DEFAULT_REWARD_LEDGER };
+      taskExerciseLog = {};
+      exerciseChallenges = [];
+      progressPhotos = [];
+      fitnessProfile = null;
+      fitnessPlan = null;
+      fitnessLogs = {};
+      fitnessWeightLog = [];
+      fitnessGameState = { xp: 0, streak: 0, lastTrainingDate: '', badges: [] };
+      aiSettings = normalizeAiSettings(null);
+      syncConfig = { ...DEFAULT_SYNC_CONFIG };
+      syncMeta = {
+        ...DEFAULT_SYNC_META,
+        localDirty: false,
+        localUpdatedAt: new Date().toISOString(),
+      };
+      syncDeviceId = uid();
+      save(STORAGE_KEYS.aiChatHistory, []);
+      if (typeof aiChatHistory !== 'undefined') aiChatHistory = [];
+
+      normalizeStorage();
+      restartAutoSyncLoop();
+      applyTheme(DEFAULT_THEME_ID, { persist: true });
+      syncNotificationPermission();
+      if (typeof persistDashboardCardOrder === 'function') {
+        persistDashboardCardOrder(getDefaultDashboardCardOrder());
+      }
+      if (typeof persistDashboardCardVisibility === 'function') {
+        persistDashboardCardVisibility(getDefaultDashboardCardVisibility());
+      }
+      syncAiProviderLabels();
+      updateGamificationVisibility();
+      syncDashboardClockVisibility();
+      initName();
+      renderTip();
+      refreshUI();
+      if (typeof renderAIChatHistory === 'function') renderAIChatHistory();
+      if (typeof renderFitnessPage === 'function') renderFitnessPage();
+      if (typeof renderSettingsPage === 'function') renderSettingsPage();
+      navigate('dashboard');
+      showToast('Dados excluídos', 'Todos os dados locais deste navegador foram removidos.', 'success');
+    }
+
+    function clearAllData() {
+      showConfirm(
+        'Excluir todos os dados?',
+        'Esta ação apaga tarefas, hábitos, progresso fitness, histórico da IA e configurações locais. Não pode ser desfeita.',
+        () => {
+          const confirmation = window.prompt('Digite EXCLUIR para confirmar:');
+          if ((confirmation || '').trim().toUpperCase() !== 'EXCLUIR') {
+            showToast('Ação cancelada', 'Nenhum dado foi apagado.', 'warn');
+            return;
+          }
+          clearAllDataNow();
+        }
+      );
     }
 
     // =============================================
@@ -1477,6 +2096,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       initTheme();
       normalizeStorage();
+      restartAutoSyncLoop();
       syncAiProviderLabels();
       updateGamificationVisibility();
       syncNotificationPermission();
@@ -1508,6 +2128,7 @@
         checkNewDay();
         checkNotificationEngine();
         refreshUI();
+        if (isAutoSyncReady()) runCloudSync({ reason: 'focus' });
       });
 
       // Daily engine and reminders
