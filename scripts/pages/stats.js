@@ -7,11 +7,10 @@
       const dailyTasks = tasks.filter(t => t.repeatDaily);
       const totalHabits = dailyTasks.length;
       const doneHabitsToday = dailyTasks.filter(t => (dailyTaskLogs[today] || []).includes(t.id)).length;
-      const maxStreak = 0; // Streaks removed for simplicity
 
       const summary = document.getElementById('stats-summary');
-      const level = getLevelFromXp(gameState.xp || 0);
-      const gamificationOn = isGamificationEnabled();
+      const totalTodayDone = doneTodayTasks + doneHabitsToday;
+      const todayProgressPct = Math.round((totalTodayDone / Math.max(todayTasks.length + totalHabits, 1)) * 100);
 
       const totalCompletedTasks = Object.values(taskStats).reduce((sum, day) => sum + (day.done || 0), 0);
       const allDays = Object.keys(taskStats).length || 1;
@@ -20,24 +19,19 @@
       const activeDays = Object.keys(taskStats || {}).filter(key => Number(taskStats[key]?.done || 0) > 0).length;
       const timeblockDays = Object.keys(timeblockHistory || {}).length;
 
+      setEl('stats-ov-tasks-done', `${doneTodayTasks}/${todayTasks.length}`);
+      setEl('stats-ov-daily-done', `${doneHabitsToday}/${totalHabits}`);
+      setEl('stats-ov-progress', `${todayProgressPct}%`);
+      setStyle('stats-ov-progress-bar', 'width', `${todayProgressPct}%`);
+      setEl('stats-dash-stat-tasks', `${totalTodayDone}`);
+
       if (summary) {
-        const cards = gamificationOn
-          ? [
-              { n: `${doneTodayTasks}/${todayTasks.length}`, l: 'Tarefas Hoje' },
-              { n: `${doneHabitsToday}/${totalHabits}`, l: 'Hábitos Hoje' },
-              { n: `${gameState.dayStreak || 0}d`, l: 'Sequência' },
-              { n: `Lv ${level}`, l: 'Nível Atual' },
-              { n: `${totalCompletedTasks}`, l: 'Total Concluídas' },
-              { n: `${(gameState.badges || []).length}`, l: 'Conquistas' },
-            ]
-          : [
-              { n: `${doneTodayTasks}/${todayTasks.length}`, l: 'Tarefas Hoje' },
-              { n: `${doneHabitsToday}/${totalHabits}`, l: 'Hábitos Hoje' },
-              { n: `${activeDays}`, l: 'Dias Ativos' },
-              { n: `${timeblockDays}`, l: 'Dias com Blocos' },
-              { n: `${totalCompletedTasks}`, l: 'Total Concluídas' },
-              { n: `${workoutDaysTotal}`, l: 'Dias de Treino' },
-            ];
+        const cards = [
+          { n: `${activeDays}`, l: 'Dias Ativos' },
+          { n: `${timeblockDays}`, l: 'Dias com Blocos' },
+          { n: `${totalCompletedTasks}`, l: 'Total Concluídas' },
+          { n: `${workoutDaysTotal}`, l: 'Dias de Treino' },
+        ];
         summary.innerHTML = cards.map(s => `<div class="stat-box" style="padding:16px"><div class="stat-number">${s.n}</div><div class="stat-label">${s.l}</div></div>`).join('');
       }
 

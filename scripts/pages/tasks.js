@@ -1,10 +1,8 @@
 function getTaskFormState(isEdit = false) {
   return {
     textInput: document.getElementById(isEdit ? 'edit-task-text' : 'task-input'),
-    priorityInput: document.getElementById(isEdit ? 'edit-task-priority' : 'task-priority'),
     datetimeInput: document.getElementById(isEdit ? 'edit-task-datetime' : 'task-datetime'),
     repeatInput: document.getElementById(isEdit ? 'edit-task-repeat-daily' : 'task-repeat-daily'),
-    exerciseInput: document.getElementById(isEdit ? 'edit-task-has-exercise' : 'task-has-exercise'),
     noDateInput: document.getElementById(isEdit ? 'edit-task-no-datetime' : 'task-no-datetime'),
     blockInput: document.getElementById(isEdit ? 'edit-task-block' : 'task-block'),
   };
@@ -34,7 +32,7 @@ function ensureTaskComposerStructure() {
     head.innerHTML = `
       <div>
         <div class="section-title" style="margin-bottom:4px">Nova rotina</div>
-        <p class="text-sm text-muted">Clique no botao para abrir o cadastro da rotina.</p>
+        <p class="text-sm text-muted">Abra para cadastrar uma rotina manualmente.</p>
       </div>
       <button class="btn btn-primary" id="task-composer-toggle-btn" type="button" onclick="toggleTaskComposer()">
         <i data-lucide="plus" style="width:16px;height:16px"></i>
@@ -123,10 +121,8 @@ function applyTaskBlockSelection(taskId, block) {
 function resetTaskComposer() {
   const form = getTaskFormState(false);
   if (form.textInput) form.textInput.value = '';
-  if (form.priorityInput) form.priorityInput.value = 'med';
   if (form.datetimeInput) form.datetimeInput.value = getDefaultTaskDateTime();
   if (form.repeatInput) form.repeatInput.checked = false;
-  if (form.exerciseInput) form.exerciseInput.checked = false;
   if (form.noDateInput) form.noDateInput.checked = false;
   if (form.blockInput) form.blockInput.value = '';
   syncTaskFormState();
@@ -144,10 +140,8 @@ function addTask() {
   const task = {
     id: uid(),
     text,
-    priority: form.priorityInput?.value || 'med',
     datetime: isNoDate ? '' : (form.datetimeInput?.value || getDefaultTaskDateTime()),
     repeatDaily: isNoDate ? false : Boolean(form.repeatInput?.checked),
-    hasExercise: Boolean(form.exerciseInput?.checked),
     createdByAI: false,
     done: false,
     created: new Date().toISOString(),
@@ -164,7 +158,6 @@ function addTask() {
   resetTaskComposer();
   setTaskComposerOpen(false, { focusInput: false });
   updateTodayTaskStats();
-  persistDaySnapshot(todayKey());
   refreshUI();
   checkNotificationEngine();
 }
@@ -174,9 +167,6 @@ function toggleTask(id) {
   if (!t) return;
   const wasDone = t.done;
   const today = todayKey();
-  if (!Array.isArray(rewardLedger.tasks[today])) rewardLedger.tasks[today] = [];
-  const hadReward = rewardLedger.tasks[today].includes(id);
-
   if (t.repeatDaily) {
     if (!dailyTaskLogs[today]) dailyTaskLogs[today] = [];
     if (!wasDone) {
@@ -190,57 +180,22 @@ function toggleTask(id) {
   t.done = !t.done;
   if (t.done) {
     t.completedAt = new Date().toISOString();
-    recordTaskCompletion(id, today, t.completedAt);
   } else {
     t.completedAt = '';
-    clearTaskCompletion(id, today);
   }
   save(STORAGE_KEYS.tasks, tasks);
-  if (!wasDone && t.done && !rewardLedger.tasks[today].includes(id)) {
-    rewardLedger.tasks[today].push(id);
-    save(STORAGE_KEYS.rewardLedger, rewardLedger);
-    if (t.createdByAI) {
-      gameState.aiTasksCompleted = Number(gameState.aiTasksCompleted || 0) + 1;
-      saveGameState();
-    }
-    grantXp(getTaskXp(t), `Tarefa concluida: ${truncateText(t.text, 40)}`);
-  }
-  if (wasDone && !t.done && hadReward) {
-    rewardLedger.tasks[today] = rewardLedger.tasks[today].filter(taskId => taskId !== id);
-    save(STORAGE_KEYS.rewardLedger, rewardLedger);
-    grantXp(-getTaskXp(t));
-  }
   updateTodayTaskStats();
-  recalcActivityStreak();
-  persistDaySnapshot(today);
-  checkMissionRewards();
-  evaluateAchievements();
   refreshUI();
   checkNotificationEngine();
 }
 
 function deleteTask(id) {
   showConfirm('Excluir tarefa?', 'Esta ação não pode ser desfeita.', () => {
-    clearTaskCompletion(id);
     tasks = tasks.filter(t => t.id !== id);
     removeTaskFromAllBlocks(id);
-    Object.keys(rewardLedger.tasks || {}).forEach(day => {
-      rewardLedger.tasks[day] = (rewardLedger.tasks[day] || []).filter(taskId => taskId !== id);
-      if (!rewardLedger.tasks[day].length) delete rewardLedger.tasks[day];
-    });
-    Object.keys(taskExerciseLog || {}).forEach(key => {
-      if (key.startsWith(`${id}:`)) delete taskExerciseLog[key];
-    });
-    exerciseChallenges = exerciseChallenges.filter(challenge => challenge.taskId !== id);
     save(STORAGE_KEYS.tasks, tasks);
     save(STORAGE_KEYS.timeblocks, timeblocks);
-    save(STORAGE_KEYS.rewardLedger, rewardLedger);
-    save(STORAGE_KEYS.taskExerciseLog, taskExerciseLog);
-    save(STORAGE_KEYS.exerciseChallenges, exerciseChallenges);
     updateTodayTaskStats();
-    persistDaySnapshot(todayKey());
-    checkMissionRewards();
-    evaluateAchievements();
     refreshUI();
   });
 }
@@ -252,12 +207,10 @@ function editTask(id) {
   const form = getTaskFormState(true);
   const noDate = isTaskPeriodAssignable(t);
   if (form.textInput) form.textInput.value = t.text;
-  if (form.priorityInput) form.priorityInput.value = t.priority;
   if (form.datetimeInput) form.datetimeInput.value = t.repeatDaily
     ? getTaskEffectiveDateTime(t)
     : (t.datetime || getDefaultTaskDateTime());
   if (form.repeatInput) form.repeatInput.checked = Boolean(t.repeatDaily);
-  if (form.exerciseInput) form.exerciseInput.checked = Boolean(t.hasExercise);
   if (form.noDateInput) form.noDateInput.checked = noDate;
   if (form.blockInput) form.blockInput.value = noDate ? getTaskAssignedBlock(t.id) : '';
   syncTaskFormState(true);
@@ -271,9 +224,7 @@ function saveEditTask() {
   const isNoDate = Boolean(form.noDateInput?.checked);
 
   t.text = form.textInput?.value.trim() || t.text;
-  t.priority = form.priorityInput?.value || t.priority;
   t.repeatDaily = isNoDate ? false : Boolean(form.repeatInput?.checked);
-  t.hasExercise = Boolean(form.exerciseInput?.checked);
   t.datetime = isNoDate ? '' : (form.datetimeInput?.value || getDefaultTaskDateTime());
   if (t.repeatDaily) t.datetime = getTaskEffectiveDateTime(t);
 
@@ -288,9 +239,6 @@ function saveEditTask() {
   save(STORAGE_KEYS.timeblockHistory, timeblockHistory);
   closeModal('modal-edit-task');
   updateTodayTaskStats();
-  persistDaySnapshot(todayKey());
-  checkMissionRewards();
-  evaluateAchievements();
   refreshUI();
   checkNotificationEngine();
 }
@@ -308,7 +256,6 @@ function getFilteredTasks() {
     case 'pending': return tasks.filter(t => !t.done);
     case 'done': return tasks.filter(t => t.done);
     case 'today': return tasks.filter(t => isTaskForDate(t, today));
-    case 'high': return tasks.filter(t => t.priority === 'high');
     default: return tasks;
   }
 }
@@ -341,7 +288,6 @@ function renderTasks() {
     const block = isTaskPeriodAssignable(t) && getTaskBlockLabel(t.id)
       ? `<span class="tag">Período: ${getTaskBlockLabel(t.id)}</span>`
       : '';
-    const exercise = t.hasExercise ? `<span class="tag">Punição: ${getTaskExercisePlan(t).title}</span>` : '';
     return `<div class="task-item ${t.done ? 'done' : ''}">
       <div class="task-check ${t.done ? 'checked' : ''}" onclick="toggleTask('${t.id}')">
         ${t.done ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
@@ -351,7 +297,7 @@ function renderTasks() {
           <div class="task-text">${t.text}</div>
           <span class="task-state-tag">${getTaskStateLabel(t)}</span>
         </div>
-        <div class="task-meta" style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">${badgeHTML(t.priority)} ${cadence} ${schedule} ${block} ${exercise}</div>
+        <div class="task-meta" style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">${cadence} ${schedule} ${block}</div>
       </div>
       <div class="task-actions">
         <button class="icon-btn" onclick="editTask('${t.id}')"><i data-lucide="pencil" style="width:14px;height:14px"></i></button>
@@ -360,12 +306,6 @@ function renderTasks() {
     </div>`;
   }).join('');
   lucide.createIcons();
-}
-
-function badgeHTML(p) {
-  const map = { high: ['badge-high', 'Alta'], med: ['badge-med', 'Media'], low: ['badge-low', 'Baixa'] };
-  const [cls, label] = map[p] || map.med;
-  return `<span class="badge ${cls}">${label}</span>`;
 }
 
 function formatDT(dt) {
@@ -449,12 +389,12 @@ function renderTimeBlocks() {
   if (dgl) {
     const pending = tasks.filter(task => isTaskPeriodAssignable(task) && !task.done && !isInAnyBlock(task.id));
     if (pending.length === 0) {
-      dgl.innerHTML = '<p class="text-muted text-sm">Todas as tarefas sem data já foram encaixadas em algum período.</p>';
+      dgl.innerHTML = '<p class="text-muted text-sm">Tudo encaixado nos períodos.</p>';
     } else {
       dgl.innerHTML = pending.map(task => `
         <div class="pending-task-card">
           <div class="pending-task-copy">
-            <div class="pending-task-title">${badgeHTML(task.priority)} ${task.text}</div>
+            <div class="pending-task-title">${task.text}</div>
             <div class="text-sm text-muted">Essas tarefas não têm data fixa. Escolha um período para encaixar no dia.</div>
           </div>
           <div class="block-assign">
@@ -483,17 +423,12 @@ function moveTaskToBlock(taskId, block) {
   applyTaskBlockSelection(taskId, block);
   save(STORAGE_KEYS.timeblocks, timeblocks);
   save(STORAGE_KEYS.timeblockHistory, timeblockHistory);
-  persistDaySnapshot(todayKey());
-  checkMissionRewards();
-  evaluateAchievements();
   refreshUI();
 }
 
 function removeFromBlock(taskId, block) {
   timeblocks[block] = (timeblocks[block] || []).filter(id => id !== taskId);
   save(STORAGE_KEYS.timeblocks, timeblocks);
-  persistDaySnapshot(todayKey());
-  checkMissionRewards();
-  evaluateAchievements();
   refreshUI();
 }
+

@@ -1,11 +1,11 @@
-<!DOCTYPE html>
-<html lang="pt-BR" data-theme="dark">
+﻿<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark-tech">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Minha Rotina</title>
-  <meta name="theme-color" content="#0A0A0F" />
+  <meta name="theme-color" content="#0B0D10" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Minha Rotina" />
@@ -19,7 +19,7 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
-  <link rel="stylesheet" href="style.css?v=2026-04-02-v4">
+  <link rel="stylesheet" href="style.css?v=2026-04-06-v18">
 </head>
 
 <body>
@@ -38,7 +38,6 @@
   </header>
 
   <div id="toast-stack" class="toast-stack"></div>
-  <div id="celebration-layer" class="celebration-layer" aria-hidden="true"></div>
 
   <!-- =============================================
      SIDEBAR NAVIGATION
@@ -54,14 +53,10 @@
       <i data-lucide="check-square" style="width:20px;height:20px;flex-shrink:0"></i>
       <span class="nav-label">Planejamento</span>
     </a>
-    <a class="nav-item" id="nav-missions" data-page="missions" data-gamification-only="true" onclick="navigate('missions')">
-      <i data-lucide="crosshair" style="width:20px;height:20px;flex-shrink:0"></i>
-      <span class="nav-label">Missões</span>
-    </a>
     
     <a class="nav-item" data-page="ai" onclick="navigate('ai')">
       <i data-lucide="bot" style="width:20px;height:20px;flex-shrink:0"></i>
-      <span class="nav-label">Rotina A.I.</span>
+      <span class="nav-label">Assistente</span>
     </a>
     
     <a class="nav-item" data-page="fitness" onclick="navigate('fitness')">
@@ -90,11 +85,8 @@
     <!-- ==================== DASHBOARD ==================== -->
     <section class="page active" id="page-dashboard">
       <div class="dashboard-hero mb-4">
-        <div>
-          <p id="greeting" class="text-muted text-sm" style="font-family:'DM Mono',monospace;"></p>
-          <h1 class="page-title" style="margin-bottom:4px">Bem-vindo, <span id="user-name"
-              style="color:var(--accent)">você</span>!</h1>
-          <p id="location-tag" class="text-sm text-muted">Organize suas tarefas, hábitos e agenda em um só lugar.</p>
+        <div class="dashboard-hero-copy">
+          <h1 class="dashboard-hero-title">Bem-vindo, <span id="user-name" class="dashboard-hero-name">você</span>!</h1>
         </div>
         <div class="clock-panel">
           <div id="clock-display" class="mono">--:--:--</div>
@@ -128,41 +120,17 @@
               </div>
 
               <div class="dashboard-overview-metrics">
-                <div class="dashboard-overview-item is-accent">
-                  <div class="dashboard-overview-label">Tarefas hoje</div>
-                  <div class="dashboard-overview-value" id="ov-tasks-done">0/0</div>
-                  <div class="progress-bar">
-                    <div class="progress-fill" style="background:var(--accent)" id="ov-tasks-bar"></div>
+                <div class="dashboard-overview-item is-accent dashboard-overview-item-unified">
+                  <div class="dashboard-overview-line">
+                    <div class="dashboard-overview-label">Resumo do dia</div>
+                    <div class="dashboard-overview-value" id="ov-progress">0%</div>
+                  </div>
+                  <div class="dashboard-overview-meta">
+                    <strong id="ov-tasks-done">0/0</strong> tarefas
+                    <strong id="ov-daily-done">0/0</strong> hábitos
+                    <strong id="dash-stat-tasks">0</strong> feitas
                   </div>
                 </div>
-                <div class="dashboard-overview-item is-accent2">
-                  <div class="dashboard-overview-label">Hábitos feitos</div>
-                  <div class="dashboard-overview-value" id="ov-daily-done">0/0</div>
-                  <div class="progress-bar">
-                    <div class="progress-fill" style="background:var(--accent2)" id="ov-daily-bar"></div>
-                  </div>
-                </div>
-                <div class="dashboard-overview-item is-accent">
-                  <div class="dashboard-overview-label">Progresso do dia</div>
-                  <div class="dashboard-overview-value" id="ov-progress">0%</div>
-                  <div class="progress-bar">
-                    <div class="progress-fill" style="background:var(--accent)" id="ov-progress-bar"></div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="dashboard-activity-stats">
-                <div class="stat-box" style="padding:16px">
-                  <div class="stat-number" id="dash-stat-tasks" style="font-size:28px">0</div>
-                  <div class="stat-label">Feitas Hoje</div>
-                </div>
-                <div class="stat-box" style="padding:16px">
-                  <div class="stat-number" id="dash-stat-streak" style="font-size:28px">0</div>
-                  <div class="stat-label">Dias Seguidos</div>
-                </div>
-              </div>
-              <div class="tip-bar" style="margin-bottom:0; padding:10px 14px">
-                <strong style="color:var(--accent)">Foco:</strong> Mantenha a barra de progresso no topo sempre cheia.
               </div>
             </div>
 
@@ -210,171 +178,82 @@
 
     </section>
 
-    <!-- ==================== MISSIONS ==================== -->
-    <section class="page" id="page-missions" data-gamification-only="true">
-      <div class="missions-hero mb-4">
-        <div>
-          <p class="text-sm text-muted mono">Baú de Conquistas</p>
-          <h1 class="page-title" style="margin-bottom:8px">Missões, Níveis e Coleção</h1>
-          <p class="text-sm text-muted" style="max-width:620px">Acompanhe suas metas diárias, o ritmo da semana, o progresso do mês e o mapa de evolução do seu perfil.</p>
-        </div>
-        <div class="missions-hero-badge">Modo de progressão</div>
-      </div>
-
-      <div class="grid-2 mb-4">
-        <div class="card game-card">
-          <div class="flex items-center justify-between mb-3">
-            <div class="section-title" style="margin-bottom:0">Seu Perfil</div>
-            <span class="tag" id="game-rank-tag">Lv 1</span>
-          </div>
-          <div class="grid-4 compact-stats mb-3">
-            <div class="stat-box">
-              <div class="stat-number" id="game-level">1</div>
-              <div class="stat-label">Nível</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-number" id="game-streak">0d</div>
-              <div class="stat-label">Streak</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-number" id="game-badges-count">0</div>
-              <div class="stat-label">Conquistas</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-number" id="game-crystals">0</div>
-              <div class="stat-label">Cristais</div>
-            </div>
-          </div>
-          <div class="section-title" style="margin-bottom:8px">Progresso</div>
-          <div class="flex items-center justify-between gap-3 mb-3">
-            <span id="game-rank-title" class="text-sm font-bold">Aprendiz</span>
-            <span id="game-xp" class="mono text-sm text-muted">0/120 XP</span>
-          </div>
-          <div class="progress-bar mb-2">
-            <div class="progress-fill" id="game-level-bar" style="background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%"></div>
-          </div>
-          <p id="game-next-level" class="text-sm text-muted mt-2 mb-3"></p>
-          <div class="reward-pill-row">
-            <div class="reward-pill"><strong>Título</strong><span id="game-current-title">Aprendiz</span></div>
-            <div class="reward-pill"><strong>Dias Lendários</strong><span id="game-legendary-days">0</span></div>
-            <div class="reward-pill"><strong>Coleção</strong><span id="game-collection-rate">0/0</span></div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="flex items-center justify-between mb-3">
-            <div class="section-title" style="margin-bottom:0">Trilha de Níveis</div>
-            <span class="tag" id="game-seasonal-status">Baú ativo</span>
-          </div>
-          <div id="game-level-roadmap" class="level-roadmap"></div>
-        </div>
-      </div>
-
-      <div class="grid-2 mb-4">
-        <div class="card">
-          <div class="section-title" style="margin-bottom:12px">Missões Diárias</div>
-          <div id="game-missions-daily" class="mission-list"></div>
-        </div>
-        <div class="card">
-          <div class="section-title" style="margin-bottom:12px">Missões Semanais</div>
-          <div id="game-missions-weekly" class="mission-list"></div>
-        </div>
-      </div>
-
-      <div class="card mb-4">
-        <div class="section-title" style="margin-bottom:12px">Missões Mensais</div>
-        <div id="game-missions-monthly" class="mission-list mission-grid"></div>
-      </div>
-
-      <div class="grid-2 mb-4">
-        <div class="card">
-          <div class="section-title" style="margin-bottom:12px">Radar de Conquistas</div>
-          <div id="game-achievement-highlight"></div>
-        </div>
-        <div class="card">
-          <div class="section-title" style="margin-bottom:12px">Recompensas e Títulos</div>
-          <div id="game-rewards-panel"></div>
-        </div>
-      </div>
-
-      <div class="card mb-4">
-        <div class="section-title" style="margin-bottom:16px">Baú de Conquistas</div>
-        <div id="game-achievements" class="achievement-grid"></div>
-      </div>
-    </section>
-
     <!-- ==================== TASKS ==================== -->
     <section class="page" id="page-tasks">
       <h1 class="page-title">Rotina e Tarefas do Dia</h1>
 
-      <!-- Add Task -->
-      <div class="card mb-4" id="task-composer">
-        <div class="section-title">Nova Tarefa</div>
-        <div class="mb-3">
-          <input type="text" id="task-input" placeholder="Descreva a tarefa..." maxlength="120" />
+      <div class="grid-2 task-quick-grid mb-4">
+        <div class="card task-assistant-card" id="task-assistant-card" data-open="false">
+          <div class="task-assistant-head">
+            <div>
+              <div class="section-title" style="margin-bottom:4px">Assistente da rotina</div>
+              <p class="text-sm text-muted">Abra para gerar uma rotina automaticamente.</p>
+            </div>
+            <button class="btn btn-primary" id="task-assistant-toggle-btn" type="button">
+              <i data-lucide="sparkles" style="width:16px;height:16px"></i>
+              <span>Gerar minha rotina</span>
+            </button>
+          </div>
+          <div id="task-assistant-form" class="task-assistant-form" hidden>
+            <textarea
+              id="task-assistant-day-input"
+              class="input task-assistant-input"
+              rows="4"
+              placeholder="Ex: acordo 06:30, trabalho 08:00-12:00 e 14:00-18:00, treino a noite e quero estudar 1h."></textarea>
+            <div class="task-assistant-actions">
+              <button id="task-assistant-voice-btn" class="btn btn-ghost" type="button">
+                <i data-lucide="mic" style="width:16px;height:16px"></i> Ditar
+              </button>
+              <button id="task-assistant-generate-btn" class="btn btn-primary" type="button">
+                <i data-lucide="sparkles" style="width:16px;height:16px"></i> Gerar rotina
+              </button>
+              <button id="task-assistant-open-chat-btn" class="btn btn-ghost" type="button">Abrir chat</button>
+            </div>
+            <div id="task-assistant-result" class="task-assistant-result" hidden></div>
+          </div>
         </div>
-        <div class="task-config-grid mb-3">
-          <div>
-            <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Prioridade</label>
-            <select id="task-priority" onchange="syncTaskFormState()">
-              <option value="high">Alta</option>
-              <option value="med" selected>Média</option>
-              <option value="low">Baixa</option>
+
+        <!-- Add Task -->
+        <div class="card" id="task-composer">
+          <div class="section-title">Nova Tarefa</div>
+          <div class="mb-3">
+            <input type="text" id="task-input" placeholder="Descreva a tarefa..." maxlength="120" />
+          </div>
+          <div class="task-config-grid task-config-grid-main mb-3">
+            <div id="task-datetime-wrap" class="task-datetime-wrap">
+              <div class="task-datetime-head">
+                <label class="text-sm text-muted" style="display:block;margin-bottom:0">Data & Hora de hoje</label>
+                <label class="task-inline-toggle-compact">
+                  <input type="checkbox" id="task-no-datetime" onchange="syncTaskFormState()" />
+                  <span>Sem data e hora</span>
+                </label>
+              </div>
+              <input type="datetime-local" id="task-datetime" step="900" />
+            </div>
+          </div>
+          <div class="task-toggle-row task-toggle-row-main mb-3">
+            <label class="option-toggle">
+              <input type="checkbox" id="task-repeat-daily" onchange="syncTaskFormState()" />
+              <div>
+                <strong>Repetir diariamente</strong>
+                <span>Ideal para rotinas fixas. O horário é mantido e a tarefa volta todo dia.</span>
+              </div>
+            </label>
+          </div>
+          <div id="task-block-wrap" class="mb-3" hidden>
+            <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Período do dia</label>
+            <select id="task-block">
+              <option value="">Escolher depois</option>
+              <option value="morning">Manhã</option>
+              <option value="afternoon">Tarde</option>
+              <option value="evening">Noite</option>
+              <option value="night">Madrugada</option>
             </select>
           </div>
-          <div id="task-datetime-wrap">
-            <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Data & Hora de hoje</label>
-            <input type="datetime-local" id="task-datetime" step="900" />
-          </div>
+          <button class="btn btn-primary" onclick="addTask()">
+            <i data-lucide="plus" style="width:16px;height:16px"></i> Adicionar Tarefa
+          </button>
         </div>
-        <div class="task-toggle-row mb-3">
-          <label class="option-toggle">
-            <input type="checkbox" id="task-no-datetime" onchange="syncTaskFormState()" />
-            <div>
-              <strong>Sem data e hora</strong>
-              <span>Use para tarefas flexíveis que você quer encaixar em um período do dia.</span>
-            </div>
-          </label>
-          <label class="option-toggle">
-            <input type="checkbox" id="task-repeat-daily" onchange="syncTaskFormState()" />
-            <div>
-              <strong>Repetir diariamente</strong>
-              <span>Ideal para rotinas fixas. O horário é mantido e a tarefa volta todo dia.</span>
-            </div>
-          </label>
-          <label class="option-toggle">
-            <input type="checkbox" id="task-has-exercise" onchange="syncTaskFormState()" />
-            <div>
-              <strong>Aplicar punição de movimento</strong>
-              <span>Se a tarefa falhar, o app cria um exercício curto como punição do ciclo perdido.</span>
-            </div>
-          </label>
-        </div>
-        <div id="task-block-wrap" class="mb-3" hidden>
-          <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Período do dia</label>
-          <select id="task-block">
-            <option value="">Escolher depois</option>
-            <option value="morning">Manhã</option>
-            <option value="afternoon">Tarde</option>
-            <option value="evening">Noite</option>
-            <option value="night">Madrugada</option>
-          </select>
-        </div>
-        <div class="exercise-preview" id="task-exercise-preview">
-          <strong>Punição desativada</strong>
-          <span>Ative para gerar um exercício rápido quando a tarefa falhar.</span>
-        </div>
-        <button class="btn btn-primary" onclick="addTask()">
-          <i data-lucide="plus" style="width:16px;height:16px"></i> Adicionar Tarefa
-        </button>
-      </div>
-
-      <div class="card mb-4">
-        <div class="flex items-center justify-between mb-3">
-          <div class="section-title" style="margin-bottom:0">Punições de Movimento</div>
-          <span class="tag" id="exercise-summary">0 pendentes</span>
-        </div>
-        <div id="exercise-list" class="exercise-list"></div>
       </div>
 
       <!-- Filters -->
@@ -383,7 +262,6 @@
         <button class="filter-tab" onclick="filterTasks('pending', this)">Pendentes</button>
         <button class="filter-tab" onclick="filterTasks('done', this)">Concluídas</button>
         <button class="filter-tab" onclick="filterTasks('today', this)">Hoje</button>
-        <button class="filter-tab" onclick="filterTasks('high', this)">Alta prioridade</button>
       </div>
 
       <div id="tasks-list"></div>
@@ -396,7 +274,7 @@
         <div>
           <div class="section-title">Rotina do Dia</div>
           <div class="tip-bar">
-            <strong style="color:var(--accent2)">Planejamento de hoje:</strong> <span id="tb-date"></span> — Distribua
+            <strong style="color:var(--accent2)">Planejamento de hoje:</strong> <span id="tb-date"></span> - Distribua
             as tarefas pendentes pelos blocos de tempo com os atalhos rápidos.
           </div>
         </div>
@@ -423,7 +301,7 @@
 
           <div class="card sticky-panel">
             <div class="section-title">Tarefas Pendentes</div>
-            <p class="text-sm text-muted mb-3">Apenas tarefas sem data aparecem aqui. Escolha um período para encaixar cada uma.</p>
+            <p class="text-sm text-muted mb-3">Sem data: escolha um período.</p>
             <div id="drag-tasks-list"></div>
           </div>
         </div>
@@ -432,16 +310,16 @@
 
 
 
-    <!-- ==================== ROTINA AI ==================== -->
+    <!-- ==================== ASSISTENTE ==================== -->
     <section class="page ai-page" id="page-ai">
       <div class="ai-shell">
         <div class="ai-topbar">
           <div>
             <div class="ai-kicker">Assistente pessoal</div>
-            <h1 class="page-title" style="margin-bottom:6px">Rotina A.I.</h1>
+            <h1 class="page-title" style="margin-bottom:6px">Assistente</h1>
             <p class="text-muted text-sm">Conversa com <span id="ai-provider-name">Gemini</span> para criar, reorganizar e limpar sua rotina.</p>
           </div>
-          <button class="icon-btn ai-clear-btn" onclick="clearAIChatHistory()" aria-label="Limpar chat" title="Limpar Histórico">
+          <button id="ai-clear-btn" class="icon-btn ai-clear-btn" type="button" onclick="clearAIChatHistory()" aria-label="Limpar conversa" title="Limpar conversa" hidden>
             <i data-lucide="trash-2" style="width:18px;height:18px"></i>
           </button>
         </div>
@@ -455,7 +333,7 @@
           <div class="ai-overview-card">
             <div class="ai-overview-label">Melhor uso</div>
             <div class="ai-overview-value">Pedidos curtos</div>
-            <div class="ai-overview-copy">Exemplo: “organize minha manhã” ou “limpe concluídas”.</div>
+            <div class="ai-overview-copy">Exemplo: "organize minha manhã" ou "limpe concluídas".</div>
           </div>
         </div>
 
@@ -464,14 +342,14 @@
 
           <div class="ai-suggestions">
             <button class="ai-chip" type="button" onclick="setAiPrompt('Monte minha rotina matinal', true)">Rotina matinal</button>
-            <button class="ai-chip" type="button" onclick="setAiPrompt('Deleta todas as tarefas concluídas', true)">Limpar concluídas</button>
+            <button class="ai-chip" type="button" onclick="setAiPrompt('Deleta todas as tarefas concluidas', true)">Limpar concluidas</button>
             <button class="ai-chip" type="button" onclick="setAiPrompt('Crie uma rotina de estudos para mim', true)">Rotina de estudos</button>
             <button class="ai-chip" type="button" onclick="setAiPrompt('Estou muito cansado hoje, adapta minha rotina', true)">Estou cansado</button>
-            <button class="ai-chip" type="button" onclick="setAiPrompt('Quais são minhas tarefas pendentes hoje?', true)">Ver pendentes</button>
+            <button class="ai-chip" type="button" onclick="setAiPrompt('Quais sao minhas tarefas pendentes hoje?', true)">Ver pendentes</button>
           </div>
 
           <div class="ai-composer">
-            <input type="text" id="ai-input" class="ai-input" placeholder="Peça uma rotina, uma limpeza ou uma reorganização..." onkeypress="if(event.key==='Enter') processAIInput()">
+            <input type="text" id="ai-input" class="ai-input" placeholder="Peca uma rotina, uma limpeza ou uma reorganizacao..." onkeypress="if(event.key==='Enter') processAIInput()">
             <button id="ai-send-btn" class="btn btn-primary ai-send-btn" type="button" onclick="processAIInput()">
               <i data-lucide="send" style="width:18px;height:18px"></i>
               <span>Enviar</span>
@@ -486,35 +364,11 @@
       <div class="dashboard-hero mb-4" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
         <div>
           <h1 class="page-title" style="margin-bottom:4px">Exercícios</h1>
-          <p class="text-sm text-muted">Plano personalizado por IA · acompanhe sua evolução física.</p>
+          <p class="text-sm text-muted">Plano personalizado por IA e acompanhe sua evolução física.</p>
         </div>
         <button class="btn btn-primary" onclick="openFitnessProfile()" style="gap:8px;display:flex;align-items:center">
           <i data-lucide="user-cog" style="width:16px;height:16px"></i> Meu Perfil
         </button>
-      </div>
-
-      <!-- Gamification Banner -->
-      <div class="card mb-4" id="fitness-game-banner" data-gamification-only="true" style="background:linear-gradient(135deg,rgba(var(--accent-rgb),0.15),rgba(var(--accent2-rgb),0.1));border:1px solid rgba(var(--accent-rgb),0.25)">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-          <div style="display:flex;align-items:center;gap:16px">
-            <div style="font-size:36px" id="fitness-avatar">💪</div>
-            <div>
-              <div style="font-size:13px;color:var(--muted);font-weight:500">Rank Fitness</div>
-              <div style="font-size:18px;font-weight:800;color:var(--accent)" id="fitness-rank-title">Iniciante</div>
-              <div style="font-size:12px;color:var(--muted)" id="fitness-xp-label">0 XP de treino</div>
-            </div>
-          </div>
-          <div style="flex:1;min-width:160px;max-width:260px">
-            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px">
-              <span id="fitness-level-label">Nível 1</span>
-              <span id="fitness-xp-next">0/200 XP</span>
-            </div>
-            <div class="progress-bar">
-              <div class="progress-fill" id="fitness-xp-bar" style="background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width 0.6s ease"></div>
-            </div>
-            <div style="font-size:11px;color:var(--muted);margin-top:4px" id="fitness-streak-label">🔥 0 dias de treino consecutivos</div>
-          </div>
-        </div>
       </div>
 
       <div class="card mb-4">
@@ -523,7 +377,7 @@
           <div class="tag">Escolha como o app monta seus treinos</div>
         </div>
         <div class="fitness-mode-grid">
-          <button id="fitness-mode-ai" class="btn btn-ghost fitness-mode-btn" type="button" onclick="setFitnessRoutineMode('ai')">IA</button>
+          <button id="fitness-mode-ai" class="btn btn-ghost fitness-mode-btn" type="button" onclick="setFitnessRoutineMode('ai')">Assistente</button>
           <button id="fitness-mode-preset" class="btn btn-ghost fitness-mode-btn" type="button" onclick="setFitnessRoutineMode('preset')">Predefinido</button>
           <button id="fitness-mode-none" class="btn btn-ghost fitness-mode-btn" type="button" onclick="setFitnessRoutineMode('none')">Sem exercícios</button>
         </div>
@@ -534,7 +388,7 @@
             <button class="btn btn-primary" type="button" onclick="applyPresetPlanFromSelect()">Aplicar plano</button>
           </div>
         </div>
-        <div class="text-sm text-muted" id="fitness-mode-note" style="margin-top:10px">Plano inteligente: gere seu treino com IA de acordo com seu perfil.</div>
+        <div class="text-sm text-muted" id="fitness-mode-note" style="margin-top:10px">Plano inteligente: gere seu treino com Assistente de acordo com seu perfil.</div>
       </div>
 
       <div class="grid-2 mb-4">
@@ -543,12 +397,12 @@
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
             <div class="section-title" style="margin-bottom:0">Treino de Hoje</div>
             <button id="fitness-ai-generate-btn" class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="generateFitnessPlan()">
-              <i data-lucide="sparkles" style="width:14px;height:14px;margin-right:4px"></i>Gerar com IA
+              <i data-lucide="sparkles" style="width:14px;height:14px;margin-right:4px"></i>Gerar com Assistente
             </button>
           </div>
           <div id="fitness-today-plan">
             <div class="empty-state">
-              <p>Nenhum treino gerado.<br>Configure seu perfil e clique em <b>Gerar com IA</b>.</p>
+              <p>Nenhum treino gerado.<br>Configure seu perfil e clique em <b>Gerar com Assistente</b>.</p>
             </div>
           </div>
         </div>
@@ -570,7 +424,7 @@
           </div>
           <div class="card">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-              <div class="section-title" style="margin-bottom:0">Histórico de Peso</div>
+              <div class="section-title" style="margin-bottom:0">Histórico de peso</div>
               <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="openWeightLog()">+ Registrar</button>
             </div>
             <div id="fitness-weight-chart-wrap" style="position:relative;height:120px">
@@ -584,7 +438,7 @@
       <div class="card mb-4">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
           <div class="section-title" style="margin-bottom:0">Plano Semanal</div>
-          <span class="tag" id="fitness-plan-tag" style="display:none">IA Gerado</span>
+          <span class="tag" id="fitness-plan-tag" style="display:none">Assistente</span>
         </div>
         <div id="fitness-weekly-plan">
           <p class="text-sm text-muted">Gere um plano com IA para ver sua semana de treinos.</p>
@@ -599,27 +453,37 @@
         <div id="fitness-selectable-list"></div>
       </div>
 
-      <!-- Badges fitness -->
-      <div class="card" id="fitness-badges-card" data-gamification-only="true">
-        <div class="section-title" style="margin-bottom:16px">Conquistas Fitness</div>
-        <div id="fitness-badges" style="display:flex;flex-wrap:wrap;gap:10px">
-          <p class="text-sm text-muted">Complete treinos para desbloquear conquistas.</p>
-        </div>
-      </div>
     </section>
 
     <section class="page" id="page-stats">
-      <h1 class="page-title">Estatísticas & Relatórios</h1>
+      <h1 class="page-title">Estatísticas e relatórios</h1>
+
+      <div class="card mb-4">
+        <div class="section-title" style="margin-bottom:12px">Resumo de Hoje</div>
+        <div class="dashboard-overview-metrics">
+          <div class="dashboard-overview-item is-accent dashboard-overview-item-unified">
+            <div class="dashboard-overview-line">
+              <div class="dashboard-overview-label">Resumo do dia</div>
+              <div class="dashboard-overview-value" id="stats-ov-progress">0%</div>
+            </div>
+            <div class="dashboard-overview-meta">
+              <strong id="stats-ov-tasks-done">0/0</strong> tarefas
+              <strong id="stats-ov-daily-done">0/0</strong> hábitos
+              <strong id="stats-dash-stat-tasks">0</strong> feitas
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div class="grid-4 mb-4" id="stats-summary"></div>
 
       <div class="grid-2">
         <div class="card">
-          <div class="section-title">Conclusão Semanal de Tarefas</div>
+          <div class="section-title">Conclusão semanal de tarefas</div>
           <canvas id="chart-tasks" height="200"></canvas>
         </div>
         <div class="card">
-          <div class="section-title">Hábitos por Dia da Semana</div>
+          <div class="section-title">Hábitos por dia da semana</div>
           <canvas id="chart-habits" height="200"></canvas>
         </div>
       </div>
@@ -629,7 +493,7 @@
       </div>
       <div class="card mt-4">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-          <div class="section-title" style="margin-bottom:0">Progresso Mês a Mês</div>
+          <div class="section-title" style="margin-bottom:0">Progresso mês a mês</div>
           <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="openProgressPhotoModal()">+ Foto do mês</button>
         </div>
         <div id="monthly-progress-grid"></div>
@@ -641,7 +505,7 @@
         <div class="settings-hero-copy">
           <div class="settings-kicker">Ajustes</div>
           <h1 class="page-title" style="margin-bottom:6px">Configurações</h1>
-          <p class="text-sm text-muted">Menos distracoes, mais controle.</p>
+          <p class="text-sm text-muted">Menos distrações, mais controle.</p>
         </div>
       </div>
 
@@ -662,7 +526,7 @@
                       <div class="settings-title">Tema e paleta</div>
                       <div class="settings-copy" id="settings-theme-copy">Escolha uma aparência pronta para o app.</div>
                     </div>
-                    <span class="settings-pill-card active" id="settings-theme-pill">Escuro Padrão</span>
+                    <span class="settings-pill-card active" id="settings-theme-pill">Dark Tech</span>
                   </div>
                   <div id="settings-theme-grid" class="theme-grid"></div>
                 </div>
@@ -689,33 +553,21 @@
                 </button>
               </div>
 
-              <div class="settings-item">
-                <div>
-                  <div class="settings-title">Gamificação</div>
-                  <div class="settings-copy">Ative missoes, conquistas, XP, niveis e cristais.</div>
-                </div>
-                <label class="toggle-switch" for="settings-gamification-toggle">
-                  <input type="checkbox" id="settings-gamification-toggle" onchange="toggleGamificationSetting(this.checked)">
-                  <span class="toggle-slider"></span>
-                </label>
-              </div>
-              <div class="settings-note beta-note">Beta teste: essa area pode mudar e ainda apresentar instabilidades.</div>
-              <div class="settings-status" id="settings-gamification-status"></div>
             </div>
           </div>
 
           <div class="card settings-surface">
             <div class="settings-section-head">
               <div>
-                <div class="settings-kicker">IA</div>
-                <div class="section-title" style="margin-bottom:0">Inteligência artificial</div>
+              <div class="settings-kicker">Assistente</div>
+              <div class="section-title" style="margin-bottom:0">Assistente inteligente</div>
               </div>
             </div>
             <div class="settings-panel">
               <div class="settings-item compact">
                 <div>
-                  <div class="settings-title">Motor atual · <span id="settings-ai-provider">Gemini</span></div>
-                  <div class="settings-copy">Configure o provedor de IA.</div>
+                  <div class="settings-title">Motor atual - <span id="settings-ai-provider">Gemini</span></div>
+                  <div class="settings-copy">Configure o motor do Assistente.</div>
                 </div>
                 <button class="btn btn-ghost" style="padding:8px 12px" onclick="openAiSettings()">Configurar</button>
               </div>
@@ -756,40 +608,6 @@
 
               <div class="settings-item compact">
                 <div>
-                  <div class="settings-title">Sincronizacao automatica (celular e PC)</div>
-                  <div class="settings-copy">Use os mesmos dados nos dois dispositivos.</div>
-                </div>
-              </div>
-              <div class="settings-status" id="settings-sync-status">Desativada. Preencha os dados e clique em Ativar sync.</div>
-              <div class="settings-note-card">
-                <div class="settings-form-grid">
-                  <div class="settings-form-field full">
-                    <label for="sync-project-url">URL do projeto</label>
-                    <input id="sync-project-url" class="input" type="text" placeholder="https://SEU-PROJETO.supabase.co">
-                  </div>
-                  <div class="settings-form-field full">
-                    <label for="sync-api-key">Chave de API</label>
-                    <input id="sync-api-key" class="input" type="password" autocomplete="off" placeholder="Cole sua anon key">
-                  </div>
-                  <div class="settings-form-field">
-                    <label for="sync-space-id">Codigo de vinculacao</label>
-                    <input id="sync-space-id" class="input" type="text" placeholder="ex: rotina-casa">
-                  </div>
-                  <div class="settings-form-field">
-                    <label for="sync-interval-seconds">Intervalo (segundos)</label>
-                    <input id="sync-interval-seconds" class="input" type="number" min="15" max="600" step="1" value="45">
-                  </div>
-                </div>
-                <div class="settings-action-grid" style="margin-top:12px">
-                  <button class="btn btn-ghost" type="button" onclick="saveSyncSettings(false)">Salvar</button>
-                  <button class="btn btn-primary" type="button" onclick="saveSyncSettings(true)">Ativar sync</button>
-                  <button class="btn btn-ghost" type="button" onclick="syncNow()">Sincronizar agora</button>
-                  <button class="btn btn-danger" type="button" onclick="disableAutoSync()">Desativar</button>
-                </div>
-              </div>
-
-              <div class="settings-item compact">
-                <div>
                   <div class="settings-title">Backup manual (opcional)</div>
                   <div class="settings-copy">Exporte ou importe arquivo JSON.</div>
                 </div>
@@ -827,7 +645,7 @@
   <nav class="mobile-dock" aria-label="Navegação rápida">
     <button class="mobile-dock-item active" type="button" data-page="dashboard" onclick="navigate('dashboard')">
       <i data-lucide="layout-dashboard" style="width:18px;height:18px"></i>
-      <span>Inicio</span>
+      <span>Início</span>
     </button>
     <button class="mobile-dock-item" type="button" data-page="tasks" onclick="navigate('tasks')">
       <i data-lucide="check-square" style="width:18px;height:18px"></i>
@@ -835,7 +653,7 @@
     </button>
     <button class="mobile-dock-item" type="button" data-page="ai" onclick="navigate('ai')">
       <i data-lucide="bot" style="width:18px;height:18px"></i>
-      <span>IA</span>
+      <span>Assist.</span>
     </button>
     <button class="mobile-dock-item" type="button" data-page="fitness" onclick="navigate('fitness')">
       <i data-lucide="dumbbell" style="width:18px;height:18px"></i>
@@ -857,7 +675,7 @@
       <div class="flex items-center justify-between mb-4">
         <h2 class="section-title" style="margin:0;display:flex;align-items:center;gap:8px">
           <i data-lucide="brain-circuit" style="width:20px;height:20px;color:var(--accent)"></i> 
-          Conectar Motor de IA
+          Conectar Assistente
         </h2>
         <button class="icon-btn" onclick="closeModal('modal-ai-settings-inline')" style="color:var(--muted)">
           <i data-lucide="x"></i>
@@ -865,13 +683,13 @@
       </div>
       
       <p class="text-sm mb-4" style="color:var(--muted); line-height:1.5">
-        Escolha o provedor de IA e salve sua chave localmente. Você pode trocar de motor quando quiser.
+        Escolha o provedor e salve sua chave localmente. Você pode trocar de motor quando quiser.
       </p>
 
       <div class="form-group mb-4">
         <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;color:var(--text);font-weight:500">
           <i data-lucide="cpu" style="width:16px;height:16px"></i>
-          Provedor de IA
+          Provedor do Assistente
         </label>
         <select id="ai-provider-select" class="input" onchange="onAiProviderChange()">
           <option value="gemini">Google Gemini</option>
@@ -910,7 +728,7 @@
       
       <div style="padding:12px;background:rgba(92, 230, 184, 0.1);border-radius:8px;border:1px solid rgba(92, 230, 184, 0.2);margin-bottom:20px">
         <p class="text-xs" style="color:var(--success);text-align:center;margin:0;line-height:1.4">
-          🔐 <b>Fique seguro!</b> Códigos ou conversas não passam por nós. A chave trafega diretamente do seu navegador para o provedor selecionado.
+          <b>Privacidade:</b> códigos ou conversas não passam por nós. A chave trafega diretamente do seu navegador para o provedor selecionado.
         </p>
       </div>
 
@@ -943,7 +761,7 @@
       </p>
       <div id="dashboard-order-list" class="dashboard-order-list"></div>
       <div class="flex gap-2" style="justify-content:flex-end;flex-wrap:wrap">
-        <button class="btn btn-ghost" onclick="resetDashboardCardOrder()">Resetar padrão</button>
+        <button class="btn btn-ghost" onclick="resetDashboardCardOrder()">Restaurar padrão</button>
         <button class="btn btn-primary" onclick="saveDashboardCardOrder()">Salvar ordem</button>
       </div>
     </div>
@@ -955,14 +773,6 @@
       <div class="modal-title">Editar Tarefa</div>
       <div class="mb-3"><input type="text" id="edit-task-text" placeholder="Texto da tarefa" /></div>
       <div class="task-config-grid mb-3">
-        <div>
-          <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Prioridade</label>
-          <select id="edit-task-priority" onchange="syncTaskFormState(true)">
-            <option value="high">Alta</option>
-            <option value="med">Média</option>
-            <option value="low">Baixa</option>
-          </select>
-        </div>
         <div id="edit-task-datetime-wrap">
           <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Data & Hora</label>
           <input type="datetime-local" id="edit-task-datetime" step="900" />
@@ -983,13 +793,6 @@
             <span>Mantém a tarefa no ciclo de todos os dias.</span>
           </div>
         </label>
-        <label class="option-toggle">
-          <input type="checkbox" id="edit-task-has-exercise" onchange="syncTaskFormState(true)" />
-          <div>
-            <strong>Aplicar punição de movimento</strong>
-            <span>Gera um exercício de punição quando a tarefa perde o prazo.</span>
-          </div>
-        </label>
       </div>
       <div id="edit-task-block-wrap" class="mb-3" hidden>
         <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Período do dia</label>
@@ -1000,10 +803,6 @@
           <option value="evening">Noite</option>
           <option value="night">Madrugada</option>
         </select>
-      </div>
-      <div class="exercise-preview mb-3" id="edit-task-exercise-preview">
-        <strong>Punição desativada</strong>
-        <span>Ative para gerar um exercício curto quando essa tarefa falhar.</span>
       </div>
       <div class="flex gap-2">
         <button class="btn btn-primary" onclick="saveEditTask()">Salvar</button>
@@ -1024,33 +823,15 @@
     </div>
   </div>
 
-  <!-- Blocking Modal for Exercises -->
-  <div class="modal-overlay" id="modal-blocking-exercise" style="z-index:9999">
-    <div class="modal card" style="max-width:400px;text-align:center">
-      <div style="font-size:48px;margin-bottom:12px">⚠️</div>
-      <h2 class="section-title" style="margin-bottom:8px">Punições Pendentes!</h2>
-      <p class="text-sm text-muted" style="margin-bottom:20px" id="blocking-ex-desc">Você possui punições de movimento pendentes por tarefas que não foram concluídas no prazo.</p>
-      
-      <div id="blocking-ex-list" style="margin-bottom:20px;text-align:left;background:var(--surface2);border-radius:12px;padding:12px;max-height:200px;overflow-y:auto;">
-      </div>
-
-      <div class="flex gap-2" style="flex-direction:column">
-        <button class="btn btn-primary" onclick="goToExercisesAndCloseModal()">Resolver Agora</button>
-        <button class="btn btn-ghost" onclick="closeModal('modal-blocking-exercise')">Ignorar por enquanto</button>
-      </div>
-    </div>
-  </div>
-
   <!-- =============================================
      JAVASCRIPT
 ============================================= -->
   <script src="scripts/core/theme.js?v=2026-04-02-v4"></script>
   <script src="scripts/pages/settings.js?v=2026-04-02-v4"></script>
-  <script src="scripts/pages/missions.js?v=2026-04-02-v4"></script>
   <script src="scripts/pages/dashboard.js?v=2026-04-02-v4"></script>
-  <script src="scripts/pages/tasks.js?v=2026-04-02-v4"></script>
+  <script src="scripts/pages/tasks.js?v=2026-04-05-v5"></script>
   <script src="scripts/pages/stats.js?v=2026-04-02-v4"></script>
-  <script src="scripts/pages/ai.js?v=2026-04-02-v4"></script>
+  <script src="scripts/pages/ai.js?v=2026-04-05-v5"></script>
   <script src="scripts/pages/fitness.js?v=2026-04-02-v4"></script>
   <script src="app.js?v=2026-04-02-v4"></script>
 
@@ -1104,7 +885,7 @@
         <label>Nível de experiência</label>
         <select id="fp-level" class="input">
           <option value="beginner">Iniciante (menos de 6 meses)</option>
-          <option value="intermediate">Intermediário (6 meses–2 anos)</option>
+          <option value="intermediate">Intermediário (6 meses a 2 anos)</option>
           <option value="advanced">Avançado (2+ anos)</option>
         </select>
       </div>
@@ -1149,7 +930,7 @@
   <div class="modal-overlay" id="modal-weight-log">
     <div class="modal card" style="max-width:360px;margin:0 16px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-        <h2 class="section-title" style="margin:0">⚖️ Registrar Peso</h2>
+        <h2 class="section-title" style="margin:0">Registrar peso</h2>
         <button class="icon-btn" onclick="closeModal('modal-weight-log')"><i data-lucide="x"></i></button>
       </div>
       <div class="form-group" style="margin-bottom:12px">
@@ -1170,7 +951,7 @@
   <div class="modal-overlay" id="modal-progress-photo">
     <div class="modal card" style="max-width:460px;margin:0 16px;max-height:90vh;overflow-y:auto">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-        <h2 class="section-title" style="margin:0">📸 Foto de Progresso</h2>
+        <h2 class="section-title" style="margin:0">Foto de progresso</h2>
         <button class="icon-btn" onclick="closeModal('modal-progress-photo')"><i data-lucide="x"></i></button>
       </div>
       <div class="form-group" style="margin-bottom:12px">
@@ -1201,18 +982,14 @@
   </div>
 
   <!-- MODAL: Exercise Done -->
-  <div class="modal-overlay" id="modal-exercise-done">
-    <div class="modal card" style="max-width:360px;margin:0 16px;text-align:center">
-      <div style="font-size:56px;margin-bottom:12px" id="exdone-emoji">💪</div>
-      <h2 class="section-title" style="margin-bottom:8px" id="exdone-title">Treino concluído!</h2>
-      <p class="text-sm text-muted" style="margin-bottom:20px" id="exdone-body">Você ganhou XP de treino!</p>
-      <div style="background:rgba(var(--accent-rgb),0.1);border:1px solid rgba(var(--accent-rgb),0.25);border-radius:12px;padding:16px;margin-bottom:20px">
-        <div style="font-size:28px;font-weight:800;color:var(--accent)" id="exdone-xp">+50 XP</div>
-        <div style="font-size:12px;color:var(--muted)">XP de Treino</div>
+    <div class="modal-overlay" id="modal-exercise-done">
+      <div class="modal card" style="max-width:360px;margin:0 16px;text-align:center">
+        <div style="font-size:56px;margin-bottom:12px" id="exdone-emoji">💪</div>
+        <h2 class="section-title" style="margin-bottom:8px" id="exdone-title">Treino concluído!</h2>
+        <p class="text-sm text-muted" style="margin-bottom:20px" id="exdone-body">Ótimo trabalho. Continue assim!</p>
+        <button class="btn btn-primary" style="width:100%" onclick="closeModal('modal-exercise-done')">Continuar</button>
       </div>
-      <button class="btn btn-primary" style="width:100%" onclick="closeModal('modal-exercise-done')">Continuar</button>
     </div>
-  </div>
 
   <!-- MODAL: AI Settings -->
 
@@ -1228,7 +1005,7 @@
    OU arraste para o Chrome/Firefox/Edge
 
 3. TODOS os dados são salvos automaticamente no
-   localStorage do navegador — nenhuma internet
+   localStorage do navegador - nenhuma internet
    necessária para o app funcionar!
 
 4. Para backup, clique em "Exportar" na barra lateral
@@ -1248,3 +1025,5 @@ Desenvolvido para:
 </body>
 
 </html>
+
+

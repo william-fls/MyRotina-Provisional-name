@@ -10,7 +10,7 @@ Um aplicativo de produtividade pessoal completo e gamificado, operando diretamen
 - **Dashboard Central:** Visão rápida de tarefas pontuais, hábitos diários e exercícios do dia.
 - **Blocos de Tempo:** Arraste e solte tarefas nos turnos (Manhã, Tarde, Noite, Madrugada) para estruturar sua agenda.
 - **Hábitos e Rotinas Diárias:** Mantenha o ritmo (streak) cumprindo tarefas recorrentes que não deixam a peteca cair.
-- **Desafios de Movimento:** Quando agendado, se a tarefa principal falhar, o app te dá um "exercício punitivo" curto em vez de perder o dia todo.
+- **Planejamento Sem Data:** Tarefas sem hor�rio podem ser encaixadas nos blocos do dia para organizar a rotina com mais flexibilidade.
 
 ### 🤖 Rotina A.I. (Assistente Gemini)
 - **Criação Ativa:** Adicione, edite e dê \`check\` em suas tarefas conversando via texto. Como por exemplo: _"Cria uma rotina matinal pra mim"_.
@@ -54,3 +54,4 @@ Como o "Minha Rotina" foi projetado inteiramente em um **único documento HTML e
 ---
 
 *Crie o seu ritmo, monte seu estilo de vida e gamifique seu sucesso diário!*
+

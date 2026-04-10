@@ -352,9 +352,7 @@
       save(STORAGE_KEYS.fitnessWeightLog, fitnessWeightLog);
 
       if (isNew) {
-        grantFitnessXp(50, 'Perfil fitness criado!');
-        unlockFitnessBadge('profile_set', 'Perfil configurado', 'Configurou seu perfil físico', '👤');
-        if (!isGamificationEnabled()) showToast('Perfil criado!', '', 'success');
+        showToast('Perfil criado!', '', 'success');
       } else {
         showToast('Perfil atualizado!', '', 'success');
       }
@@ -377,11 +375,7 @@
       fitnessWeightLog.sort((a, b) => a.date.localeCompare(b.date));
       save(STORAGE_KEYS.fitnessWeightLog, fitnessWeightLog);
       if (fitnessProfile) { fitnessProfile.weight = weight; save(STORAGE_KEYS.fitnessProfile, fitnessProfile); }
-      grantFitnessXp(10, 'Peso registrado!');
-      if (!isGamificationEnabled()) showToast('Peso registrado!', '', 'success');
-      persistDaySnapshot(date);
-      checkMissionRewards();
-      evaluateAchievements();
+      showToast('Peso registrado!', '', 'success');
       closeModal('modal-weight-log');
       refreshUI();
       renderFitnessPage();
@@ -688,8 +682,6 @@ Crie exatamente 7 dias (Seg a Dom). Adapte ao nível e objetivo. Preencha howTo 
         fitnessPlan.generatedAt = new Date().toISOString();
         save(STORAGE_KEYS.fitnessPlan, fitnessPlan);
 
-        grantXp(40, 'Plano de treino gerado!');
-        unlockBadge('first_plan', 'Primeiro plano', 'Gerou seu primeiro plano de treino', '🏁');
         showToast('Plano gerado!', 'Seu treino personalizado está pronto.', 'success');
         renderFitnessPage();
       } catch(e) {
@@ -699,43 +691,13 @@ Crie exatamente 7 dias (Seg a Dom). Adapte ao nível e objetivo. Preencha howTo 
       }
     }
 
-    function completeExercise(exName, xpAmount, options = {}) {
+    function completeExercise(exName, _unusedReward = 0, options = {}) {
       const showModal = options.showModal !== false;
       const today = todayKey();
       if (!fitnessLogs[today]) fitnessLogs[today] = [];
       if (fitnessLogs[today].includes(exName)) return;
       fitnessLogs[today].push(exName);
       save(STORAGE_KEYS.fitnessLogs, fitnessLogs);
-
-      // Update streak
-      const yesterday = (() => { const d = new Date(); d.setDate(d.getDate()-1); return d.toISOString().slice(0,10); })();
-      if (fitnessGameState.lastTrainingDate === yesterday || fitnessGameState.lastTrainingDate === today) {
-        if (fitnessGameState.lastTrainingDate !== today) fitnessGameState.streak = (fitnessGameState.streak || 0) + 1;
-      } else {
-        fitnessGameState.streak = 1;
-      }
-      fitnessGameState.lastTrainingDate = today;
-      save(STORAGE_KEYS.fitnessGameState, fitnessGameState);
-
-      // Streak badges
-      if (fitnessGameState.streak >= 7)  unlockBadge('streak_7',  'Semana inteira',   '7 dias consecutivos de treino', '🔥');
-      if (fitnessGameState.streak >= 30) unlockBadge('streak_30', 'Mês implacável',   '30 dias consecutivos de treino', '⚡');
-
-      // Count total exercises done
-      const totalDone = Object.values(fitnessLogs).flat().length;
-      if (totalDone >= 10)  unlockBadge('ex_10',  '10 exercícios',    'Completou 10 exercícios', '💪');
-      if (totalDone >= 50)  unlockBadge('ex_50',  '50 exercícios',    'Completou 50 exercícios', '🏋️');
-      if (totalDone >= 100) unlockBadge('ex_100', '100 exercícios',   'Completou 100 exercícios', '👑');
-      const weekWorkoutDays = getWorkoutDaysInLast(7);
-      if (weekWorkoutDays >= 4) unlockBadge('wk_4', 'Ritmo Semanal', 'Completou 4 dias de treino em 7 dias', 'WK');
-      if (weekWorkoutDays >= 6) unlockBadge('wk_6', 'Semana Forte', 'Completou 6 dias de treino em 7 dias', 'WK+');
-
-      // Grant unified XP silently (sem toast de XP nesta etapa)
-      grantXp(xpAmount + 15);
-      persistDaySnapshot(today);
-      checkMissionRewards();
-      evaluateAchievements();
-
       // Show celebration modal
       if (showModal) {
         document.getElementById('exdone-title').textContent = `${exName} concluído`;
@@ -766,30 +728,10 @@ Crie exatamente 7 dias (Seg a Dom). Adapte ao nível e objetivo. Preencha howTo 
       const selectableCard = document.getElementById('fitness-selectable-card');
       const showSelectableFallback = routine.mode === 'ai' && !fitnessPlan;
       if (selectableCard) selectableCard.hidden = !showSelectableFallback;
-      const gamificationOn = isGamificationEnabled();
       const themeStyles = getComputedStyle(document.documentElement);
       const accent = themeStyles.getPropertyValue('--accent').trim() || '#7c6df7';
       const accentRgb = themeStyles.getPropertyValue('--accent-rgb').trim() || '124, 109, 247';
       const muted = themeStyles.getPropertyValue('--muted').trim() || '#6b6b88';
-      const fitnessBanner = document.getElementById('fitness-game-banner');
-      const fitnessBadgesCard = document.getElementById('fitness-badges-card');
-      if (fitnessBanner) fitnessBanner.hidden = !gamificationOn;
-      if (fitnessBadgesCard) fitnessBadgesCard.hidden = !gamificationOn;
-
-      if (gamificationOn) {
-        const prog = getLevelProgress();
-        document.getElementById('fitness-avatar').textContent     = '🏋️';
-        document.getElementById('fitness-rank-title').textContent = prog.title;
-        document.getElementById('fitness-xp-label').textContent   = `${gameState.xp || 0} XP Coletivo`;
-        document.getElementById('fitness-level-label').textContent = `Nível ${prog.level}`;
-        document.getElementById('fitness-xp-next').textContent    = `${prog.current}/${prog.next} XP`;
-        document.getElementById('fitness-xp-bar').style.width     = prog.pct + '%';
-        document.getElementById('fitness-streak-label').textContent = `🔥 ${fitnessGameState.streak || 0} dias de treino consecutivos`;
-        const weekGoal = Math.max(3, Math.min(6, Array.isArray(fitnessProfile?.days) ? (fitnessProfile.days.length || 4) : 4));
-        const weekDone = getWorkoutDaysInLast(7);
-        const weekGoalLabel = document.getElementById('fitness-week-goal-label');
-        if (weekGoalLabel) weekGoalLabel.textContent = `Meta semanal: ${Math.min(weekDone, weekGoal)}/${weekGoal} treinos`;
-      }
 
       // Profile display
       const profileDiv = document.getElementById('fitness-profile-display');
@@ -915,20 +857,6 @@ Crie exatamente 7 dias (Seg a Dom). Adapte ao nível e objetivo. Preencha howTo 
 
       if (showSelectableFallback) {
         renderSelectableExercises();
-      }
-
-      // Badges
-      const badgesDiv = document.getElementById('fitness-badges');
-      if (gamificationOn && (fitnessGameState.badges || []).length > 0) {
-        badgesDiv.innerHTML = fitnessGameState.badges.map(b => `
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px">
-            <span style="font-size:22px">${b.icon}</span>
-            <div><div style="font-size:13px;font-weight:600">${b.title}</div><div style="font-size:11px;color:var(--muted)">${b.desc}</div></div>
-          </div>`).join('');
-      } else if (gamificationOn && badgesDiv) {
-        badgesDiv.innerHTML = '<p class="text-sm text-muted">Complete treinos para desbloquear conquistas.</p>';
-      } else if (badgesDiv) {
-        badgesDiv.innerHTML = '<p class="text-sm text-muted">Ative a gamificação nas configurações para acompanhar conquistas fitness.</p>';
       }
 
       lucide.createIcons();

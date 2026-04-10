@@ -88,14 +88,12 @@ function loadDashboardCardVisibility() {
 function persistDashboardCardOrder(order) {
   const safe = sanitizeDashboardCardOrder(order);
   localStorage.setItem(DASHBOARD_CARD_ORDER_KEY, JSON.stringify(safe));
-  if (typeof markSyncDirty === 'function') markSyncDirty();
   return safe;
 }
 
 function persistDashboardCardVisibility(visibility) {
   const safe = sanitizeDashboardCardVisibility(visibility);
   localStorage.setItem(DASHBOARD_CARD_VISIBILITY_KEY, JSON.stringify(safe));
-  if (typeof markSyncDirty === 'function') markSyncDirty();
   return safe;
 }
 
@@ -231,7 +229,7 @@ function renderCurrentBlockCard() {
       <button class="task-check" type="button" onclick="toggleTask('${task.id}')"></button>
       <div class="dashboard-now-copy">
         <div class="dashboard-now-task">${task.text}</div>
-        <div class="task-meta">${badgeHTML(task.priority)} <span class="tag">Período do dia</span></div>
+        <div class="task-meta"> <span class="tag">Período do dia</span></div>
       </div>
     </div>
   `).join('');
@@ -252,21 +250,18 @@ function renderDashboard() {
   const totalT = punctualTasks.length;
   const pctT = totalT ? Math.round((doneTasks / totalT) * 100) : 0;
   setEl('ov-tasks-done', `${doneTasks}/${totalT}`);
-  setStyle('ov-tasks-bar', 'width', `${pctT}%`);
 
   const dailyTasks = tasks.filter(t => t.repeatDaily);
   const doneHabits = dailyTasks.filter(t => (dailyTaskLogs[today] || []).includes(t.id)).length;
   const totalH = dailyTasks.length;
   const pctH = totalH ? Math.round((doneHabits / totalH) * 100) : 0;
   setEl('ov-daily-done', `${doneHabits}/${totalH}`);
-  setStyle('ov-daily-bar', 'width', `${pctH}%`);
 
   const overall = Math.round(((doneTasks + doneHabits) / Math.max(totalT + totalH, 1)) * 100);
   setEl('ov-progress', `${overall}%`);
   setStyle('ov-progress-bar', 'width', `${overall}%`);
 
   setEl('dash-stat-tasks', doneTasks + doneHabits);
-  setEl('dash-stat-streak', `${gameState.dayStreak || 0}d`);
 
   const dtl = document.getElementById('dash-tasks-list');
   const cardT = document.getElementById('dash-card-tasks');
@@ -285,7 +280,7 @@ function renderDashboard() {
               <div class="task-text">${t.text}</div>
               <span class="task-state-tag">${getTaskStateLabel(t)}</span>
             </div>
-            <div class="task-meta">${badgeHTML(t.priority)} ${hasTaskDateTime(t) ? `<span class="tag">${formatDT(getTaskEffectiveDateTime(t))}</span>` : ''} ${isTaskPeriodAssignable(t) && getTaskBlockLabel(t.id) ? `<span class="tag">${getTaskBlockLabel(t.id)}</span>` : ''}</div>
+            <div class="task-meta">${hasTaskDateTime(t) ? `<span class="tag">${formatDT(getTaskEffectiveDateTime(t))}</span>` : ''} ${isTaskPeriodAssignable(t) && getTaskBlockLabel(t.id) ? `<span class="tag">${getTaskBlockLabel(t.id)}</span>` : ''}</div>
           </div>
         </div>`).join('');
     }
@@ -309,7 +304,7 @@ function renderDashboard() {
               <div class="task-text">${t.text}</div>
               <span class="task-state-tag">Recorrente</span>
             </div>
-            <div class="task-meta">${badgeHTML(t.priority)}</div>
+            <div class="task-meta"><span class="tag">Recorrente</span></div>
           </div>
         </div>`).join('');
     }
@@ -360,7 +355,6 @@ function renderDashboard() {
 
   renderCurrentBlockCard();
   renderWeeklyCalendar();
-  renderGamePanel();
   renderAutomationPanel();
   lucide.createIcons();
 }
@@ -441,3 +435,4 @@ function renderWeeklyCalendar() {
   }
   grid.innerHTML = html;
 }
+

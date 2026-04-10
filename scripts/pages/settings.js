@@ -1,7 +1,3 @@
-function isGamificationEnabled() {
-  return Boolean(appSettings.gamificationEnabled);
-}
-
 function isDashboardClockEnabled() {
   return appSettings.showDashboardClock !== false;
 }
@@ -16,38 +12,6 @@ function syncDashboardClockVisibility() {
   const enabled = isDashboardClockEnabled();
   if (panel) panel.hidden = !enabled;
   if (hero) hero.classList.toggle('clock-disabled', !enabled);
-}
-
-function updateGamificationVisibility() {
-  const enabled = isGamificationEnabled();
-  document.querySelectorAll('[data-gamification-only="true"]').forEach(el => {
-    if (!el) return;
-    el.hidden = !enabled;
-  });
-  if (!enabled && document.getElementById('page-missions')?.classList.contains('active')) {
-    navigate('settings');
-  }
-}
-
-function toggleGamificationSetting(enabled) {
-  appSettings.gamificationEnabled = Boolean(enabled);
-  saveAppSettings();
-  updateGamificationVisibility();
-  if (appSettings.gamificationEnabled) {
-    checkMissionRewards();
-    evaluateAchievements();
-  }
-  renderSettingsPage();
-  refreshUI();
-  renderFitnessPage();
-  if (document.getElementById('page-stats')?.classList.contains('active')) renderStats();
-  showToast(
-    appSettings.gamificationEnabled ? 'Gamificação ativada' : 'Gamificação desativada',
-    appSettings.gamificationEnabled
-      ? 'Missões, conquistas e níveis voltaram a aparecer.'
-      : 'Missões e conquistas ficaram ocultas, mas seus dados foram preservados.',
-    appSettings.gamificationEnabled ? 'success' : 'warn'
-  );
 }
 
 function toggleDashboardClockSetting(enabled) {
@@ -89,14 +53,6 @@ function renderThemeOptions() {
 }
 
 function renderSettingsPage() {
-  const gamificationEnabled = isGamificationEnabled();
-  const toggle = document.getElementById('settings-gamification-toggle');
-  if (toggle) toggle.checked = gamificationEnabled;
-  const status = document.getElementById('settings-gamification-status');
-  if (status) status.textContent = gamificationEnabled
-    ? 'Status: gamificacao ligada.'
-    : 'Status: gamificacao desligada.';
-
   const currentName = document.getElementById('settings-current-name');
   if (currentName) currentName.textContent = (load(STORAGE_KEYS.name, '') || 'Você').trim() || 'Você';
 
@@ -104,8 +60,8 @@ function renderSettingsPage() {
   if (clockToggle) clockToggle.checked = isDashboardClockEnabled();
   const clockStatus = document.getElementById('settings-clock-status');
   if (clockStatus) clockStatus.textContent = isDashboardClockEnabled()
-    ? 'Relogio visivel no topo do dashboard.'
-    : 'Relogio oculto no dashboard.';
+    ? 'Relógio visível no topo do dashboard.'
+    : 'Relógio oculto no dashboard.';
 
   const currentTheme = getThemePreset(getCurrentThemeId());
   const themePill = document.getElementById('settings-theme-pill');
@@ -133,9 +89,7 @@ function renderSettingsPage() {
         : notificationEnv.enabled ? 'Pausar alertas' : 'Ativar alertas';
   }
 
-  if (typeof renderSyncSettings === 'function') renderSyncSettings();
   syncAiProviderLabels();
   syncDashboardClockVisibility();
   lucide.createIcons();
 }
-

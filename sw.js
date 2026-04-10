@@ -7,7 +7,6 @@ const CORE_ASSETS = [
   './app.js',
   './scripts/core/theme.js',
   './scripts/pages/settings.js',
-  './scripts/pages/missions.js',
   './scripts/pages/dashboard.js',
   './scripts/pages/tasks.js',
   './scripts/pages/stats.js',
