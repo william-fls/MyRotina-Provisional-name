@@ -1,4 +1,4 @@
-const ASSET_VERSION = '2026-04-03-v5';
+const ASSET_VERSION = '2026-09-06-v2';
 const CACHE_NAME = `minha-rotina-${ASSET_VERSION}`;
 const OFFLINE_FALLBACK = './index.html';
 const CORE_ASSETS = [
@@ -9,9 +9,6 @@ const CORE_ASSETS = [
   './scripts/pages/settings.js',
   './scripts/pages/dashboard.js',
   './scripts/pages/tasks.js',
-  './scripts/pages/stats.js',
-  './scripts/pages/ai.js',
-  './scripts/pages/fitness.js',
   './manifest.webmanifest',
   './icons/app-icon.svg',
   './icons/app-badge.svg',

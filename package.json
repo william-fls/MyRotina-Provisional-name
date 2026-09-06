@@ -1,7 +1,7 @@
 ﻿{
   "name": "myrotina-provisional-name",
   "version": "1.0.0",
-  "description": "Um aplicativo de produtividade pessoal completo, operando diretamente no navegador para organizar tarefas, rotina, treinos e estatisticas.",
+  "description": "Planejador diário PWA: tarefas, recorrentes e blocos de tempo. Dados locais no navegador.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/william-fls/MyRotina-Provisional-name.git"

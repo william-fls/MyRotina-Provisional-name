@@ -5,21 +5,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Minha Rotina</title>
-  <meta name="theme-color" content="#0B0D10" />
+  <meta name="theme-color" content="#09090b" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Minha Rotina" />
-  <link rel="icon" href="icons/app-icon.svg?v=2026-04-02-v4" type="image/svg+xml" />
-  <link rel="manifest" href="manifest.webmanifest?v=2026-04-02-v4" />
+  <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="manifest.webmanifest" />
 
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
-  <link rel="stylesheet" href="style.css?v=2026-04-06-v18">
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -32,255 +28,187 @@
     </button>
     <div class="mobile-topbar-copy">
       <div class="mobile-brand">Minha Rotina</div>
-      <div class="mobile-page-label" id="mobile-page-label">Dashboard</div>
+      <div class="mobile-page-label" id="mobile-page-label">Hoje</div>
     </div>
     <div style="width:36px"></div>
   </header>
 
   <div id="toast-stack" class="toast-stack"></div>
 
-  <!-- =============================================
-     SIDEBAR NAVIGATION
-============================================= -->
   <nav id="sidebar">
-    <div class="nav-logo">Minha Rotina</div>
+    <div class="nav-logo"><span class="nav-logo-mark">M</span><span>Minha Rotina</span></div>
 
+    <div class="nav-section">Menu</div>
     <a class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
       <i data-lucide="layout-dashboard" style="width:20px;height:20px;flex-shrink:0"></i>
-      <span class="nav-label">Dashboard</span>
+      <span class="nav-label">Hoje</span>
     </a>
     <a class="nav-item" data-page="tasks" onclick="navigate('tasks')">
       <i data-lucide="check-square" style="width:20px;height:20px;flex-shrink:0"></i>
-      <span class="nav-label">Planejamento</span>
+      <span class="nav-label">Planejar</span>
     </a>
-    
-    <a class="nav-item" data-page="ai" onclick="navigate('ai')">
-      <i data-lucide="bot" style="width:20px;height:20px;flex-shrink:0"></i>
-      <span class="nav-label">Assistente</span>
-    </a>
-    
-    <a class="nav-item" data-page="fitness" onclick="navigate('fitness')">
-      <i data-lucide="dumbbell" style="width:20px;height:20px;flex-shrink:0"></i>
-      <span class="nav-label">Exercícios</span>
-    </a>
-
-    <a class="nav-item" data-page="stats" onclick="navigate('stats')">
-      <i data-lucide="bar-chart-2" style="width:20px;height:20px;flex-shrink:0"></i>
-      <span class="nav-label">Estatísticas</span>
-    </a>
-
     <a class="nav-item" data-page="settings" onclick="navigate('settings')">
       <i data-lucide="settings-2" style="width:20px;height:20px;flex-shrink:0"></i>
-      <span class="nav-label">Configurações</span>
+      <span class="nav-label">Ajustes</span>
     </a>
 
-    <div class="nav-bottom" style="width:100%"></div>
+    <div class="nav-footer"><span class="nav-dot"></span>Dados salvos localmente</div>
   </nav>
 
-  <!-- =============================================
-     MAIN CONTENT AREA
-============================================= -->
   <main id="main">
 
-    <!-- ==================== DASHBOARD ==================== -->
+    <!-- ==================== DASHBOARD ("Hoje") ==================== -->
     <section class="page active" id="page-dashboard">
-      <div class="dashboard-hero mb-4">
-        <div class="dashboard-hero-copy">
-          <h1 class="dashboard-hero-title">Bem-vindo, <span id="user-name" class="dashboard-hero-name">você</span>!</h1>
+      <div class="dash-hero-row mb-3">
+        <div class="dashboard-greeting">
+          <h1 id="greeting-text" class="dashboard-greeting-title"></h1>
+          <span id="user-name" class="dashboard-greeting-name"></span>
         </div>
-        <div class="clock-panel">
-          <div id="clock-display" class="mono">--:--:--</div>
-          <div id="date-display"></div>
-        </div>
-      </div>
-
-      <div id="dashboard-cards-container">
-        <div class="dashboard-card-section" data-dashboard-card="tip">
-          <div class="tip-bar" id="daily-tip">
-            <strong style="color:var(--accent)">Dica do dia:</strong> <span id="tip-text"></span>
+        <div id="dashboard-now-pill" class="settings-pill-card"></div>
+        <div class="dash-hero-progress">
+          <div class="dash-hero-progress-top">
+            <span class="dash-hero-progress-label">Progresso</span>
+            <span id="ov-progress" class="dash-hero-progress-pct">0%</span>
           </div>
-        </div>
-
-        <div class="dashboard-card-section mb-4" data-dashboard-card="week">
-          <div class="card" id="weekly-calendar-card" style="padding:16px 20px;">
-            <div class="flex items-center justify-between mb-3">
-              <div class="section-title" style="margin-bottom:0">Esta Semana</div>
-              <span class="text-xs text-muted" id="weekly-calendar-date" style="font-weight:600;text-transform:capitalize"></span>
-            </div>
-            <div id="weekly-calendar-grid" style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;"></div>
-          </div>
-        </div>
-
-        <div class="dashboard-card-section mb-4" data-dashboard-card="overview-focus">
-          <div class="grid-2 dashboard-overview-focus-grid">
-            <div class="card dashboard-overview-card">
-              <div class="dashboard-activity-head flex items-center justify-between mb-3">
-                <div class="section-title" style="margin-bottom:0">Resumo de Atividade</div>
-                <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="navigate('stats')">Estatísticas</button>
-              </div>
-
-              <div class="dashboard-overview-metrics">
-                <div class="dashboard-overview-item is-accent dashboard-overview-item-unified">
-                  <div class="dashboard-overview-line">
-                    <div class="dashboard-overview-label">Resumo do dia</div>
-                    <div class="dashboard-overview-value" id="ov-progress">0%</div>
-                  </div>
-                  <div class="dashboard-overview-meta">
-                    <strong id="ov-tasks-done">0/0</strong> tarefas
-                    <strong id="ov-daily-done">0/0</strong> hábitos
-                    <strong id="dash-stat-tasks">0</strong> feitas
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="card dashboard-now-card">
-              <div class="dashboard-now-head">
-                <div>
-                  <div class="section-title" style="margin-bottom:4px">Foco do período</div>
-                  <div class="text-sm text-muted">Tarefas sem data que você encaixou para o horário atual.</div>
-                </div>
-                <span class="settings-pill-card active" id="dashboard-now-pill">Agora</span>
-              </div>
-              <div class="dashboard-now-meta">
-                <div id="dashboard-now-title" class="dashboard-now-title">Manhã</div>
-                <div id="dashboard-now-range" class="dashboard-now-range">06:00 - 12:00</div>
-              </div>
-              <div id="dashboard-now-list"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="dashboard-card-section grid-3 mb-4" id="dash-lists-container" data-dashboard-card="lists">
-          <div class="card" id="dash-card-tasks">
-            <div class="flex items-center justify-between mb-3">
-              <div class="section-title" style="margin-bottom:0">Tarefas de Hoje</div>
-              <button class="btn btn-primary" style="padding:6px 12px;font-size:12px" onclick="navigate('tasks')">Ver tudo</button>
-            </div>
-            <div id="dash-tasks-list"></div>
-          </div>
-          <div class="card" id="dash-card-daily">
-            <div class="flex items-center justify-between mb-3">
-              <div class="section-title" style="margin-bottom:0">Tarefas Recorrentes</div>
-              <button class="btn btn-primary" style="padding:6px 12px;font-size:12px" onclick="navigate('tasks')">Ver tudo</button>
-            </div>
-            <div id="dash-daily-list"></div>
-          </div>
-          <div class="card" id="dash-card-exercises" style="display:none;">
-            <div class="flex items-center justify-between mb-3">
-              <div class="section-title" style="margin-bottom:0">Treino de Hoje</div>
-              <button class="btn btn-primary" style="padding:6px 12px;font-size:12px" onclick="navigate('fitness')">Ver tudo</button>
-            </div>
-            <div id="dash-exercises-list"></div>
+          <div class="progress-bar"><div class="progress-fill" id="ov-progress-bar" style="width:0%"></div></div>
+          <div class="dash-hero-progress-meta">
+            <strong id="ov-tasks-done">0/0</strong> tarefas
+            <strong id="ov-daily-done">0/0</strong> diárias
+            <strong id="dash-stat-tasks">0</strong> feitas
           </div>
         </div>
       </div>
 
+      <div class="dashboard-grid">
+        <div class="card" id="dash-card-focus">
+          <div class="dash-card-head">
+            <div class="section-title" style="margin-bottom:0">Foco</div>
+            <div id="dashboard-now-range" class="dashboard-now-range"></div>
+          </div>
+          <div id="dashboard-now-title" class="dashboard-now-title"></div>
+          <div id="dashboard-now-list"></div>
+        </div>
+
+        <div class="card" id="dash-card-tasks">
+          <div class="dash-card-head">
+            <div class="section-title" style="margin-bottom:0">Hoje</div>
+            <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="navigate('tasks')">Ver mais</button>
+          </div>
+          <div id="dash-tasks-list"></div>
+        </div>
+
+        <div class="card" id="dash-card-daily">
+          <div class="dash-card-head">
+            <div class="section-title" style="margin-bottom:0">Diárias</div>
+            <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="navigate('tasks')">Ver mais</button>
+          </div>
+          <div id="dash-daily-list"></div>
+        </div>
+      </div>
     </section>
 
-    <!-- ==================== TASKS ==================== -->
+    <!-- ==================== TASKS ("Planejar") ==================== -->
     <section class="page" id="page-tasks">
-      <h1 class="page-title">Rotina e Tarefas do Dia</h1>
+      <h1 class="page-title" style="margin-bottom:4px">Planejar</h1>
+      <p class="text-sm text-muted mb-4" id="plan-subtitle">Tarefas e blocos do dia.</p>
 
-      <div class="grid-2 task-quick-grid mb-4">
-        <div class="card task-assistant-card" id="task-assistant-card" data-open="false">
-          <div class="task-assistant-head">
-            <div>
-              <div class="section-title" style="margin-bottom:4px">Assistente da rotina</div>
-              <p class="text-sm text-muted">Abra para gerar uma rotina automaticamente.</p>
-            </div>
-            <button class="btn btn-primary" id="task-assistant-toggle-btn" type="button">
-              <i data-lucide="sparkles" style="width:16px;height:16px"></i>
-              <span>Gerar minha rotina</span>
-            </button>
+      <div class="plan-top-grid mb-4">
+        <div class="card" id="task-composer" data-open="true">
+        <div class="task-composer-head">
+          <div>
+            <div class="section-title" style="margin-bottom:4px">Criar</div>
+            <p class="text-sm text-muted">Adicione uma nova tarefa.</p>
           </div>
-          <div id="task-assistant-form" class="task-assistant-form" hidden>
-            <textarea
-              id="task-assistant-day-input"
-              class="input task-assistant-input"
-              rows="4"
-              placeholder="Ex: acordo 06:30, trabalho 08:00-12:00 e 14:00-18:00, treino a noite e quero estudar 1h."></textarea>
-            <div class="task-assistant-actions">
-              <button id="task-assistant-voice-btn" class="btn btn-ghost" type="button">
-                <i data-lucide="mic" style="width:16px;height:16px"></i> Ditar
-              </button>
-              <button id="task-assistant-generate-btn" class="btn btn-primary" type="button">
-                <i data-lucide="sparkles" style="width:16px;height:16px"></i> Gerar rotina
-              </button>
-              <button id="task-assistant-open-chat-btn" class="btn btn-ghost" type="button">Abrir chat</button>
-            </div>
-            <div id="task-assistant-result" class="task-assistant-result" hidden></div>
-          </div>
+          <button class="btn btn-ghost" id="task-composer-toggle-btn" type="button" onclick="toggleTaskComposer()" aria-expanded="true" aria-controls="task-composer-form">
+            <i data-lucide="chevron-up" style="width:16px;height:16px"></i>
+            <span>Ocultar</span>
+          </button>
         </div>
-
-        <!-- Add Task -->
-        <div class="card" id="task-composer">
-          <div class="section-title">Nova Tarefa</div>
-          <div class="mb-3">
-            <input type="text" id="task-input" placeholder="Descreva a tarefa..." maxlength="120" />
+        <div id="task-composer-form" class="task-composer-form">
+          <div class="mb-2">
+            <label class="composer-label" for="task-input">Tarefa</label>
+            <input type="text" id="task-input" placeholder="Ex.: Beber água, estudar 25 min..." maxlength="120" autocomplete="off" />
           </div>
-          <div class="task-config-grid task-config-grid-main mb-3">
-            <div id="task-datetime-wrap" class="task-datetime-wrap">
-              <div class="task-datetime-head">
-                <label class="text-sm text-muted" style="display:block;margin-bottom:0">Data & Hora de hoje</label>
-                <label class="task-inline-toggle-compact">
-                  <input type="checkbox" id="task-no-datetime" onchange="syncTaskFormState()" />
-                  <span>Sem data e hora</span>
-                </label>
-              </div>
-              <input type="datetime-local" id="task-datetime" step="900" />
+          <div class="mb-2 task-datetime-wrap" id="task-datetime-wrap">
+            <div class="task-datetime-head">
+              <label class="composer-label" for="task-datetime" style="margin-bottom:0">Data</label>
+              <label class="task-inline-toggle-compact">
+                <input type="checkbox" id="task-no-datetime" onchange="syncTaskFormState()" />
+                <span>Sem data</span>
+              </label>
             </div>
+            <input type="datetime-local" id="task-datetime" step="900" />
           </div>
-          <div class="task-toggle-row task-toggle-row-main mb-3">
+          <div class="task-toggle-row task-toggle-row-main mb-2">
             <label class="option-toggle">
               <input type="checkbox" id="task-repeat-daily" onchange="syncTaskFormState()" />
               <div>
-                <strong>Repetir diariamente</strong>
-                <span>Ideal para rotinas fixas. O horário é mantido e a tarefa volta todo dia.</span>
+                <strong>Diária</strong>
+                <span>Repete todos os dias.</span>
               </div>
             </label>
           </div>
-          <div id="task-block-wrap" class="mb-3" hidden>
-            <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Período do dia</label>
+          <div id="task-block-wrap" class="mb-2" hidden>
+            <label class="composer-label" for="task-block">Período</label>
             <select id="task-block">
-              <option value="">Escolher depois</option>
+              <option value="">Depois</option>
               <option value="morning">Manhã</option>
               <option value="afternoon">Tarde</option>
               <option value="evening">Noite</option>
               <option value="night">Madrugada</option>
             </select>
           </div>
-          <button class="btn btn-primary" onclick="addTask()">
-            <i data-lucide="plus" style="width:16px;height:16px"></i> Adicionar Tarefa
-          </button>
+          <div class="task-composer-actions">
+            <button class="btn btn-primary" type="button" onclick="addTask()">
+              <i data-lucide="check" style="width:14px;height:14px"></i> Adicionar
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Filters -->
-      <div class="filter-tabs">
-        <button class="filter-tab active" onclick="filterTasks('all', this)">Todas</button>
-        <button class="filter-tab" onclick="filterTasks('pending', this)">Pendentes</button>
-        <button class="filter-tab" onclick="filterTasks('done', this)">Concluídas</button>
-        <button class="filter-tab" onclick="filterTasks('today', this)">Hoje</button>
+      <div class="card">
+        <div class="flex items-center justify-between mb-3">
+          <div class="section-title" style="margin-bottom:0">Modelos</div>
+          <span class="tag">1 toque</span>
+        </div>
+        <p class="text-sm text-muted mb-3">Rotinas prontas para aplicar.</p>
+        <div id="preset-grid" class="preset-grid"></div>
+      </div>
+      </div>
+
+      <div class="tasks-section-head">
+        <div class="section-title" style="margin-bottom:0">Tarefas</div>
+        <div class="tasks-section-actions">
+          <span class="tag" id="tasks-count">0 pendentes</span>
+          <button class="btn btn-ghost" id="clear-done-btn" type="button" onclick="clearDoneTasks()" style="padding:6px 12px;font-size:12px">Limpar feitas</button>
+        </div>
+      </div>
+
+      <div class="filter-tabs" role="tablist" aria-label="Filtrar tarefas">
+        <button class="filter-tab active" data-filter="all" onclick="filterTasks('all', this)">Todas</button>
+        <button class="filter-tab" data-filter="pending" onclick="filterTasks('pending', this)">Pendentes</button>
+        <button class="filter-tab" data-filter="done" onclick="filterTasks('done', this)">Feitas</button>
+        <button class="filter-tab" data-filter="today" onclick="filterTasks('today', this)">Hoje</button>
       </div>
 
       <div id="tasks-list"></div>
 
       <div class="card mt-4 mb-4">
-        <div class="section-title" style="margin-bottom:12px">Progresso Contínuo (Tarefas Diárias)</div>
+        <div class="section-title" style="margin-bottom:12px">Progresso Semanal</div>
         <div id="weekly-heatmap"></div>
       </div>
+
       <div class="planning-stack mt-4">
         <div>
-          <div class="section-title">Rotina do Dia</div>
+          <div class="section-title">Dia</div>
           <div class="tip-bar">
-            <strong style="color:var(--accent2)">Planejamento de hoje:</strong> <span id="tb-date"></span> - Distribua
-            as tarefas pendentes pelos blocos de tempo com os atalhos rápidos.
+            <strong style="color:var(--accent)">Hoje:</strong> <span id="tb-date"></span> - Distribua
+            as tarefas pelos blocos.
           </div>
         </div>
 
         <div class="grid-2 timeblocks-layout">
-          <div>
+          <div class="timeblocks-grid">
             <div class="time-block morning">
               <div class="time-block-header"></div>
               <div id="block-morning-tasks"></div>
@@ -300,212 +228,21 @@
           </div>
 
           <div class="card sticky-panel">
-            <div class="section-title">Tarefas Pendentes</div>
-            <p class="text-sm text-muted mb-3">Sem data: escolha um período.</p>
+            <div class="section-title">Pendentes</div>
+            <p class="text-sm text-muted mb-3">Escolha um período.</p>
             <div id="drag-tasks-list"></div>
           </div>
         </div>
       </div>
     </section>
 
-
-
-    <!-- ==================== ASSISTENTE ==================== -->
-    <section class="page ai-page" id="page-ai">
-      <div class="ai-shell">
-        <div class="ai-topbar">
-          <div>
-            <div class="ai-kicker">Assistente pessoal</div>
-            <h1 class="page-title" style="margin-bottom:6px">Assistente</h1>
-            <p class="text-muted text-sm">Conversa com <span id="ai-provider-name">Gemini</span> para criar, reorganizar e limpar sua rotina.</p>
-          </div>
-          <button id="ai-clear-btn" class="icon-btn ai-clear-btn" type="button" onclick="clearAIChatHistory()" aria-label="Limpar conversa" title="Limpar conversa" hidden>
-            <i data-lucide="trash-2" style="width:18px;height:18px"></i>
-          </button>
-        </div>
-
-        <div class="ai-overview">
-          <div class="ai-overview-card">
-            <div class="ai-overview-label">Modo</div>
-            <div class="ai-overview-value">Ações no app</div>
-            <div class="ai-overview-copy">Pode sugerir e aplicar mudanças nas suas tarefas.</div>
-          </div>
-          <div class="ai-overview-card">
-            <div class="ai-overview-label">Melhor uso</div>
-            <div class="ai-overview-value">Pedidos curtos</div>
-            <div class="ai-overview-copy">Exemplo: "organize minha manhã" ou "limpe concluídas".</div>
-          </div>
-        </div>
-
-        <div class="ai-chat-card">
-          <div class="ai-thread" id="ai-chat-history"></div>
-
-          <div class="ai-suggestions">
-            <button class="ai-chip" type="button" onclick="setAiPrompt('Monte minha rotina matinal', true)">Rotina matinal</button>
-            <button class="ai-chip" type="button" onclick="setAiPrompt('Deleta todas as tarefas concluidas', true)">Limpar concluidas</button>
-            <button class="ai-chip" type="button" onclick="setAiPrompt('Crie uma rotina de estudos para mim', true)">Rotina de estudos</button>
-            <button class="ai-chip" type="button" onclick="setAiPrompt('Estou muito cansado hoje, adapta minha rotina', true)">Estou cansado</button>
-            <button class="ai-chip" type="button" onclick="setAiPrompt('Quais sao minhas tarefas pendentes hoje?', true)">Ver pendentes</button>
-          </div>
-
-          <div class="ai-composer">
-            <input type="text" id="ai-input" class="ai-input" placeholder="Peca uma rotina, uma limpeza ou uma reorganizacao..." onkeypress="if(event.key==='Enter') processAIInput()">
-            <button id="ai-send-btn" class="btn btn-primary ai-send-btn" type="button" onclick="processAIInput()">
-              <i data-lucide="send" style="width:18px;height:18px"></i>
-              <span>Enviar</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== FITNESS ==================== -->
-    <section class="page" id="page-fitness">
-      <div class="dashboard-hero mb-4" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
-        <div>
-          <h1 class="page-title" style="margin-bottom:4px">Exercícios</h1>
-          <p class="text-sm text-muted">Plano personalizado por IA e acompanhe sua evolução física.</p>
-        </div>
-        <button class="btn btn-primary" onclick="openFitnessProfile()" style="gap:8px;display:flex;align-items:center">
-          <i data-lucide="user-cog" style="width:16px;height:16px"></i> Meu Perfil
-        </button>
-      </div>
-
-      <div class="card mb-4">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px">
-          <div class="section-title" style="margin-bottom:0">Modo de treino</div>
-          <div class="tag">Escolha como o app monta seus treinos</div>
-        </div>
-        <div class="fitness-mode-grid">
-          <button id="fitness-mode-ai" class="btn btn-ghost fitness-mode-btn" type="button" onclick="setFitnessRoutineMode('ai')">Assistente</button>
-          <button id="fitness-mode-preset" class="btn btn-ghost fitness-mode-btn" type="button" onclick="setFitnessRoutineMode('preset')">Predefinido</button>
-          <button id="fitness-mode-none" class="btn btn-ghost fitness-mode-btn" type="button" onclick="setFitnessRoutineMode('none')">Sem exercícios</button>
-        </div>
-        <div id="fitness-preset-wrap" class="fitness-preset-wrap" hidden>
-          <label class="text-sm text-muted" style="display:block;margin-bottom:6px">Plano predefinido</label>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <select id="fitness-preset-select" class="input" style="min-width:200px;flex:1"></select>
-            <button class="btn btn-primary" type="button" onclick="applyPresetPlanFromSelect()">Aplicar plano</button>
-          </div>
-        </div>
-        <div class="text-sm text-muted" id="fitness-mode-note" style="margin-top:10px">Plano inteligente: gere seu treino com Assistente de acordo com seu perfil.</div>
-      </div>
-
-      <div class="grid-2 mb-4">
-        <!-- Today's workout -->
-        <div class="card" style="display:flex;flex-direction:column;gap:0">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-            <div class="section-title" style="margin-bottom:0">Treino de Hoje</div>
-            <button id="fitness-ai-generate-btn" class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="generateFitnessPlan()">
-              <i data-lucide="sparkles" style="width:14px;height:14px;margin-right:4px"></i>Gerar com Assistente
-            </button>
-          </div>
-          <div id="fitness-today-plan">
-            <div class="empty-state">
-              <p>Nenhum treino gerado.<br>Configure seu perfil e clique em <b>Gerar com Assistente</b>.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Stats & Body tracking -->
-        <div style="display:flex;flex-direction:column;gap:16px">
-          <div class="card">
-            <div class="section-title" style="margin-bottom:12px">Meus Dados Físicos</div>
-            <div id="fitness-profile-display">
-              <p class="text-sm text-muted">Nenhum perfil configurado ainda.<br>Clique em <b>Meu Perfil</b> para começar.</p>
-            </div>
-          </div>
-          <div class="card">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;flex-wrap:wrap">
-              <div class="section-title" style="margin-bottom:0">Foto de Progresso</div>
-              <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="openProgressPhotoModal()">+ Adicionar foto</button>
-            </div>
-            <div id="fitness-progress-photo-panel"></div>
-          </div>
-          <div class="card">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-              <div class="section-title" style="margin-bottom:0">Histórico de peso</div>
-              <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="openWeightLog()">+ Registrar</button>
-            </div>
-            <div id="fitness-weight-chart-wrap" style="position:relative;height:120px">
-              <canvas id="fitness-weight-chart"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Weekly plan -->
-      <div class="card mb-4">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-          <div class="section-title" style="margin-bottom:0">Plano Semanal</div>
-          <span class="tag" id="fitness-plan-tag" style="display:none">Assistente</span>
-        </div>
-        <div id="fitness-weekly-plan">
-          <p class="text-sm text-muted">Gere um plano com IA para ver sua semana de treinos.</p>
-        </div>
-      </div>
-
-      <div class="card mb-4" id="fitness-selectable-card">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">
-          <div class="section-title" style="margin-bottom:0">Exercícios rápidos</div>
-          <span class="tag" id="fitness-selectable-summary">0/0 feitos hoje</span>
-        </div>
-        <div id="fitness-selectable-list"></div>
-      </div>
-
-    </section>
-
-    <section class="page" id="page-stats">
-      <h1 class="page-title">Estatísticas e relatórios</h1>
-
-      <div class="card mb-4">
-        <div class="section-title" style="margin-bottom:12px">Resumo de Hoje</div>
-        <div class="dashboard-overview-metrics">
-          <div class="dashboard-overview-item is-accent dashboard-overview-item-unified">
-            <div class="dashboard-overview-line">
-              <div class="dashboard-overview-label">Resumo do dia</div>
-              <div class="dashboard-overview-value" id="stats-ov-progress">0%</div>
-            </div>
-            <div class="dashboard-overview-meta">
-              <strong id="stats-ov-tasks-done">0/0</strong> tarefas
-              <strong id="stats-ov-daily-done">0/0</strong> hábitos
-              <strong id="stats-dash-stat-tasks">0</strong> feitas
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid-4 mb-4" id="stats-summary"></div>
-
-      <div class="grid-2">
-        <div class="card">
-          <div class="section-title">Conclusão semanal de tarefas</div>
-          <canvas id="chart-tasks" height="200"></canvas>
-        </div>
-        <div class="card">
-          <div class="section-title">Hábitos por dia da semana</div>
-          <canvas id="chart-habits" height="200"></canvas>
-        </div>
-      </div>
-      <div class="card mt-4">
-        <div class="section-title">Melhores Dias da Semana</div>
-        <div id="best-days"></div>
-      </div>
-      <div class="card mt-4">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-          <div class="section-title" style="margin-bottom:0">Progresso mês a mês</div>
-          <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="openProgressPhotoModal()">+ Foto do mês</button>
-        </div>
-        <div id="monthly-progress-grid"></div>
-      </div>
-    </section>
-
+    <!-- ==================== SETTINGS ("Ajustes") ==================== -->
     <section class="page" id="page-settings">
       <div class="settings-hero mb-4">
         <div class="settings-hero-copy">
           <div class="settings-kicker">Ajustes</div>
           <h1 class="page-title" style="margin-bottom:6px">Configurações</h1>
-          <p class="text-sm text-muted">Menos distrações, mais controle.</p>
+          <p class="text-sm text-muted">Controle total.</p>
         </div>
       </div>
 
@@ -515,7 +252,7 @@
             <div class="settings-section-head">
               <div>
                 <div class="settings-kicker">Visual</div>
-                <div class="section-title" style="margin-bottom:0">Aparência e painel</div>
+                <div class="section-title" style="margin-bottom:0">Aparência</div>
               </div>
             </div>
             <div class="settings-panel">
@@ -523,53 +260,13 @@
                 <div class="settings-theme-stack" style="width:100%">
                   <div class="settings-theme-head">
                     <div>
-                      <div class="settings-title">Tema e paleta</div>
-                      <div class="settings-copy" id="settings-theme-copy">Escolha uma aparência pronta para o app.</div>
+                      <div class="settings-title">Tema</div>
+                      <div class="settings-copy" id="settings-theme-copy">Escolha uma aparência.</div>
                     </div>
-                    <span class="settings-pill-card active" id="settings-theme-pill">Dark Tech</span>
+                    <span class="settings-pill-card" id="settings-theme-pill">Minimal</span>
                   </div>
                   <div id="settings-theme-grid" class="theme-grid"></div>
                 </div>
-              </div>
-
-              <div class="settings-item">
-                <div>
-                  <div class="settings-title">Relógio da tela principal</div>
-                  <div class="settings-copy" id="settings-clock-status">Relógio visível no topo da tela principal.</div>
-                </div>
-                <label class="toggle-switch" for="settings-clock-toggle">
-                  <input type="checkbox" id="settings-clock-toggle" onchange="toggleDashboardClockSetting(this.checked)">
-                  <span class="toggle-slider"></span>
-                </label>
-              </div>
-
-              <div class="settings-item compact">
-                <div>
-                  <div class="settings-title">Cards da tela inicial</div>
-                  <div class="settings-copy">Organize os cards do dashboard.</div>
-                </div>
-                <button class="btn btn-ghost" style="padding:8px 12px" onclick="openDashboardOrderModal()">
-                  Organizar cards
-                </button>
-              </div>
-
-            </div>
-          </div>
-
-          <div class="card settings-surface">
-            <div class="settings-section-head">
-              <div>
-              <div class="settings-kicker">Assistente</div>
-              <div class="section-title" style="margin-bottom:0">Assistente inteligente</div>
-              </div>
-            </div>
-            <div class="settings-panel">
-              <div class="settings-item compact">
-                <div>
-                  <div class="settings-title">Motor atual - <span id="settings-ai-provider">Gemini</span></div>
-                  <div class="settings-copy">Configure o motor do Assistente.</div>
-                </div>
-                <button class="btn btn-ghost" style="padding:8px 12px" onclick="openAiSettings()">Configurar</button>
               </div>
             </div>
           </div>
@@ -579,37 +276,63 @@
           <div class="card settings-surface">
             <div class="settings-section-head">
               <div>
-                <div class="settings-kicker">Conta</div>
-                <div class="section-title" style="margin-bottom:0">Dados e alertas</div>
+                <div class="settings-kicker">Perfil</div>
+                <div class="section-title" style="margin-bottom:0">Conta</div>
               </div>
             </div>
             <div class="settings-panel">
               <div class="settings-item compact">
                 <div>
-                  <div class="settings-title">Nome exibido</div>
+                  <div class="settings-title">Nome</div>
                   <div class="settings-copy" id="settings-current-name">Você</div>
                 </div>
-                <button class="btn btn-ghost" style="padding:8px 12px" onclick="openNameModal()">Alterar nome</button>
+                <button class="btn btn-ghost" style="padding:8px 12px" onclick="openNameModal()">Alterar</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card settings-surface">
+            <div class="settings-section-head">
+              <div>
+                <div class="settings-kicker">Rotina</div>
+                <div class="section-title" style="margin-bottom:0">Dia</div>
+              </div>
+              <span class="settings-pill-card" id="settings-task-count">0 tarefas</span>
+            </div>
+            <div class="settings-panel">
+              <div class="settings-item compact">
+                <div>
+                  <div class="settings-title">Período atual</div>
+                  <div class="settings-copy">Mostra "Foco" no Hoje.</div>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="settings-clock-toggle" onchange="toggleDashboardClock()" />
+                  <span class="switch-track" aria-hidden="true"></span>
+                </label>
               </div>
 
               <div class="settings-item compact">
                 <div>
-                  <div class="settings-title">Notificações do app</div>
-                  <div class="settings-copy" id="settings-notification-status">Ative ou pause alertas.</div>
+                  <div class="settings-title">Reiniciar dia</div>
+                  <div class="settings-copy">Zera tarefas e blocos.</div>
                 </div>
-                <div class="settings-inline-actions">
-                  <span class="settings-pill-card" id="settings-notification-pill">Desligadas</span>
-                  <button class="btn btn-primary" style="padding:8px 12px" onclick="toggleNotifications()">
-                    <span id="settings-notification-action-label">Ativar alertas</span>
-                  </button>
-                </div>
+                <button class="btn btn-ghost" style="padding:8px 12px" onclick="restartDay()">Reiniciar</button>
               </div>
-              <div class="settings-note-card" id="settings-mobile-note"></div>
+            </div>
+          </div>
 
+          <div class="card settings-surface">
+            <div class="settings-section-head">
+              <div>
+                <div class="settings-kicker">Conta</div>
+                <div class="section-title" style="margin-bottom:0">Dados</div>
+              </div>
+            </div>
+            <div class="settings-panel">
               <div class="settings-item compact">
                 <div>
-                  <div class="settings-title">Backup manual (opcional)</div>
-                  <div class="settings-copy">Exporte ou importe arquivo JSON.</div>
+                  <div class="settings-title">Backup</div>
+                  <div class="settings-copy">Exportar ou importar JSON.</div>
                 </div>
                 <div class="settings-inline-actions">
                   <button class="btn btn-ghost" style="padding:8px 12px" onclick="exportData()">Exportar</button>
@@ -624,16 +347,16 @@
             <div class="settings-section-head">
               <div>
                 <div class="settings-kicker">Privacidade</div>
-                <div class="section-title" style="margin-bottom:0">Seus dados continuam seus</div>
+                <div class="section-title" style="margin-bottom:0">Dados</div>
               </div>
             </div>
-            <div class="settings-note">Seus dados ficam locais neste navegador.</div>
+            <div class="settings-note">Dados locais neste navegador.</div>
             <div class="settings-item compact" style="margin-top:14px">
               <div>
-                <div class="settings-title">Excluir todos os dados locais</div>
-                <div class="settings-copy">Remove tudo deste navegador e reinicia o app do zero.</div>
+                <div class="settings-title">Excluir tudo</div>
+                <div class="settings-copy">Remove tudo e reinicia.</div>
               </div>
-              <button class="btn btn-danger" style="padding:8px 12px" onclick="clearAllData()">Excluir tudo</button>
+              <button class="btn btn-danger" style="padding:8px 12px" onclick="clearAllData()">Excluir</button>
             </div>
           </div>
         </div>
@@ -645,19 +368,11 @@
   <nav class="mobile-dock" aria-label="Navegação rápida">
     <button class="mobile-dock-item active" type="button" data-page="dashboard" onclick="navigate('dashboard')">
       <i data-lucide="layout-dashboard" style="width:18px;height:18px"></i>
-      <span>Início</span>
+      <span>Hoje</span>
     </button>
     <button class="mobile-dock-item" type="button" data-page="tasks" onclick="navigate('tasks')">
       <i data-lucide="check-square" style="width:18px;height:18px"></i>
       <span>Plano</span>
-    </button>
-    <button class="mobile-dock-item" type="button" data-page="ai" onclick="navigate('ai')">
-      <i data-lucide="bot" style="width:18px;height:18px"></i>
-      <span>Assist.</span>
-    </button>
-    <button class="mobile-dock-item" type="button" data-page="fitness" onclick="navigate('fitness')">
-      <i data-lucide="dumbbell" style="width:18px;height:18px"></i>
-      <span>Fit</span>
     </button>
     <button class="mobile-dock-item" type="button" data-page="settings" onclick="navigate('settings')">
       <i data-lucide="settings-2" style="width:18px;height:18px"></i>
@@ -665,83 +380,10 @@
     </button>
   </nav>
 
-  <!-- =============================================
-     MODALS
-============================================= -->
-  
-  <!-- AI Settings Modal (usado embutido na página de settings) -->
-  <div class="modal-overlay" id="modal-ai-settings-inline" style="backdrop-filter:blur(4px)">
-    <div class="modal card" style="max-width:480px; margin: 0 16px;">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="section-title" style="margin:0;display:flex;align-items:center;gap:8px">
-          <i data-lucide="brain-circuit" style="width:20px;height:20px;color:var(--accent)"></i> 
-          Conectar Assistente
-        </h2>
-        <button class="icon-btn" onclick="closeModal('modal-ai-settings-inline')" style="color:var(--muted)">
-          <i data-lucide="x"></i>
-        </button>
-      </div>
-      
-      <p class="text-sm mb-4" style="color:var(--muted); line-height:1.5">
-        Escolha o provedor e salve sua chave localmente. Você pode trocar de motor quando quiser.
-      </p>
-
-      <div class="form-group mb-4">
-        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;color:var(--text);font-weight:500">
-          <i data-lucide="cpu" style="width:16px;height:16px"></i>
-          Provedor do Assistente
-        </label>
-        <select id="ai-provider-select" class="input" onchange="onAiProviderChange()">
-          <option value="gemini">Google Gemini</option>
-          <option value="openai">OpenAI (ChatGPT)</option>
-          <option value="groq">Groq</option>
-          <option value="mistral">Mistral</option>
-          <option value="custom">OpenAI compatível (custom)</option>
-        </select>
-      </div>
-
-      <div class="form-group mb-4">
-        <label id="ai-key-label" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;color:var(--text);font-weight:500">
-          <i data-lucide="lock" style="width:16px;height:16px"></i>
-          Chave da API
-        </label>
-        <input type="password" id="ai-api-key" class="input" placeholder="" style="font-family:monospace;letter-spacing:1px">
-      </div>
-
-      <div class="form-group mb-4">
-        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;color:var(--text);font-weight:500">
-          <i data-lucide="sparkles" style="width:16px;height:16px"></i>
-          Modelo
-        </label>
-        <input type="text" id="ai-model" class="input" placeholder="">
-        <div class="settings-note" id="ai-model-note"></div>
-      </div>
-
-      <div class="form-group mb-4" id="ai-base-url-group">
-        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;color:var(--text);font-weight:500">
-          <i data-lucide="link-2" style="width:16px;height:16px"></i>
-          Endpoint/Base URL
-        </label>
-        <input type="text" id="ai-base-url" class="input" placeholder="">
-        <div class="settings-note" id="ai-base-url-note"></div>
-      </div>
-      
-      <div style="padding:12px;background:rgba(92, 230, 184, 0.1);border-radius:8px;border:1px solid rgba(92, 230, 184, 0.2);margin-bottom:20px">
-        <p class="text-xs" style="color:var(--success);text-align:center;margin:0;line-height:1.4">
-          <b>Privacidade:</b> códigos ou conversas não passam por nós. A chave trafega diretamente do seu navegador para o provedor selecionado.
-        </p>
-      </div>
-
-      <div class="flex gap-2">
-            <button class="btn btn-primary" style="flex:1" onclick="saveAiSettings()">Salvar conexão</button>
-      </div>
-    </div>
-  </div>
-  
   <!-- Confirm Modal -->
   <div class="modal-overlay" id="modal-confirm">
     <div class="modal">
-      <div class="modal-title" id="confirm-title">Confirmar ação</div>
+      <div class="modal-title" id="confirm-title">Confirmar</div>
       <p class="text-muted mb-4" id="confirm-msg">Tem certeza?</p>
       <div class="flex gap-2">
         <button class="btn btn-danger" id="confirm-yes-btn">Confirmar</button>
@@ -750,31 +392,14 @@
     </div>
   </div>
 
-  <div class="modal-overlay" id="modal-dashboard-order">
-    <div class="modal card" style="max-width:520px;margin:0 16px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px">
-        <h2 class="section-title" style="margin:0">Cards da tela inicial</h2>
-        <button class="icon-btn" onclick="closeModal('modal-dashboard-order')"><i data-lucide="x"></i></button>
-      </div>
-      <p class="text-sm text-muted" style="margin-bottom:12px">
-        Reordene e ative/desative os cards como preferir.
-      </p>
-      <div id="dashboard-order-list" class="dashboard-order-list"></div>
-      <div class="flex gap-2" style="justify-content:flex-end;flex-wrap:wrap">
-        <button class="btn btn-ghost" onclick="resetDashboardCardOrder()">Restaurar padrão</button>
-        <button class="btn btn-primary" onclick="saveDashboardCardOrder()">Salvar ordem</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Edit Task Modal -->
   <div class="modal-overlay" id="modal-edit-task">
     <div class="modal">
-      <div class="modal-title">Editar Tarefa</div>
-      <div class="mb-3"><input type="text" id="edit-task-text" placeholder="Texto da tarefa" /></div>
+      <div class="modal-title">Editar</div>
+      <div class="mb-3"><input type="text" id="edit-task-text" placeholder="Tarefa" /></div>
       <div class="task-config-grid mb-3">
         <div id="edit-task-datetime-wrap">
-          <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Data & Hora</label>
+          <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Data</label>
           <input type="datetime-local" id="edit-task-datetime" step="900" />
         </div>
       </div>
@@ -782,22 +407,22 @@
         <label class="option-toggle">
           <input type="checkbox" id="edit-task-no-datetime" onchange="syncTaskFormState(true)" />
           <div>
-            <strong>Sem data e hora</strong>
-            <span>Deixa a tarefa pronta para ser encaixada nos períodos do dia.</span>
+            <strong>Sem data</strong>
+            <span>Pronta para os períodos.</span>
           </div>
         </label>
         <label class="option-toggle">
           <input type="checkbox" id="edit-task-repeat-daily" onchange="syncTaskFormState(true)" />
           <div>
-            <strong>Repetir diariamente</strong>
-            <span>Mantém a tarefa no ciclo de todos os dias.</span>
+            <strong>Diária</strong>
+            <span>Repete todos os dias.</span>
           </div>
         </label>
       </div>
       <div id="edit-task-block-wrap" class="mb-3" hidden>
-        <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Período do dia</label>
+        <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Período</label>
         <select id="edit-task-block">
-          <option value="">Escolher depois</option>
+          <option value="">Depois</option>
           <option value="morning">Manhã</option>
           <option value="afternoon">Tarde</option>
           <option value="evening">Noite</option>
@@ -814,8 +439,8 @@
   <!-- Name Modal -->
   <div class="modal-overlay" id="modal-name">
     <div class="modal">
-      <div class="modal-title">Qual é o seu nome?</div>
-      <div class="mb-3"><input type="text" id="name-input" placeholder="Seu nome..." maxlength="30" /></div>
+      <div class="modal-title">Seu nome</div>
+      <div class="mb-3"><input type="text" id="name-input" placeholder="Nome..." maxlength="30" /></div>
       <div class="flex gap-2">
         <button class="btn btn-primary" onclick="saveName()">Salvar</button>
         <button class="btn btn-ghost" onclick="closeModal('modal-name')">Cancelar</button>
@@ -823,207 +448,11 @@
     </div>
   </div>
 
-  <!-- =============================================
-     JAVASCRIPT
-============================================= -->
-  <script src="scripts/core/theme.js?v=2026-04-02-v4"></script>
-  <script src="scripts/pages/settings.js?v=2026-04-02-v4"></script>
-  <script src="scripts/pages/dashboard.js?v=2026-04-02-v4"></script>
-  <script src="scripts/pages/tasks.js?v=2026-04-05-v5"></script>
-  <script src="scripts/pages/stats.js?v=2026-04-02-v4"></script>
-  <script src="scripts/pages/ai.js?v=2026-04-05-v5"></script>
-  <script src="scripts/pages/fitness.js?v=2026-04-02-v4"></script>
-  <script src="app.js?v=2026-04-02-v4"></script>
-
-  <!-- MODAL: Fitness Profile -->
-  <div class="modal-overlay" id="modal-fitness-profile">
-    <div class="modal card" style="max-width:480px;margin:0 16px;max-height:90vh;overflow-y:auto">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-        <h2 class="section-title" style="margin:0;display:flex;align-items:center;gap:8px">
-          <i data-lucide="user-cog" style="width:20px;height:20px;color:var(--accent)"></i> Meu Perfil Físico
-        </h2>
-        <button class="icon-btn" onclick="closeModal('modal-fitness-profile')"><i data-lucide="x"></i></button>
-      </div>
-
-      <div class="grid-2" style="gap:12px;margin-bottom:12px">
-        <div class="form-group" style="margin:0">
-          <label>Idade (anos)</label>
-          <input type="number" id="fp-age" class="input" placeholder="25" min="10" max="99">
-        </div>
-        <div class="form-group" style="margin:0">
-          <label>Sexo</label>
-          <select id="fp-sex" class="input">
-            <option value="male">Masculino</option>
-            <option value="female">Feminino</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="grid-2" style="gap:12px;margin-bottom:12px">
-        <div class="form-group" style="margin:0">
-          <label>Altura (cm)</label>
-          <input type="number" id="fp-height" class="input" placeholder="175" min="100" max="250">
-        </div>
-        <div class="form-group" style="margin:0">
-          <label>Peso atual (kg)</label>
-          <input type="number" id="fp-weight" class="input" placeholder="70" step="0.1" min="30" max="300">
-        </div>
-      </div>
-
-      <div class="form-group" style="margin-bottom:12px">
-        <label>Objetivo principal</label>
-        <select id="fp-goal" class="input">
-          <option value="lose_fat">Perder gordura</option>
-          <option value="gain_muscle">Ganhar músculo</option>
-          <option value="maintain">Manter forma</option>
-          <option value="endurance">Melhorar resistência</option>
-          <option value="general">Saúde geral</option>
-        </select>
-      </div>
-
-      <div class="form-group" style="margin-bottom:12px">
-        <label>Nível de experiência</label>
-        <select id="fp-level" class="input">
-          <option value="beginner">Iniciante (menos de 6 meses)</option>
-          <option value="intermediate">Intermediário (6 meses a 2 anos)</option>
-          <option value="advanced">Avançado (2+ anos)</option>
-        </select>
-      </div>
-
-      <div class="form-group" style="margin-bottom:12px">
-        <label>Dias de treino</label>
-        <div id="fp-days-picker" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
-          <button type="button" data-day="Seg" onclick="toggleDayPick(this)" class="day-pick-btn">Seg</button>
-          <button type="button" data-day="Ter" onclick="toggleDayPick(this)" class="day-pick-btn">Ter</button>
-          <button type="button" data-day="Qua" onclick="toggleDayPick(this)" class="day-pick-btn">Qua</button>
-          <button type="button" data-day="Qui" onclick="toggleDayPick(this)" class="day-pick-btn">Qui</button>
-          <button type="button" data-day="Sex" onclick="toggleDayPick(this)" class="day-pick-btn">Sex</button>
-          <button type="button" data-day="Sáb" onclick="toggleDayPick(this)" class="day-pick-btn">Sáb</button>
-          <button type="button" data-day="Dom" onclick="toggleDayPick(this)" class="day-pick-btn">Dom</button>
-        </div>
-        <div style="font-size:11px;color:var(--muted);margin-top:6px" id="fp-days-count">Nenhum dia selecionado</div>
-      </div>
-
-      <div class="form-group" style="margin-bottom:12px">
-        <label>Equipamento disponível</label>
-        <select id="fp-equipment" class="input">
-          <option value="none">Sem equipamento (calistenia)</option>
-          <option value="dumbbells">Halteres em casa</option>
-          <option value="gym">Academia completa</option>
-          <option value="resistance_bands">Elásticos/bandas</option>
-        </select>
-      </div>
-
-      <div class="form-group" style="margin-bottom:20px">
-        <label>Restrições / Observações (opcional)</label>
-        <input type="text" id="fp-notes" class="input" placeholder="Ex: joelho lesionado, não posso correr...">
-      </div>
-
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-primary" style="flex:1" onclick="saveFitnessProfile()">Salvar Perfil</button>
-        <button class="btn btn-ghost" onclick="closeModal('modal-fitness-profile')">Cancelar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: Weight Log -->
-  <div class="modal-overlay" id="modal-weight-log">
-    <div class="modal card" style="max-width:360px;margin:0 16px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-        <h2 class="section-title" style="margin:0">Registrar peso</h2>
-        <button class="icon-btn" onclick="closeModal('modal-weight-log')"><i data-lucide="x"></i></button>
-      </div>
-      <div class="form-group" style="margin-bottom:12px">
-        <label>Peso (kg)</label>
-        <input type="number" id="wl-weight" class="input" placeholder="70.5" step="0.1" min="30" max="300">
-      </div>
-      <div class="form-group" style="margin-bottom:20px">
-        <label>Data</label>
-        <input type="date" id="wl-date" class="input">
-      </div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-primary" style="flex:1" onclick="saveWeightEntry()">Registrar</button>
-        <button class="btn btn-ghost" onclick="closeModal('modal-weight-log')">Cancelar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="modal-progress-photo">
-    <div class="modal card" style="max-width:460px;margin:0 16px;max-height:90vh;overflow-y:auto">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-        <h2 class="section-title" style="margin:0">Foto de progresso</h2>
-        <button class="icon-btn" onclick="closeModal('modal-progress-photo')"><i data-lucide="x"></i></button>
-      </div>
-      <div class="form-group" style="margin-bottom:12px">
-        <label>Data da foto</label>
-        <input type="date" id="progress-photo-date" class="input">
-      </div>
-      <div class="form-group" style="margin-bottom:12px">
-        <label>Observação (opcional)</label>
-        <input type="text" id="progress-photo-note" class="input" placeholder="Ex: início do mês, definição melhorando...">
-      </div>
-      <div class="form-group" style="margin-bottom:12px">
-        <label>Selecione a imagem</label>
-        <input type="file" id="progress-photo-file" class="input" accept="image/*" onchange="handleProgressPhotoSelection(event)">
-      </div>
-      <div id="progress-photo-preview-wrap" class="progress-photo-upload">
-        <div class="progress-photo-empty">
-          Escolha uma foto para visualizar antes de salvar.
-        </div>
-      </div>
-      <div class="settings-note" style="margin-top:12px">
-        A imagem fica salva localmente no seu navegador para acompanhar sua evolução mês a mês.
-      </div>
-      <div style="display:flex;gap:8px;margin-top:20px">
-        <button class="btn btn-primary" style="flex:1" onclick="saveProgressPhoto()">Salvar foto</button>
-        <button class="btn btn-ghost" onclick="closeModal('modal-progress-photo')">Cancelar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: Exercise Done -->
-    <div class="modal-overlay" id="modal-exercise-done">
-      <div class="modal card" style="max-width:360px;margin:0 16px;text-align:center">
-        <div style="font-size:56px;margin-bottom:12px" id="exdone-emoji">💪</div>
-        <h2 class="section-title" style="margin-bottom:8px" id="exdone-title">Treino concluído!</h2>
-        <p class="text-sm text-muted" style="margin-bottom:20px" id="exdone-body">Ótimo trabalho. Continue assim!</p>
-        <button class="btn btn-primary" style="width:100%" onclick="closeModal('modal-exercise-done')">Continuar</button>
-      </div>
-    </div>
-
-  <!-- MODAL: AI Settings -->
-
-  <!--
-==============================================
-  INSTRUÇÕES DE USO
-==============================================
-
-1. Salve este arquivo como: minha-rotina.html
-   (em qualquer pasta do seu computador)
-
-2. Abra no navegador: clique duas vezes no arquivo
-   OU arraste para o Chrome/Firefox/Edge
-
-3. TODOS os dados são salvos automaticamente no
-   localStorage do navegador - nenhuma internet
-   necessária para o app funcionar!
-
-4. Para backup, clique em "Exportar" na barra lateral
-   para baixar um arquivo JSON com todos os seus dados.
-
-5. Funciona offline após o primeiro carregamento
-   (Tailwind, Chart.js e Lucide são carregados via CDN
-   apenas na primeira vez).
-
-ATALHOS DE TECLADO:
-- Enter no campo de tarefa -> Adicionar tarefa
-- Enter no campo de hábito -> Adicionar hábito
-- Esc -> Fechar modal
-Desenvolvido para: 
-==============================================
--->
+  <script src="scripts/core/theme.js"></script>
+  <script src="scripts/pages/settings.js"></script>
+  <script src="scripts/pages/dashboard.js"></script>
+  <script src="scripts/pages/tasks.js"></script>
+  <script src="app.js"></script>
 </body>
 
 </html>
-
-

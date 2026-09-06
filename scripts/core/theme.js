@@ -1,19 +1,11 @@
 const DEFAULT_THEME_ID = 'dark-tech';
-const LAST_DARK_THEME_KEY = 'mr_lastDarkTheme';
 const THEME_PRESETS = [
   {
     id: 'dark-tech',
-    name: 'Dark Tech',
-    description: 'Black tech minimalista: preto profundo, cinza e branco.',
+    name: 'Minimal',
+    description: 'Clean dark theme with indigo accent.',
     mode: 'dark',
-    swatches: ['#040506', '#2A2F37', '#F4F6F8'],
-  },
-  {
-    id: 'liquid-glass',
-    name: 'Liquid Glass',
-    description: 'Vidro fosco com paleta dark tech em preto, cinza e branco.',
-    mode: 'dark',
-    swatches: ['#040506', '#2A2F37', '#F4F6F8'],
+    swatches: ['#09090b', '#27272a', '#818cf8'],
   },
 ];
 
@@ -45,10 +37,7 @@ function applyTheme(themeId, { persist = false } = {}) {
   const preset = getThemePreset(normalized);
   document.documentElement.setAttribute('data-theme', preset.id);
   document.documentElement.dataset.themeMode = preset.mode;
-  if (persist) {
-    save(STORAGE_KEYS.theme, preset.id);
-    if (preset.mode === 'dark') save(LAST_DARK_THEME_KEY, preset.id);
-  }
+  if (persist) save(STORAGE_KEYS.theme, preset.id);
   updateThemeMeta(preset.id);
   return preset;
 }
@@ -61,7 +50,7 @@ function setTheme(themeId, { silent = false } = {}) {
   const previous = getCurrentThemeId();
   const next = applyTheme(themeId, { persist: true });
   if (!silent && previous !== next.id) {
-    showToast('Tema atualizado', `${next.name} aplicado ao app.`, 'success');
+    showToast('Tema', `${next.name} aplicado.`, 'success');
   }
   refreshUI();
   renderSettingsPage();

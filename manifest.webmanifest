@@ -1,7 +1,7 @@
 {
   "name": "Minha Rotina",
   "short_name": "Rotina",
-  "description": "Organize tarefas, habitos, exercicios e alertas em um so lugar.",
+  "description": "Planejador diário simples: tarefas, recorrentes e blocos de tempo.",
   "id": "./",
   "start_url": "./index.html",
   "scope": "./",
