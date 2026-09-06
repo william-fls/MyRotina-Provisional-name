@@ -40,6 +40,4 @@ scripts/pages/
 icons/
 ```
 
-## Licença
 
-ISC
