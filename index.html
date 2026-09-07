@@ -20,39 +20,39 @@
 
 <body>
 
-  <div id="sidebar-overlay" onclick="closeSidebar()"></div>
+  <div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true" data-action="close-sidebar"></div>
 
-  <header id="mobile-topbar">
-    <button class="icon-btn mobile-only" type="button" onclick="toggleSidebar()" aria-label="Abrir menu">
+  <header id="mobile-topbar" class="mobile-topbar" role="banner">
+    <button class="icon-btn mobile-only" type="button" data-action="toggle-sidebar" aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
       <i data-lucide="menu" style="width:18px;height:18px"></i>
     </button>
     <div class="mobile-topbar-copy">
       <div class="mobile-brand">Minha Rotina</div>
       <div class="mobile-page-label" id="mobile-page-label">Hoje</div>
     </div>
-    <div style="width:36px"></div>
+    <div class="mobile-topbar-spacer" aria-hidden="true"></div>
   </header>
 
-  <div id="toast-stack" class="toast-stack"></div>
+  <div id="toast-stack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
 
-  <nav id="sidebar">
+  <nav id="sidebar" class="sidebar" role="navigation" aria-label="Navegação principal" aria-hidden="false">
     <div class="nav-logo"><span class="nav-logo-mark">M</span><span>Minha Rotina</span></div>
 
     <div class="nav-section">Menu</div>
-    <a class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+    <button class="nav-item active" data-page="dashboard" type="button" data-action="navigate" aria-current="page">
       <i data-lucide="layout-dashboard" style="width:20px;height:20px;flex-shrink:0"></i>
       <span class="nav-label">Hoje</span>
-    </a>
-    <a class="nav-item" data-page="tasks" onclick="navigate('tasks')">
+    </button>
+    <button class="nav-item" data-page="tasks" type="button" data-action="navigate">
       <i data-lucide="check-square" style="width:20px;height:20px;flex-shrink:0"></i>
       <span class="nav-label">Planejar</span>
-    </a>
-    <a class="nav-item" data-page="settings" onclick="navigate('settings')">
+    </button>
+    <button class="nav-item" data-page="settings" type="button" data-action="navigate">
       <i data-lucide="settings-2" style="width:20px;height:20px;flex-shrink:0"></i>
       <span class="nav-label">Ajustes</span>
-    </a>
+    </button>
 
-    <div class="nav-footer"><span class="nav-dot"></span>Dados salvos localmente</div>
+    <div class="nav-footer"><span class="nav-dot" aria-hidden="true"></span>Dados salvos localmente</div>
   </nav>
 
   <main id="main">
@@ -92,7 +92,7 @@
         <div class="card" id="dash-card-tasks">
           <div class="dash-card-head">
             <div class="section-title" style="margin-bottom:0">Hoje</div>
-            <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="navigate('tasks')">Ver mais</button>
+            <button class="btn btn-ghost" data-action="navigate" data-page="tasks" type="button" style="padding:4px 10px;font-size:11px">Ver mais</button>
           </div>
           <div id="dash-tasks-list"></div>
         </div>
@@ -100,7 +100,7 @@
         <div class="card" id="dash-card-daily">
           <div class="dash-card-head">
             <div class="section-title" style="margin-bottom:0">Diárias</div>
-            <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="navigate('tasks')">Ver mais</button>
+            <button class="btn btn-ghost" data-action="navigate" data-page="tasks" type="button" style="padding:4px 10px;font-size:11px">Ver mais</button>
           </div>
           <div id="dash-daily-list"></div>
         </div>
@@ -119,7 +119,7 @@
             <div class="section-title" style="margin-bottom:4px">Criar</div>
             <p class="text-sm text-muted">Adicione uma nova tarefa.</p>
           </div>
-          <button class="btn btn-ghost" id="task-composer-toggle-btn" type="button" onclick="toggleTaskComposer()" aria-expanded="true" aria-controls="task-composer-form">
+          <button class="btn btn-ghost" id="task-composer-toggle-btn" type="button" data-action="toggle-task-composer" aria-expanded="true" aria-controls="task-composer-form">
             <i data-lucide="chevron-up" style="width:16px;height:16px"></i>
             <span>Ocultar</span>
           </button>
@@ -129,27 +129,34 @@
             <label class="composer-label" for="task-input">Tarefa</label>
             <input type="text" id="task-input" placeholder="Ex.: Beber água, estudar 25 min..." maxlength="120" autocomplete="off" />
           </div>
-          <div class="mb-2 task-datetime-wrap" id="task-datetime-wrap">
-            <div class="task-datetime-head">
-              <label class="composer-label" for="task-datetime" style="margin-bottom:0">Data</label>
-              <label class="task-inline-toggle-compact">
-                <input type="checkbox" id="task-no-datetime" onchange="syncTaskFormState()" />
-                <span>Sem data</span>
-              </label>
-            </div>
+          <div class="mb-2" id="task-datetime-wrap">
+            <label class="composer-label" for="task-datetime">Data e hora</label>
             <input type="datetime-local" id="task-datetime" step="900" />
+            <p class="form-hint" id="task-daily-hint" hidden>Só o horário importa — repete todo dia.</p>
           </div>
-          <div class="task-toggle-row task-toggle-row-main mb-2">
+          <div class="task-toggle-row mb-2">
             <label class="option-toggle">
-              <input type="checkbox" id="task-repeat-daily" onchange="syncTaskFormState()" />
-              <div>
-                <strong>Diária</strong>
-                <span>Repete todos os dias.</span>
+              <input type="checkbox" id="task-no-datetime" data-action="sync-task-form" />
+              <span class="option-icon" aria-hidden="true"><i data-lucide="calendar-off" style="width:16px;height:16px"></i></span>
+              <div class="option-copy">
+                <strong>Sem hora</strong>
+                <span>Sem hora marcada. Combina com Diária.</span>
               </div>
+              <span class="option-switch" aria-hidden="true"></span>
+            </label>
+            <label class="option-toggle">
+              <input type="checkbox" id="task-repeat-daily" data-action="sync-task-form" />
+              <span class="option-icon" aria-hidden="true"><i data-lucide="repeat" style="width:16px;height:16px"></i></span>
+              <div class="option-copy">
+                <strong>Diária</strong>
+                <span>Repete todo dia, com ou sem hora.</span>
+              </div>
+              <span class="option-switch" aria-hidden="true"></span>
             </label>
           </div>
-          <div id="task-block-wrap" class="mb-2" hidden>
+          <div id="task-block-wrap" class="task-block-panel mb-2" hidden>
             <label class="composer-label" for="task-block">Período</label>
+            <p class="form-hint" style="margin-bottom:6px">Tarefas sem hora podem ir para um período.</p>
             <select id="task-block">
               <option value="">Depois</option>
               <option value="morning">Manhã</option>
@@ -159,7 +166,7 @@
             </select>
           </div>
           <div class="task-composer-actions">
-            <button class="btn btn-primary" type="button" onclick="addTask()">
+            <button class="btn btn-primary" type="button" data-action="add-task">
               <i data-lucide="check" style="width:14px;height:14px"></i> Adicionar
             </button>
           </div>
@@ -180,15 +187,15 @@
         <div class="section-title" style="margin-bottom:0">Tarefas</div>
         <div class="tasks-section-actions">
           <span class="tag" id="tasks-count">0 pendentes</span>
-          <button class="btn btn-ghost" id="clear-done-btn" type="button" onclick="clearDoneTasks()" style="padding:6px 12px;font-size:12px">Limpar feitas</button>
+          <button class="btn btn-ghost" id="clear-done-btn" type="button" data-action="clear-done-tasks" style="padding:6px 12px;font-size:12px">Limpar feitas</button>
         </div>
       </div>
 
       <div class="filter-tabs" role="tablist" aria-label="Filtrar tarefas">
-        <button class="filter-tab active" data-filter="all" onclick="filterTasks('all', this)">Todas</button>
-        <button class="filter-tab" data-filter="pending" onclick="filterTasks('pending', this)">Pendentes</button>
-        <button class="filter-tab" data-filter="done" onclick="filterTasks('done', this)">Feitas</button>
-        <button class="filter-tab" data-filter="today" onclick="filterTasks('today', this)">Hoje</button>
+        <button class="filter-tab active" data-filter="all" data-action="filter-tasks" type="button">Todas</button>
+        <button class="filter-tab" data-filter="pending" data-action="filter-tasks" type="button">Pendentes</button>
+        <button class="filter-tab" data-filter="done" data-action="filter-tasks" type="button">Feitas</button>
+        <button class="filter-tab" data-filter="today" data-action="filter-tasks" type="button">Hoje</button>
       </div>
 
       <div id="tasks-list"></div>
@@ -286,7 +293,7 @@
                   <div class="settings-title">Nome</div>
                   <div class="settings-copy" id="settings-current-name">Você</div>
                 </div>
-                <button class="btn btn-ghost" style="padding:8px 12px" onclick="openNameModal()">Alterar</button>
+                <button class="btn btn-ghost" style="padding:8px 12px" data-action="open-name-modal" type="button">Alterar</button>
               </div>
             </div>
           </div>
@@ -306,7 +313,7 @@
                   <div class="settings-copy">Mostra "Foco" no Hoje.</div>
                 </div>
                 <label class="switch">
-                  <input type="checkbox" id="settings-clock-toggle" onchange="toggleDashboardClock()" />
+                  <input type="checkbox" id="settings-clock-toggle" />
                   <span class="switch-track" aria-hidden="true"></span>
                 </label>
               </div>
@@ -316,7 +323,7 @@
                   <div class="settings-title">Reiniciar dia</div>
                   <div class="settings-copy">Zera tarefas e blocos.</div>
                 </div>
-                <button class="btn btn-ghost" style="padding:8px 12px" onclick="restartDay()">Reiniciar</button>
+                <button class="btn btn-ghost" style="padding:8px 12px" data-action="restart-day" type="button">Reiniciar</button>
               </div>
             </div>
           </div>
@@ -335,15 +342,15 @@
                   <div class="settings-copy">Exportar ou importar JSON.</div>
                 </div>
                 <div class="settings-inline-actions">
-                  <button class="btn btn-ghost" style="padding:8px 12px" onclick="exportData()">Exportar</button>
-                  <button class="btn btn-primary" style="padding:8px 12px" onclick="triggerImportData()">Importar</button>
+                  <button class="btn btn-ghost" style="padding:8px 12px" data-action="export-data" type="button">Exportar</button>
+                  <button class="btn btn-primary" style="padding:8px 12px" data-action="import-data" type="button">Importar</button>
                 </div>
               </div>
-              <input type="file" id="import-backup-file" accept=".json,application/json" hidden onchange="importDataFromFile(event)">
+              <input type="file" id="import-backup-file" accept=".json,application/json" hidden>
             </div>
           </div>
 
-          <div class="card settings-surface">
+          <div class="card settings-surface settings-surface-wide">
             <div class="settings-section-head">
               <div>
                 <div class="settings-kicker">Privacidade</div>
@@ -356,7 +363,7 @@
                 <div class="settings-title">Excluir tudo</div>
                 <div class="settings-copy">Remove tudo e reinicia.</div>
               </div>
-              <button class="btn btn-danger" style="padding:8px 12px" onclick="clearAllData()">Excluir</button>
+              <button class="btn btn-danger" style="padding:8px 12px" data-action="clear-all-data" type="button">Excluir</button>
             </div>
           </div>
         </div>
@@ -365,62 +372,66 @@
 
   </main>
 
-  <nav class="mobile-dock" aria-label="Navegação rápida">
-    <button class="mobile-dock-item active" type="button" data-page="dashboard" onclick="navigate('dashboard')">
+  <nav class="mobile-dock" aria-label="Navegação rápida" role="navigation">
+    <button class="mobile-dock-item active" type="button" data-page="dashboard" data-action="navigate" aria-current="page">
       <i data-lucide="layout-dashboard" style="width:18px;height:18px"></i>
       <span>Hoje</span>
     </button>
-    <button class="mobile-dock-item" type="button" data-page="tasks" onclick="navigate('tasks')">
+    <button class="mobile-dock-item" type="button" data-page="tasks" data-action="navigate">
       <i data-lucide="check-square" style="width:18px;height:18px"></i>
       <span>Plano</span>
     </button>
-    <button class="mobile-dock-item" type="button" data-page="settings" onclick="navigate('settings')">
+    <button class="mobile-dock-item" type="button" data-page="settings" data-action="navigate">
       <i data-lucide="settings-2" style="width:18px;height:18px"></i>
       <span>Ajustes</span>
     </button>
   </nav>
 
   <!-- Confirm Modal -->
-  <div class="modal-overlay" id="modal-confirm">
+  <div class="modal-overlay" id="modal-confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-hidden="true">
     <div class="modal">
       <div class="modal-title" id="confirm-title">Confirmar</div>
       <p class="text-muted mb-4" id="confirm-msg">Tem certeza?</p>
       <div class="flex gap-2">
-        <button class="btn btn-danger" id="confirm-yes-btn">Confirmar</button>
-        <button class="btn btn-ghost" onclick="closeModal('modal-confirm')">Cancelar</button>
+        <button class="btn btn-danger" id="confirm-yes-btn" type="button" data-action="confirm-yes">Confirmar</button>
+        <button class="btn btn-ghost" data-action="close-modal" type="button">Cancelar</button>
       </div>
     </div>
   </div>
 
   <!-- Edit Task Modal -->
-  <div class="modal-overlay" id="modal-edit-task">
+  <div class="modal-overlay" id="modal-edit-task" role="dialog" aria-modal="true" aria-labelledby="edit-task-title" aria-hidden="true">
     <div class="modal">
-      <div class="modal-title">Editar</div>
+      <div class="modal-title" id="edit-task-title">Editar</div>
       <div class="mb-3"><input type="text" id="edit-task-text" placeholder="Tarefa" /></div>
-      <div class="task-config-grid mb-3">
-        <div id="edit-task-datetime-wrap">
-          <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Data</label>
-          <input type="datetime-local" id="edit-task-datetime" step="900" />
-        </div>
+      <div class="mb-3" id="edit-task-datetime-wrap">
+        <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Data e hora</label>
+        <input type="datetime-local" id="edit-task-datetime" step="900" />
+        <p class="form-hint" id="edit-task-daily-hint" hidden>Só o horário importa — repete todo dia.</p>
       </div>
       <div class="task-toggle-row mb-3">
         <label class="option-toggle">
-          <input type="checkbox" id="edit-task-no-datetime" onchange="syncTaskFormState(true)" />
-          <div>
-            <strong>Sem data</strong>
-            <span>Pronta para os períodos.</span>
+          <input type="checkbox" id="edit-task-no-datetime" data-action="sync-task-form-edit" />
+          <span class="option-icon" aria-hidden="true"><i data-lucide="calendar-off" style="width:16px;height:16px"></i></span>
+          <div class="option-copy">
+            <strong>Sem hora</strong>
+            <span>Sem hora marcada. Combina com Diária.</span>
           </div>
+          <span class="option-switch" aria-hidden="true"></span>
         </label>
         <label class="option-toggle">
-          <input type="checkbox" id="edit-task-repeat-daily" onchange="syncTaskFormState(true)" />
-          <div>
+          <input type="checkbox" id="edit-task-repeat-daily" data-action="sync-task-form-edit" />
+          <span class="option-icon" aria-hidden="true"><i data-lucide="repeat" style="width:16px;height:16px"></i></span>
+          <div class="option-copy">
             <strong>Diária</strong>
-            <span>Repete todos os dias.</span>
+            <span>Repete todo dia, com ou sem hora.</span>
           </div>
+          <span class="option-switch" aria-hidden="true"></span>
         </label>
       </div>
-      <div id="edit-task-block-wrap" class="mb-3" hidden>
+      <div id="edit-task-block-wrap" class="task-block-panel mb-3" hidden>
         <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Período</label>
+        <p class="form-hint" style="margin-bottom:6px">Tarefas sem hora podem ir para um período.</p>
         <select id="edit-task-block">
           <option value="">Depois</option>
           <option value="morning">Manhã</option>
@@ -430,20 +441,20 @@
         </select>
       </div>
       <div class="flex gap-2">
-        <button class="btn btn-primary" onclick="saveEditTask()">Salvar</button>
-        <button class="btn btn-ghost" onclick="closeModal('modal-edit-task')">Cancelar</button>
+        <button class="btn btn-primary" data-action="save-edit-task" type="button">Salvar</button>
+        <button class="btn btn-ghost" data-action="close-modal" type="button">Cancelar</button>
       </div>
     </div>
   </div>
 
   <!-- Name Modal -->
-  <div class="modal-overlay" id="modal-name">
+  <div class="modal-overlay" id="modal-name" role="dialog" aria-modal="true" aria-labelledby="name-modal-title" aria-hidden="true">
     <div class="modal">
-      <div class="modal-title">Seu nome</div>
+      <div class="modal-title" id="name-modal-title">Seu nome</div>
       <div class="mb-3"><input type="text" id="name-input" placeholder="Nome..." maxlength="30" /></div>
       <div class="flex gap-2">
-        <button class="btn btn-primary" onclick="saveName()">Salvar</button>
-        <button class="btn btn-ghost" onclick="closeModal('modal-name')">Cancelar</button>
+        <button class="btn btn-primary" data-action="save-name" type="button">Salvar</button>
+        <button class="btn btn-ghost" data-action="close-modal" type="button">Cancelar</button>
       </div>
     </div>
   </div>

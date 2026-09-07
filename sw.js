@@ -1,4 +1,4 @@
-const ASSET_VERSION = '2026-09-06-v2';
+const ASSET_VERSION = '2026-09-07-taskform-v2';
 const CACHE_NAME = `minha-rotina-${ASSET_VERSION}`;
 const OFFLINE_FALLBACK = './index.html';
 const CORE_ASSETS = [

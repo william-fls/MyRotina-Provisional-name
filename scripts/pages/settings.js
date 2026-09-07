@@ -10,7 +10,8 @@ function renderThemeOptions() {
     <button
       class="theme-card ${theme.id === activeThemeId ? 'active' : ''}"
       type="button"
-      onclick="setTheme('${theme.id}')"
+      data-action="set-theme"
+      data-theme-id="${theme.id}"
       aria-pressed="${theme.id === activeThemeId}"
     >
       <div class="theme-card-swatches">
@@ -27,12 +28,13 @@ function renderThemeOptions() {
 function toggleDashboardClock() {
   appSettings.showDashboardClock = !isDashboardClockEnabled();
   save(STORAGE_KEYS.appSettings, appSettings);
+  const enabled = isDashboardClockEnabled();
   renderSettingsPage();
   renderDashboard();
   showToast(
-    isDashboardClockEnabled() ? 'Foco visível' : 'Foco oculto',
-    isDashboardClockEnabled() ? 'Card de foco no Hoje.' : 'Card de foco removido.',
-    'success'
+    enabled ? 'Foco visível' : 'Foco oculto',
+    enabled ? 'Card de foco no Hoje.' : 'Card de foco removido.',
+    'success',
   );
 }
 

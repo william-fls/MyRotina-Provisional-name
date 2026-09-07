@@ -336,16 +336,8 @@
     }
 
     /* =============================================
-     DASHBOARD COMPACT HEADER
+     DASHBOARD GREETING (usado no hero "Hoje")
   ============================================= */
-    .dashboard-compact-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px 12px;
-    }
-
     .dashboard-greeting {
       display: flex;
       align-items: baseline;
@@ -366,30 +358,11 @@
       letter-spacing: -0.3px;
     }
 
-    .dashboard-progress-bar-wrap {
-      display: none;
-    }
-
-    .dashboard-progress-label {
-      display: none;
-    }
-
     .dash-hero-progress-pct {
       font-family: 'DM Mono', monospace;
       font-size: 15px;
       color: var(--accent);
       font-weight: 500;
-    }
-
-    .dashboard-progress-meta {
-      display: none;
-    }
-
-    .dashboard-progress-meta strong {
-      font-family: 'DM Mono', monospace;
-      color: var(--text);
-      font-weight: 600;
-      font-size: 12px;
     }
 
     /* =============================================
@@ -1023,93 +996,137 @@
       outline-offset: 2px;
     }
 
-    .task-config-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .task-datetime-wrap { display: flex; flex-direction: column; gap: 5px; }
-
-    .task-datetime-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    .task-datetime-head .text-sm { font-size: 12px; margin-bottom: 0; }
-
-    .task-inline-toggle-compact {
-      display: inline-flex;
-      align-items: center;
-      min-height: 24px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      background: var(--surface2);
-      padding: 0 7px;
-      gap: 5px;
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      user-select: none;
-      white-space: nowrap;
-    }
-
-    .task-inline-toggle-compact input {
-      width: auto;
-      margin: 0;
-      accent-color: var(--accent);
-    }
-
-    .task-datetime-wrap.is-no-date-active .task-inline-toggle-compact {
-      color: var(--text);
-      border-color: rgba(var(--accent-rgb), 0.35);
-      background: rgba(var(--accent-rgb), 0.10);
-    }
-
-    .task-datetime-wrap.is-no-date-active input[type="datetime-local"] { opacity: 0.55; }
-
-    .task-toggle-row-main {
-      grid-template-columns: 1fr;
-      gap: 8px;
-    }
-
-    .task-toggle-row-main .option-toggle { padding: 7px 9px; border-radius: 8px; gap: 6px; }
-    .task-toggle-row-main .option-toggle strong { font-size: 11px; margin-bottom: 0; }
-    .task-toggle-row-main .option-toggle span { font-size: 10px; line-height: 1.25; }
-
     .task-toggle-row {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
     }
 
+    /* Cards de opção (Sem hora / Diária): ícone + texto + switch.
+       O estado ativo usa :has(input:checked); o input cobre o card
+       inteiro (clique em qualquer lugar alterna, teclado via Tab). */
     .option-toggle {
+      position: relative;
       display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      padding: 8px 10px;
-      border-radius: 8px;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
       border: 1px solid var(--border);
       background: var(--surface2);
       cursor: pointer;
-      transition: all 0.15s;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s, opacity 0.15s;
     }
 
     .option-toggle:hover {
-      border-color: var(--accent);
+      border-color: rgba(var(--accent-rgb), 0.45);
     }
 
     .option-toggle input {
-      width: auto;
-      margin-top: 2px;
-      accent-color: var(--accent);
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      opacity: 0;
+      cursor: pointer;
     }
 
-    .option-toggle strong { display: block; font-size: 11px; margin-bottom: 1px; }
-    .option-toggle span { display: block; font-size: 10px; color: var(--muted); line-height: 1.3; }
+    .option-toggle:has(input:focus-visible) {
+      outline: 2px solid rgba(var(--accent-rgb), 0.55);
+      outline-offset: 2px;
+    }
+
+    .option-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      flex-shrink: 0;
+      border-radius: 8px;
+      background: var(--surface3);
+      color: var(--muted);
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .option-copy { flex: 1; min-width: 0; }
+
+    .option-copy strong { display: block; font-size: 12px; margin-bottom: 1px; }
+    .option-copy span { display: block; font-size: 10px; color: var(--muted); line-height: 1.35; }
+
+    .option-switch {
+      position: relative;
+      flex-shrink: 0;
+      width: 34px;
+      height: 20px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface3);
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .option-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: transform 0.15s, background 0.15s;
+    }
+
+    .option-toggle:has(input:checked) {
+      border-color: var(--accent);
+      background: rgba(var(--accent-rgb), 0.10);
+      box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.25);
+    }
+
+    .option-toggle:has(input:checked) .option-icon {
+      background: var(--accent);
+      color: var(--on-accent);
+    }
+
+    .option-toggle:has(input:checked) .option-switch {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .option-toggle:has(input:checked) .option-switch::after {
+      transform: translateX(14px);
+      background: #fff;
+    }
+
+    .option-toggle:has(input:disabled) {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .option-toggle:has(input:disabled) input { cursor: not-allowed; }
+
+    /* Data esmaecida no modo sem hora (criar e editar iguais). */
+    #task-datetime-wrap.is-no-date-active input[type="datetime-local"],
+    #edit-task-datetime-wrap.is-no-date-active input[type="datetime-local"] { opacity: 0.5; }
+
+    /* Painel do Período: aparece com "Sem hora", integrado ao grupo. */
+    .task-block-panel {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(var(--accent-rgb), 0.35);
+      border-left: 3px solid var(--accent);
+      background: rgba(var(--accent-rgb), 0.07);
+      animation: fadeIn 0.2s ease;
+    }
+
+    /* Dica curta dentro do formulário (ex.: diária usa só o horário). */
+    .form-hint {
+      margin: 6px 0 0;
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--muted);
+    }
 
     .planning-stack { display: flex; flex-direction: column; gap: 12px; }
 
@@ -1151,9 +1168,12 @@
     /* =============================================
      GRID HELPERS
   ============================================= */
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
 
-    .timeblocks-layout { align-items: start; }
+    .planning-stack { width: 100%; min-width: 0; }
+
+    .timeblocks-layout { align-items: start; width: 100%; min-width: 0; }
+    .timeblocks-layout > * { min-width: 0; }
 
     .sticky-panel {
       height: fit-content;
@@ -1164,16 +1184,22 @@
     /* =============================================
      DASHBOARD HERO + GRID
   ============================================= */
-    .dashboard-hero {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+    #page-dashboard {
+      width: 100%;
+      min-width: 0;
     }
 
     .dashboard-grid {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .dashboard-grid > .card {
+      min-width: 0;
+      width: 100%;
     }
 
     /* =============================================
@@ -1181,21 +1207,25 @@
   ============================================= */
     .dash-hero-row {
       display: flex;
-      align-items: center;
+      align-items: stretch;
       gap: 14px;
       flex-wrap: wrap;
+      width: 100%;
+      min-width: 0;
     }
 
     .dash-hero-row .dashboard-greeting {
       display: flex;
       align-items: baseline;
+      align-content: center;
       gap: 6px;
-      flex-shrink: 0;
+      flex: 1 1 220px;
+      min-width: 0;
     }
 
     .dash-hero-progress {
-      flex: 1;
-      min-width: 200px;
+      flex: 2 1 320px;
+      min-width: 0;
       display: flex;
       flex-direction: column;
       gap: 5px;
@@ -1249,12 +1279,33 @@
     }
 
     /* =============================================
-     PLAN TOP
+     PLAN TOP (Criar + Modelos lado a lado no desktop)
   ============================================= */
+    #page-tasks {
+      width: 100%;
+      min-width: 0;
+    }
+
     .plan-top-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 12px;
+      width: 100%;
+      min-width: 0;
+      align-items: start;
+    }
+
+    .plan-top-grid > .card {
+      min-width: 0;
+      height: 100%;
+    }
+
+    /* Lado a lado já em ≥1024 (antes só ≥1200), Usage consistente
+       com o grid do Dashboard e sem pilha esparsa em notebooks. */
+    @media (min-width: 1024px) {
+      .plan-top-grid {
+        grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      }
     }
 
     /* =============================================
@@ -1267,15 +1318,8 @@
     }
 
     /* =============================================
-     DASHBOARD NOW
+     DASHBOARD NOW (período atual / Foco)
   ============================================= */
-    .dashboard-now-meta {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
     .dashboard-now-title {
       font-size: 16px;
       font-weight: 700;
@@ -1310,13 +1354,21 @@
     }
 
     .dashboard-now-empty {
-      padding: 10px;
-      border-radius: 6px;
+      padding: 12px;
+      border-radius: 8px;
       border: 1px dashed var(--border);
       color: var(--muted);
       background: rgba(255, 255, 255, 0.02);
-      font-size: 11px;
-      line-height: 1.4;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .dashboard-now-empty .btn {
+      max-width: 100%;
+    }
+
+    #dashboard-now-pill {
+      flex-shrink: 0;
     }
 
     /* =============================================
@@ -1481,8 +1533,11 @@
 
     .settings-layout {
       display: grid;
-      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      grid-template-columns: minmax(0, 1fr);
       gap: 12px;
+      width: 100%;
+      min-width: 0;
+      align-items: start;
     }
 
     .settings-column {
@@ -1490,6 +1545,26 @@
       flex-direction: column;
       gap: 12px;
       min-width: 0;
+    }
+
+    /* Desktop: os 5 cards fluem em 2 colunas equilibradas
+       (Aparência | Perfil / Dia | Backup / Privacidade largura total),
+       sem a trinca 1-vs-4 que deixava vazio sob a esquerda. */
+    @media (min-width: 1024px) {
+      .settings-layout {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      }
+      .settings-layout > .settings-column {
+        display: contents;
+      }
+      .settings-layout .settings-surface {
+        min-width: 0;
+        height: 100%;
+      }
+      .settings-layout .settings-surface-wide {
+        grid-column: 1 / -1;
+        height: auto;
+      }
     }
 
     .settings-surface {
@@ -1669,9 +1744,54 @@
     .toast-title { font-size: 12px; font-weight: 700; margin-bottom: 1px; }
     .toast-body { font-size: 11px; color: var(--muted); line-height: 1.3; }
 
+    .toast.is-leaving {
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
     @keyframes toastIn {
       from { opacity: 0; transform: translateY(12px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Feedback de erro no campo (usado por shake()) */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+    .shake { animation: shake 0.3s ease; }
+
+    /* Botão-linha (diárias no dashboard): parece .task-item, comporta-se como botão */
+    .task-row-btn {
+      cursor: pointer;
+      border: 1px solid transparent;
+      font-family: inherit;
+      color: inherit;
+    }
+    .task-row-btn:hover { border-color: var(--border); }
+
+    /* Heatmap: título + linha por tarefa diária */
+    .heatmap-row { margin-bottom: 16px; }
+    .heatmap-row:last-child { margin-bottom: 0; }
+    .heatmap-title { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+
+    /* Navegação: foco visível + espacador do topbar mobile */
+    .mobile-topbar-spacer { width: 36px; flex-shrink: 0; }
+    .nav-item:focus-visible,
+    .mobile-dock-item:focus-visible,
+    .filter-tab:focus-visible,
+    .block-assign-btn:focus-visible {
+      outline: 2px solid rgba(var(--accent-rgb), 0.55);
+      outline-offset: 2px;
+    }
+    #sidebar-overlay { cursor: pointer; }
+    button.task-check { padding: 0; font: inherit; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .page.active, .task-item, .toast, .modal-overlay.open { animation: none; }
+      .progress-fill, .task-item, .nav-item { transition: none; }
     }
 
     /* =============================================
@@ -1692,18 +1812,26 @@
     @media (min-width: 1024px) {
       .dashboard-grid {
         display: grid;
-        grid-template-columns: 1fr 1.2fr 1fr;
-        gap: 10px;
-        align-items: stretch;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+        grid-auto-flow: dense;
       }
-      #dash-card-focus { grid-column: 1; grid-row: 1; }
-      #dash-card-tasks { grid-column: 2; grid-row: 1; }
-      #dash-card-daily { grid-column: 3; grid-row: 1; }
-      .timeblocks-layout { grid-template-columns: 1.4fr 1fr; }
+      /* Sem posicionamento fixo: os cards visíveis fluem e preenchem
+         da esquerda para a direita, sem deixar coluna vazia. */
+      .dashboard-grid > .card {
+        min-width: 0;
+        height: 100%;
+      }
+      /* Foco oculto (Ajustes): 2 colunas em vez de 3 vazias. */
+      .dashboard-grid.no-focus {
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      }
+      .timeblocks-layout { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
       .timeblocks-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 10px;
         align-items: start;
       }
       .timeblocks-grid .time-block { margin-bottom: 0; }
@@ -1712,11 +1840,9 @@
 
     /* --- TIER 3: WIDE DESKTOP (≥1200px) --- */
     @media (min-width: 1200px) {
-      .plan-top-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 14px;
-        align-items: start;
+      .page {
+        padding-left: clamp(18px, 3vw, 40px);
+        padding-right: clamp(18px, 3vw, 40px);
       }
     }
 
@@ -1724,15 +1850,21 @@
     @media (max-width: 768px) {
       :root { --sidebar-w: 0px; }
 
-      #mobile-topbar { display: flex; }
+      /* Sem topbar no mobile: só o dock inferior navega. */
+      #mobile-topbar { display: none; }
+      /* Hambúrguer removido no mobile: navegação só pelo dock inferior. */
+      #mobile-topbar [data-action="toggle-sidebar"] { display: none !important; }
+      .mobile-topbar-spacer { display: none; }
+      .mobile-topbar-copy { flex: none; align-items: center; }
       .mobile-dock { display: grid; }
       .mobile-only { display: inline-flex !important; }
+      #mobile-topbar [data-action="toggle-sidebar"].mobile-only { display: none !important; }
 
       #sidebar {
         width: 280px;
         max-width: 85vw;
         transform: translateX(-100%);
-        padding: 88px 12px 24px;
+        padding: 20px 12px 24px;
         align-items: stretch;
       }
 
@@ -1782,11 +1914,8 @@
         padding: 20px 18px 22px;
       }
 
-      .task-config-grid,
       .task-toggle-row { grid-template-columns: 1fr; }
 
-      .task-datetime-head { flex-wrap: wrap; }
-      .task-inline-toggle-compact { width: 100%; justify-content: center; min-height: 36px; border-radius: 8px; }
       .task-composer-head { flex-direction: column; align-items: stretch; }
       .task-composer-head .btn { width: 100%; justify-content: center; }
 
@@ -1815,11 +1944,32 @@
       .settings-surface { border-radius: 12px; }
 
       .dashboard-now-item { align-items: center; }
-      .dashboard-now-meta { flex-direction: column; align-items: flex-start; }
-      .dash-hero-row { flex-direction: column; align-items: stretch; }
-      .dash-hero-row .dashboard-greeting { justify-content: space-between; }
-      .dash-hero-progress { min-width: 0; }
+      /* Hoje denso no mobile: sem basis de altura herdado do desktop
+         (em coluna, o flex-basis virava altura e esticava os blocos);
+         tudo colado no conteúdo. */
+      #page-dashboard { padding-top: 12px; }
+      .dash-hero-row { flex-direction: column; align-items: stretch; gap: 8px; }
+      .dash-hero-row .dashboard-greeting {
+        flex: none;
+        justify-content: flex-start;
+        align-items: baseline;
+        gap: 4px;
+      }
+      .dashboard-greeting-title { font-size: 15px; }
+      .dashboard-greeting-name { font-size: 19px; }
+      #dashboard-now-pill { align-self: flex-start; }
+      .dash-hero-progress { flex: none; min-width: 0; padding: 10px 12px; gap: 4px; }
+      .dash-hero-progress-top { align-items: center; }
+      .dash-hero-progress-label { font-size: 10px; }
+      .dash-hero-progress-pct { font-size: 13px; }
+      .dash-hero-progress-meta { flex-wrap: wrap; gap: 4px 10px; font-size: 10px; }
+      .dash-hero-progress-meta strong { font-size: 10px; }
       .dashboard-grid { gap: 8px; }
+      #page-dashboard .card { padding: 12px; }
+      #page-dashboard .dash-card-head { margin-bottom: 4px; }
+      #page-dashboard .dashboard-now-title { margin-bottom: 4px; font-size: 15px; }
+      #page-dashboard .dashboard-now-item { padding: 4px 0; }
+      #page-dashboard .dashboard-now-empty { padding: 10px; font-size: 12px; }
 
       .settings-hero { padding: 18px 16px; border-radius: 12px; }
       .settings-surface { padding: 14px; border-radius: 12px; }
