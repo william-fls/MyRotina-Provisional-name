@@ -88,10 +88,6 @@
       -moz-osx-font-smoothing: grayscale;
     }
 
-    body.sidebar-open {
-      overflow: hidden;
-    }
-
     /* =============================================
      SCROLLBAR
   ============================================= */
@@ -100,7 +96,7 @@
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
     /* =============================================
-     SIDEBAR
+     SIDEBAR (desktop; no mobile só o dock navega)
   ============================================= */
     #sidebar {
       position: fixed;
@@ -118,63 +114,6 @@
       z-index: 100;
       transition: transform 0.25s ease, width 0.25s ease, padding 0.25s ease;
     }
-
-    #sidebar-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.55);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s ease;
-      z-index: 90;
-    }
-
-    body.sidebar-open #sidebar-overlay {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    #mobile-topbar {
-      display: none;
-      position: sticky;
-      top: 0;
-      z-index: 110;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 16px;
-      background: var(--surface);
-      backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--border);
-    }
-
-    .mobile-topbar-copy {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
-      min-width: 0;
-      flex: 1;
-    }
-
-    .mobile-brand {
-      font-size: 16px;
-      font-weight: 800;
-      letter-spacing: -0.3px;
-    }
-
-    .mobile-page-label {
-      font-size: 11px;
-      color: var(--muted);
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-    }
-
-    .mobile-only { display: none !important; }
 
     .mobile-dock {
       display: none;
@@ -207,6 +146,7 @@
       font-size: 10px;
       font-weight: 600;
       font-family: inherit;
+      text-decoration: none;
       cursor: pointer;
       transition: all 0.15s ease;
     }
@@ -454,6 +394,7 @@
       font-family: 'Inter', sans-serif;
       font-size: 12px;
       font-weight: 600;
+      text-decoration: none;
       cursor: pointer;
       border: none;
       transition: all 0.15s;
@@ -1777,8 +1718,7 @@
     .heatmap-row:last-child { margin-bottom: 0; }
     .heatmap-title { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
 
-    /* Navegação: foco visível + espacador do topbar mobile */
-    .mobile-topbar-spacer { width: 36px; flex-shrink: 0; }
+    /* Navegação: foco visível no teclado */
     .nav-item:focus-visible,
     .mobile-dock-item:focus-visible,
     .filter-tab:focus-visible,
@@ -1786,7 +1726,6 @@
       outline: 2px solid rgba(var(--accent-rgb), 0.55);
       outline-offset: 2px;
     }
-    #sidebar-overlay { cursor: pointer; }
     button.task-check { padding: 0; font: inherit; }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1851,24 +1790,11 @@
       :root { --sidebar-w: 0px; }
 
       /* Sem topbar no mobile: só o dock inferior navega. */
-      #mobile-topbar { display: none; }
-      /* Hambúrguer removido no mobile: navegação só pelo dock inferior. */
-      #mobile-topbar [data-action="toggle-sidebar"] { display: none !important; }
-      .mobile-topbar-spacer { display: none; }
-      .mobile-topbar-copy { flex: none; align-items: center; }
+      /* Sem topbar: só o dock inferior navega no mobile. */
       .mobile-dock { display: grid; }
-      .mobile-only { display: inline-flex !important; }
-      #mobile-topbar [data-action="toggle-sidebar"].mobile-only { display: none !important; }
 
-      #sidebar {
-        width: 280px;
-        max-width: 85vw;
-        transform: translateX(-100%);
-        padding: 20px 12px 24px;
-        align-items: stretch;
-      }
-
-      body.sidebar-open #sidebar { transform: translateX(0); }
+      /* Sidebar só no desktop; no mobile o dock é a navegação. */
+      #sidebar { display: none; }
 
       .nav-logo { margin: 0 8px 16px; }
       .nav-footer { display: none; }

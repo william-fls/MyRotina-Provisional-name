@@ -52,6 +52,6 @@ function setTheme(themeId, { silent = false } = {}) {
   if (!silent && previous !== next.id) {
     showToast('Tema', `${next.name} aplicado.`, 'success');
   }
-  refreshUI();
-  renderSettingsPage();
+  // Botões de tema só existem nos Ajustes; nas outras páginas não há o que renderizar.
+  if (typeof renderSettingsPage === 'function') renderSettingsPage();
 }

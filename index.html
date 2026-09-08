@@ -10,6 +10,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Minha Rotina" />
   <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="manifest" href="manifest.webmanifest" />
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -18,46 +20,33 @@
   <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
-
-  <div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true" data-action="close-sidebar"></div>
-
-  <header id="mobile-topbar" class="mobile-topbar" role="banner">
-    <button class="icon-btn mobile-only" type="button" data-action="toggle-sidebar" aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
-      <i data-lucide="menu" style="width:18px;height:18px"></i>
-    </button>
-    <div class="mobile-topbar-copy">
-      <div class="mobile-brand">Minha Rotina</div>
-      <div class="mobile-page-label" id="mobile-page-label">Hoje</div>
-    </div>
-    <div class="mobile-topbar-spacer" aria-hidden="true"></div>
-  </header>
+<body data-page="dashboard" data-title="Minha Rotina">
 
   <div id="toast-stack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
 
-  <nav id="sidebar" class="sidebar" role="navigation" aria-label="Navegação principal" aria-hidden="false">
+  <nav id="sidebar" class="sidebar" role="navigation" aria-label="Navegação principal">
     <div class="nav-logo"><span class="nav-logo-mark">M</span><span>Minha Rotina</span></div>
 
     <div class="nav-section">Menu</div>
-    <button class="nav-item active" data-page="dashboard" type="button" data-action="navigate" aria-current="page">
+    <a class="nav-item active" href="./index.html" aria-current="page">
       <i data-lucide="layout-dashboard" style="width:20px;height:20px;flex-shrink:0"></i>
       <span class="nav-label">Hoje</span>
-    </button>
-    <button class="nav-item" data-page="tasks" type="button" data-action="navigate">
+    </a>
+    <a class="nav-item" href="./planejar.html">
       <i data-lucide="check-square" style="width:20px;height:20px;flex-shrink:0"></i>
       <span class="nav-label">Planejar</span>
-    </button>
-    <button class="nav-item" data-page="settings" type="button" data-action="navigate">
+    </a>
+    <a class="nav-item" href="./ajustes.html">
       <i data-lucide="settings-2" style="width:20px;height:20px;flex-shrink:0"></i>
       <span class="nav-label">Ajustes</span>
-    </button>
+    </a>
 
     <div class="nav-footer"><span class="nav-dot" aria-hidden="true"></span>Dados salvos localmente</div>
   </nav>
 
   <main id="main">
 
-    <!-- ==================== DASHBOARD ("Hoje") ==================== -->
+    <!-- ==================== HOJE ==================== -->
     <section class="page active" id="page-dashboard">
       <div class="dash-hero-row mb-3">
         <div class="dashboard-greeting">
@@ -92,7 +81,7 @@
         <div class="card" id="dash-card-tasks">
           <div class="dash-card-head">
             <div class="section-title" style="margin-bottom:0">Hoje</div>
-            <button class="btn btn-ghost" data-action="navigate" data-page="tasks" type="button" style="padding:4px 10px;font-size:11px">Ver mais</button>
+            <a class="btn btn-ghost" href="./planejar.html" style="padding:4px 10px;font-size:11px">Ver mais</a>
           </div>
           <div id="dash-tasks-list"></div>
         </div>
@@ -100,272 +89,9 @@
         <div class="card" id="dash-card-daily">
           <div class="dash-card-head">
             <div class="section-title" style="margin-bottom:0">Diárias</div>
-            <button class="btn btn-ghost" data-action="navigate" data-page="tasks" type="button" style="padding:4px 10px;font-size:11px">Ver mais</button>
+            <a class="btn btn-ghost" href="./planejar.html" style="padding:4px 10px;font-size:11px">Ver mais</a>
           </div>
           <div id="dash-daily-list"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== TASKS ("Planejar") ==================== -->
-    <section class="page" id="page-tasks">
-      <h1 class="page-title" style="margin-bottom:4px">Planejar</h1>
-      <p class="text-sm text-muted mb-4" id="plan-subtitle">Tarefas e blocos do dia.</p>
-
-      <div class="plan-top-grid mb-4">
-        <div class="card" id="task-composer" data-open="true">
-        <div class="task-composer-head">
-          <div>
-            <div class="section-title" style="margin-bottom:4px">Criar</div>
-            <p class="text-sm text-muted">Adicione uma nova tarefa.</p>
-          </div>
-          <button class="btn btn-ghost" id="task-composer-toggle-btn" type="button" data-action="toggle-task-composer" aria-expanded="true" aria-controls="task-composer-form">
-            <i data-lucide="chevron-up" style="width:16px;height:16px"></i>
-            <span>Ocultar</span>
-          </button>
-        </div>
-        <div id="task-composer-form" class="task-composer-form">
-          <div class="mb-2">
-            <label class="composer-label" for="task-input">Tarefa</label>
-            <input type="text" id="task-input" placeholder="Ex.: Beber água, estudar 25 min..." maxlength="120" autocomplete="off" />
-          </div>
-          <div class="mb-2" id="task-datetime-wrap">
-            <label class="composer-label" for="task-datetime">Data e hora</label>
-            <input type="datetime-local" id="task-datetime" step="900" />
-            <p class="form-hint" id="task-daily-hint" hidden>Só o horário importa — repete todo dia.</p>
-          </div>
-          <div class="task-toggle-row mb-2">
-            <label class="option-toggle">
-              <input type="checkbox" id="task-no-datetime" data-action="sync-task-form" />
-              <span class="option-icon" aria-hidden="true"><i data-lucide="calendar-off" style="width:16px;height:16px"></i></span>
-              <div class="option-copy">
-                <strong>Sem hora</strong>
-                <span>Sem hora marcada. Combina com Diária.</span>
-              </div>
-              <span class="option-switch" aria-hidden="true"></span>
-            </label>
-            <label class="option-toggle">
-              <input type="checkbox" id="task-repeat-daily" data-action="sync-task-form" />
-              <span class="option-icon" aria-hidden="true"><i data-lucide="repeat" style="width:16px;height:16px"></i></span>
-              <div class="option-copy">
-                <strong>Diária</strong>
-                <span>Repete todo dia, com ou sem hora.</span>
-              </div>
-              <span class="option-switch" aria-hidden="true"></span>
-            </label>
-          </div>
-          <div id="task-block-wrap" class="task-block-panel mb-2" hidden>
-            <label class="composer-label" for="task-block">Período</label>
-            <p class="form-hint" style="margin-bottom:6px">Tarefas sem hora podem ir para um período.</p>
-            <select id="task-block">
-              <option value="">Depois</option>
-              <option value="morning">Manhã</option>
-              <option value="afternoon">Tarde</option>
-              <option value="evening">Noite</option>
-              <option value="night">Madrugada</option>
-            </select>
-          </div>
-          <div class="task-composer-actions">
-            <button class="btn btn-primary" type="button" data-action="add-task">
-              <i data-lucide="check" style="width:14px;height:14px"></i> Adicionar
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="flex items-center justify-between mb-3">
-          <div class="section-title" style="margin-bottom:0">Modelos</div>
-          <span class="tag">1 toque</span>
-        </div>
-        <p class="text-sm text-muted mb-3">Rotinas prontas para aplicar.</p>
-        <div id="preset-grid" class="preset-grid"></div>
-      </div>
-      </div>
-
-      <div class="tasks-section-head">
-        <div class="section-title" style="margin-bottom:0">Tarefas</div>
-        <div class="tasks-section-actions">
-          <span class="tag" id="tasks-count">0 pendentes</span>
-          <button class="btn btn-ghost" id="clear-done-btn" type="button" data-action="clear-done-tasks" style="padding:6px 12px;font-size:12px">Limpar feitas</button>
-        </div>
-      </div>
-
-      <div class="filter-tabs" role="tablist" aria-label="Filtrar tarefas">
-        <button class="filter-tab active" data-filter="all" data-action="filter-tasks" type="button">Todas</button>
-        <button class="filter-tab" data-filter="pending" data-action="filter-tasks" type="button">Pendentes</button>
-        <button class="filter-tab" data-filter="done" data-action="filter-tasks" type="button">Feitas</button>
-        <button class="filter-tab" data-filter="today" data-action="filter-tasks" type="button">Hoje</button>
-      </div>
-
-      <div id="tasks-list"></div>
-
-      <div class="card mt-4 mb-4">
-        <div class="section-title" style="margin-bottom:12px">Progresso Semanal</div>
-        <div id="weekly-heatmap"></div>
-      </div>
-
-      <div class="planning-stack mt-4">
-        <div>
-          <div class="section-title">Dia</div>
-          <div class="tip-bar">
-            <strong style="color:var(--accent)">Hoje:</strong> <span id="tb-date"></span> - Distribua
-            as tarefas pelos blocos.
-          </div>
-        </div>
-
-        <div class="grid-2 timeblocks-layout">
-          <div class="timeblocks-grid">
-            <div class="time-block morning">
-              <div class="time-block-header"></div>
-              <div id="block-morning-tasks"></div>
-            </div>
-            <div class="time-block afternoon">
-              <div class="time-block-header"></div>
-              <div id="block-afternoon-tasks"></div>
-            </div>
-            <div class="time-block evening">
-              <div class="time-block-header"></div>
-              <div id="block-evening-tasks"></div>
-            </div>
-            <div class="time-block night">
-              <div class="time-block-header"></div>
-              <div id="block-night-tasks"></div>
-            </div>
-          </div>
-
-          <div class="card sticky-panel">
-            <div class="section-title">Pendentes</div>
-            <p class="text-sm text-muted mb-3">Escolha um período.</p>
-            <div id="drag-tasks-list"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== SETTINGS ("Ajustes") ==================== -->
-    <section class="page" id="page-settings">
-      <div class="settings-hero mb-4">
-        <div class="settings-hero-copy">
-          <div class="settings-kicker">Ajustes</div>
-          <h1 class="page-title" style="margin-bottom:6px">Configurações</h1>
-          <p class="text-sm text-muted">Controle total.</p>
-        </div>
-      </div>
-
-      <div class="settings-layout">
-        <div class="settings-column">
-          <div class="card settings-surface">
-            <div class="settings-section-head">
-              <div>
-                <div class="settings-kicker">Visual</div>
-                <div class="section-title" style="margin-bottom:0">Aparência</div>
-              </div>
-            </div>
-            <div class="settings-panel">
-              <div class="settings-item">
-                <div class="settings-theme-stack" style="width:100%">
-                  <div class="settings-theme-head">
-                    <div>
-                      <div class="settings-title">Tema</div>
-                      <div class="settings-copy" id="settings-theme-copy">Escolha uma aparência.</div>
-                    </div>
-                    <span class="settings-pill-card" id="settings-theme-pill">Minimal</span>
-                  </div>
-                  <div id="settings-theme-grid" class="theme-grid"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="settings-column">
-          <div class="card settings-surface">
-            <div class="settings-section-head">
-              <div>
-                <div class="settings-kicker">Perfil</div>
-                <div class="section-title" style="margin-bottom:0">Conta</div>
-              </div>
-            </div>
-            <div class="settings-panel">
-              <div class="settings-item compact">
-                <div>
-                  <div class="settings-title">Nome</div>
-                  <div class="settings-copy" id="settings-current-name">Você</div>
-                </div>
-                <button class="btn btn-ghost" style="padding:8px 12px" data-action="open-name-modal" type="button">Alterar</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="card settings-surface">
-            <div class="settings-section-head">
-              <div>
-                <div class="settings-kicker">Rotina</div>
-                <div class="section-title" style="margin-bottom:0">Dia</div>
-              </div>
-              <span class="settings-pill-card" id="settings-task-count">0 tarefas</span>
-            </div>
-            <div class="settings-panel">
-              <div class="settings-item compact">
-                <div>
-                  <div class="settings-title">Período atual</div>
-                  <div class="settings-copy">Mostra "Foco" no Hoje.</div>
-                </div>
-                <label class="switch">
-                  <input type="checkbox" id="settings-clock-toggle" />
-                  <span class="switch-track" aria-hidden="true"></span>
-                </label>
-              </div>
-
-              <div class="settings-item compact">
-                <div>
-                  <div class="settings-title">Reiniciar dia</div>
-                  <div class="settings-copy">Zera tarefas e blocos.</div>
-                </div>
-                <button class="btn btn-ghost" style="padding:8px 12px" data-action="restart-day" type="button">Reiniciar</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="card settings-surface">
-            <div class="settings-section-head">
-              <div>
-                <div class="settings-kicker">Conta</div>
-                <div class="section-title" style="margin-bottom:0">Dados</div>
-              </div>
-            </div>
-            <div class="settings-panel">
-              <div class="settings-item compact">
-                <div>
-                  <div class="settings-title">Backup</div>
-                  <div class="settings-copy">Exportar ou importar JSON.</div>
-                </div>
-                <div class="settings-inline-actions">
-                  <button class="btn btn-ghost" style="padding:8px 12px" data-action="export-data" type="button">Exportar</button>
-                  <button class="btn btn-primary" style="padding:8px 12px" data-action="import-data" type="button">Importar</button>
-                </div>
-              </div>
-              <input type="file" id="import-backup-file" accept=".json,application/json" hidden>
-            </div>
-          </div>
-
-          <div class="card settings-surface settings-surface-wide">
-            <div class="settings-section-head">
-              <div>
-                <div class="settings-kicker">Privacidade</div>
-                <div class="section-title" style="margin-bottom:0">Dados</div>
-              </div>
-            </div>
-            <div class="settings-note">Dados locais neste navegador.</div>
-            <div class="settings-item compact" style="margin-top:14px">
-              <div>
-                <div class="settings-title">Excluir tudo</div>
-                <div class="settings-copy">Remove tudo e reinicia.</div>
-              </div>
-              <button class="btn btn-danger" style="padding:8px 12px" data-action="clear-all-data" type="button">Excluir</button>
-            </div>
-          </div>
         </div>
       </div>
     </section>
@@ -373,79 +99,19 @@
   </main>
 
   <nav class="mobile-dock" aria-label="Navegação rápida" role="navigation">
-    <button class="mobile-dock-item active" type="button" data-page="dashboard" data-action="navigate" aria-current="page">
+    <a class="mobile-dock-item active" href="./index.html" aria-current="page">
       <i data-lucide="layout-dashboard" style="width:18px;height:18px"></i>
       <span>Hoje</span>
-    </button>
-    <button class="mobile-dock-item" type="button" data-page="tasks" data-action="navigate">
+    </a>
+    <a class="mobile-dock-item" href="./planejar.html">
       <i data-lucide="check-square" style="width:18px;height:18px"></i>
       <span>Plano</span>
-    </button>
-    <button class="mobile-dock-item" type="button" data-page="settings" data-action="navigate">
+    </a>
+    <a class="mobile-dock-item" href="./ajustes.html">
       <i data-lucide="settings-2" style="width:18px;height:18px"></i>
       <span>Ajustes</span>
-    </button>
+    </a>
   </nav>
-
-  <!-- Confirm Modal -->
-  <div class="modal-overlay" id="modal-confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-hidden="true">
-    <div class="modal">
-      <div class="modal-title" id="confirm-title">Confirmar</div>
-      <p class="text-muted mb-4" id="confirm-msg">Tem certeza?</p>
-      <div class="flex gap-2">
-        <button class="btn btn-danger" id="confirm-yes-btn" type="button" data-action="confirm-yes">Confirmar</button>
-        <button class="btn btn-ghost" data-action="close-modal" type="button">Cancelar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Edit Task Modal -->
-  <div class="modal-overlay" id="modal-edit-task" role="dialog" aria-modal="true" aria-labelledby="edit-task-title" aria-hidden="true">
-    <div class="modal">
-      <div class="modal-title" id="edit-task-title">Editar</div>
-      <div class="mb-3"><input type="text" id="edit-task-text" placeholder="Tarefa" /></div>
-      <div class="mb-3" id="edit-task-datetime-wrap">
-        <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Data e hora</label>
-        <input type="datetime-local" id="edit-task-datetime" step="900" />
-        <p class="form-hint" id="edit-task-daily-hint" hidden>Só o horário importa — repete todo dia.</p>
-      </div>
-      <div class="task-toggle-row mb-3">
-        <label class="option-toggle">
-          <input type="checkbox" id="edit-task-no-datetime" data-action="sync-task-form-edit" />
-          <span class="option-icon" aria-hidden="true"><i data-lucide="calendar-off" style="width:16px;height:16px"></i></span>
-          <div class="option-copy">
-            <strong>Sem hora</strong>
-            <span>Sem hora marcada. Combina com Diária.</span>
-          </div>
-          <span class="option-switch" aria-hidden="true"></span>
-        </label>
-        <label class="option-toggle">
-          <input type="checkbox" id="edit-task-repeat-daily" data-action="sync-task-form-edit" />
-          <span class="option-icon" aria-hidden="true"><i data-lucide="repeat" style="width:16px;height:16px"></i></span>
-          <div class="option-copy">
-            <strong>Diária</strong>
-            <span>Repete todo dia, com ou sem hora.</span>
-          </div>
-          <span class="option-switch" aria-hidden="true"></span>
-        </label>
-      </div>
-      <div id="edit-task-block-wrap" class="task-block-panel mb-3" hidden>
-        <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Período</label>
-        <p class="form-hint" style="margin-bottom:6px">Tarefas sem hora podem ir para um período.</p>
-        <select id="edit-task-block">
-          <option value="">Depois</option>
-          <option value="morning">Manhã</option>
-          <option value="afternoon">Tarde</option>
-          <option value="evening">Noite</option>
-          <option value="night">Madrugada</option>
-        </select>
-      </div>
-      <div class="flex gap-2">
-        <button class="btn btn-primary" data-action="save-edit-task" type="button">Salvar</button>
-        <button class="btn btn-ghost" data-action="close-modal" type="button">Cancelar</button>
-      </div>
-    </div>
-  </div>
 
   <!-- Name Modal -->
   <div class="modal-overlay" id="modal-name" role="dialog" aria-modal="true" aria-labelledby="name-modal-title" aria-hidden="true">
@@ -460,10 +126,9 @@
   </div>
 
   <script src="scripts/core/theme.js"></script>
-  <script src="scripts/pages/settings.js"></script>
+  <script src="scripts/core/store.js"></script>
+  <script src="scripts/core/shell.js"></script>
   <script src="scripts/pages/dashboard.js"></script>
-  <script src="scripts/pages/tasks.js"></script>
-  <script src="app.js"></script>
 </body>
 
 </html>

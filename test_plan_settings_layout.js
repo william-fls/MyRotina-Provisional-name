@@ -1,4 +1,4 @@
-// test_plan_settings_layout.js — 25 testes: estrutura HTML/CSS, presets, breakpoints
+// test_plan_settings_layout.js — 30 testes: estrutura HTML/CSS (3 páginas), presets, breakpoints
 'use strict';
 
 const assert = require('assert');
@@ -7,6 +7,7 @@ const path = require('path');
 const vm = require('vm');
 
 const root = __dirname;
+const pages = {};
 let html = '';
 let css = '';
 
@@ -28,7 +29,16 @@ function it(desc, fn) {
 }
 
 function loadSources() {
-  html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  // Mocks mínimos: tasks.js registra listeners no top-level.
+  if (typeof document === 'undefined') {
+    global.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
+    global.window = { matchMedia: () => ({ matches: false }), addEventListener() {} };
+    global.document = { getElementById: () => null, querySelector: () => null, querySelectorAll: () => [], addEventListener() {} };
+  }
+  pages.index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  pages.planejar = fs.readFileSync(path.join(root, 'planejar.html'), 'utf8');
+  pages.ajustes = fs.readFileSync(path.join(root, 'ajustes.html'), 'utf8');
+  html = pages.index + '\n' + pages.planejar + '\n' + pages.ajustes;
   css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
   const code = fs.readFileSync(path.join(root, 'scripts', 'pages', 'tasks.js'), 'utf8');
   vm.runInThisContext(code, { filename: 'scripts/pages/tasks.js' });
@@ -36,7 +46,7 @@ function loadSources() {
 loadSources();
 
 // =============================================
-console.log('\n\x1b[1m=== Section 1: IDs essenciais no HTML (12) ===\x1b[0m');
+console.log('\n\x1b[1m=== Section 1: IDs essenciais no HTML (15) ===\x1b[0m');
 
 function hasId(id) { return html.includes(`id="${id}"`); }
 
@@ -80,13 +90,36 @@ it('modais: confirm, edit-task, name', () => {
   assert.ok(hasId('modal-name'));
 });
 
+it('cada página tem sua seção (sem vazar)', () => {
+  assert.ok(pages.index.includes('id="page-dashboard"'));
+  assert.ok(!pages.index.includes('id="page-tasks"'));
+  assert.ok(!pages.index.includes('id="page-settings"'));
+  assert.ok(pages.planejar.includes('id="page-tasks"'));
+  assert.ok(!pages.planejar.includes('id="page-dashboard"'));
+  assert.ok(pages.ajustes.includes('id="page-settings"'));
+  assert.ok(!pages.ajustes.includes('id="page-dashboard"'));
+});
+
+it('navegação por links com ativo fixo por página', () => {
+  assert.ok(pages.index.includes('href="./planejar.html"'));
+  assert.ok(pages.planejar.includes('href="./ajustes.html"'));
+  assert.ok(pages.ajustes.includes('href="./index.html"'));
+  assert.ok(!html.includes('data-action="navigate"'));
+});
+
+it('sem drawer/topbar mortos (sem overlay, sem hamburger)', () => {
+  assert.ok(!html.includes('sidebar-overlay'));
+  assert.ok(!html.includes('mobile-topbar'));
+  assert.ok(!html.includes('toggle-sidebar'));
+});
+
 it('toast-stack e import-backup-file existem', () => {
   assert.ok(hasId('toast-stack'));
   assert.ok(hasId('import-backup-file'));
 });
 
 // =============================================
-console.log('\n\x1b[1m=== Section 2: HTML limpo (4) ===\x1b[0m');
+console.log('\n\x1b[1m=== Section 2: HTML limpo (6) ===\x1b[0m');
 
 it('zero atributos onclick inline', () => {
   assert.ok(!/onclick\s*=/i.test(html));
@@ -100,14 +133,28 @@ it('zero atributos oninput inline', () => {
   assert.ok(!/oninput\s*=/i.test(html));
 });
 
-it('scripts carregados em ordem correta', () => {
-  const idxTheme = html.indexOf('scripts/core/theme.js');
-  const idxSettings = html.indexOf('scripts/pages/settings.js');
-  const idxDashboard = html.indexOf('scripts/pages/dashboard.js');
-  const idxTasks = html.indexOf('scripts/pages/tasks.js');
-  const idxApp = html.indexOf('app.js');
-  assert.ok(idxTheme >= 0 && idxApp >= 0);
-  assert.ok(idxTheme < idxSettings && idxSettings < idxDashboard && idxDashboard < idxTasks && idxTasks < idxApp);
+it('scripts do Hoje em ordem (sem app.js)', () => {
+  const order = ['scripts/core/theme.js', 'scripts/core/store.js', 'scripts/core/shell.js', 'scripts/pages/dashboard.js'];
+  const idx = order.map(s => pages.index.indexOf(s));
+  assert.ok(idx.every(i => i >= 0));
+  assert.ok(idx[0] < idx[1] && idx[1] < idx[2] && idx[2] < idx[3]);
+  assert.ok(!pages.index.includes('app.js'));
+});
+
+it('scripts do Planejar em ordem (sem app.js)', () => {
+  const order = ['scripts/core/theme.js', 'scripts/core/store.js', 'scripts/core/shell.js', 'scripts/pages/tasks.js'];
+  const idx = order.map(s => pages.planejar.indexOf(s));
+  assert.ok(idx.every(i => i >= 0));
+  assert.ok(idx[0] < idx[1] && idx[1] < idx[2] && idx[2] < idx[3]);
+  assert.ok(!pages.planejar.includes('app.js'));
+});
+
+it('scripts dos Ajustes em ordem (sem app.js)', () => {
+  const order = ['scripts/core/theme.js', 'scripts/core/store.js', 'scripts/core/shell.js', 'scripts/pages/settings.js'];
+  const idx = order.map(s => pages.ajustes.indexOf(s));
+  assert.ok(idx.every(i => i >= 0));
+  assert.ok(idx[0] < idx[1] && idx[1] < idx[2] && idx[2] < idx[3]);
+  assert.ok(!pages.ajustes.includes('app.js'));
 });
 
 // =============================================

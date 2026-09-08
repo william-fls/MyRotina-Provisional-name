@@ -1,7 +1,4 @@
-function isDashboardClockEnabled() {
-  return appSettings.showDashboardClock !== false;
-}
-
+// Ajustes: roda só em ajustes.html. Estado e backup vivem no store.js.
 function renderThemeOptions() {
   const grid = document.getElementById('settings-theme-grid');
   if (!grid) return;
@@ -30,7 +27,6 @@ function toggleDashboardClock() {
   save(STORAGE_KEYS.appSettings, appSettings);
   const enabled = isDashboardClockEnabled();
   renderSettingsPage();
-  renderDashboard();
   showToast(
     enabled ? 'Foco visível' : 'Foco oculto',
     enabled ? 'Card de foco no Hoje.' : 'Card de foco removido.',
@@ -70,3 +66,44 @@ function renderSettingsPage() {
   }
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
+
+// ---- Eventos + init (só Ajustes) ----
+function handleSettingsClick(event) {
+  const target = event.target.closest('[data-action]');
+  if (!target) return;
+  const themeId = target.dataset.themeId || target.dataset.presetId;
+
+  switch (target.dataset.action) {
+    case 'restart-day': restartDay(); break;
+    case 'export-data': exportData(); break;
+    case 'import-data': triggerImportData(); break;
+    case 'clear-all-data': clearAllData(); break;
+    case 'set-theme': if (themeId) setTheme(themeId); break;
+    default: break;
+  }
+}
+
+// O switch do relógio usa 'change' (estado já atualizado, sem duplo clique).
+function handleSettingsChange(event) {
+  if (event.target?.id === 'settings-clock-toggle') toggleDashboardClock();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.body.addEventListener('click', handleSettingsClick);
+  document.body.addEventListener('change', handleSettingsChange);
+  setStoreChangedHandler(renderSettingsPage);
+
+  // Backup: sem inline onchange no HTML.
+  document.getElementById('import-backup-file')
+    ?.addEventListener('change', importDataFromFile);
+
+  checkNewDay();
+  renderSettingsPage();
+
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+
+  window.addEventListener('focus', () => {
+    checkNewDay();
+    renderSettingsPage();
+  });
+});

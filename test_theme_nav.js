@@ -1,4 +1,4 @@
-// test_theme_nav.js — 5 testes: tema, navegação inválida, confirm, toast XSS-safe
+// test_theme_nav.js — 5 testes: tema, sem-SPA, confirm, toast XSS-safe
 'use strict';
 
 const assert = require('assert');
@@ -108,10 +108,11 @@ global.getComputedStyle = () => ({ getPropertyValue: () => '' });
 
 for (const rel of [
   'scripts/core/theme.js',
+  'scripts/core/store.js',
+  'scripts/core/shell.js',
   'scripts/pages/settings.js',
   'scripts/pages/dashboard.js',
   'scripts/pages/tasks.js',
-  'app.js',
 ]) {
   vm.runInThisContext(fs.readFileSync(path.join(__dirname, rel), 'utf8'), { filename: rel });
 }
@@ -144,7 +145,7 @@ function it(desc, fn) {
 }
 
 // =============================================
-console.log('\n\x1b[1m=== Tema + Navegação + Confirm + Toast (5) ===\x1b[0m');
+console.log('\n\x1b[1m=== Tema + Sem-SPA + Confirm + Toast (5) ===\x1b[0m');
 
 it('setTheme aplica e persiste mr_theme', () => {
   call('setTheme', 'dark-tech', { silent: true });
@@ -159,11 +160,11 @@ it('initTheme aplica tema salvo no localStorage', () => {
   assert.strictEqual(documentMock.documentElement._attrs['data-theme'], 'dark-tech');
 });
 
-it('navigate com página inválida não altera nada', () => {
+it('sem SPA: navigate/toggleSidebar não existem (links reais)', () => {
   mockEl('dash-critical', { textContent: '' });
-  call('navigate', 'página-inválida');
-  // sem exceção e sem query de páginas → passa
-  assert.ok(true);
+  assert.throws(() => vm.runInThisContext('navigate'), ReferenceError);
+  assert.throws(() => vm.runInThisContext('toggleSidebar'), ReferenceError);
+  assert.throws(() => vm.runInThisContext('updateMobileNavigation'), ReferenceError);
 });
 
 it('showConfirm executa callback via confirmDialogYes', () => {

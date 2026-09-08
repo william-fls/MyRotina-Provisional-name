@@ -1,6 +1,7 @@
 // =============================================
-// Minha Rotina — núcleo (estado, storage, navegação, modais)
-// Vanilla JS. Mantém o modelo localStorage existente.
+// Minha Rotina — store compartilhado (estado, storage, tarefas, backup)
+// Carregado em TODAS as páginas, antes de shell.js e do script da página.
+// Vanilla JS, funções globais. Modelo localStorage inalterado.
 // =============================================
 
 // ---- Storage: chaves estáveis (não renomear: quebra dados de usuários) ----
@@ -24,14 +25,12 @@ function save(key, val) {
   localStorage.setItem(key, JSON.stringify(val));
 }
 
-// ---- Estado global ----
+// ---- Estado global (fonte única; storage é a verdade entre páginas) ----
 let tasks = load(STORAGE_KEYS.tasks, []);
 let dailyTaskLogs = load(STORAGE_KEYS.dailyTaskLogs, {});
 let timeblocks = load(STORAGE_KEYS.timeblocks, { morning: [], afternoon: [], evening: [], night: [] });
 let lastDayOpen = load(STORAGE_KEYS.dailyReset, '');
 let appSettings = load(STORAGE_KEYS.appSettings, { showDashboardClock: true });
-let editingTaskId = null;
-let currentFilter = 'all';
 
 // ---- Constantes ----
 const EMPTY_TIMEBLOCKS = { morning: [], afternoon: [], evening: [], night: [] };
@@ -116,7 +115,7 @@ function normalizeStorage() {
 }
 
 // =============================================
-// Datas / tarefas (helpers puros)
+// Datas / tarefas (helpers puros e compartilhados)
 // =============================================
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
@@ -170,6 +169,11 @@ function getTaskAssignedBlock(taskId) {
   return Object.keys(timeblocks).find((block) => (timeblocks[block] || []).includes(taskId)) || '';
 }
 
+function getTaskBlockLabel(taskId) {
+  const map = { morning: 'Manhã', afternoon: 'Tarde', evening: 'Noite', night: 'Madrugada' };
+  return map[getTaskAssignedBlock(taskId)] || '';
+}
+
 function isTaskForDate(task, dateKey = todayKey()) {
   if (!task) return false;
   if (task.repeatDaily) return true;
@@ -186,6 +190,39 @@ function getTaskStateLabel(task) {
 function getTodayTasks() {
   const today = todayKey();
   return tasks.filter((task) => isTaskForDate(task, today));
+}
+
+function getCurrentTimeBlock() {
+  const hour = new Date().getHours();
+  if (hour >= 6 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 18) return 'afternoon';
+  if (hour >= 18 && hour < 22) return 'evening';
+  return 'night';
+}
+
+function getTimeBlockMeta(block) {
+  const map = {
+    morning: { label: 'Manhã', range: '06:00 - 12:00' },
+    afternoon: { label: 'Tarde', range: '12:00 - 18:00' },
+    evening: { label: 'Noite', range: '18:00 - 22:00' },
+    night: { label: 'Madrugada', range: '22:00 - 06:00' },
+  };
+  return map[block] || map.morning;
+}
+
+function formatDT(dt) {
+  if (!dt) return '';
+  const d = new Date(dt);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+}
+
+function isDashboardClockEnabled() {
+  return appSettings.showDashboardClock !== false;
+}
+
+function isMobileLayout() {
+  return window.matchMedia('(max-width: 768px)').matches;
 }
 
 // =============================================
@@ -235,13 +272,41 @@ function shake(id) {
   el.classList.add('shake');
 }
 
-function refreshUI() {
-  renderDashboard();
-  renderTasks();
-  renderHeatmap();
-  renderTimeBlocks();
-  if (typeof renderPresetRoutines === 'function') renderPresetRoutines();
-  renderSettingsPage();
+// =============================================
+// Aviso de mudança: cada página registra seu render.
+// Mutações do store avisam a página atual (substitui o refreshUI global).
+// =============================================
+let storeChangedHandler = null;
+function setStoreChangedHandler(fn) {
+  storeChangedHandler = typeof fn === 'function' ? fn : null;
+}
+function emitStoreChanged() {
+  if (storeChangedHandler) storeChangedHandler();
+}
+
+// =============================================
+// Mutações de tarefas usadas em mais de uma página
+// =============================================
+function setDailyLog(taskId, done) {
+  const today = todayKey();
+  if (!dailyTaskLogs[today]) dailyTaskLogs[today] = [];
+  if (done) {
+    if (!dailyTaskLogs[today].includes(taskId)) dailyTaskLogs[today].push(taskId);
+  } else {
+    dailyTaskLogs[today] = dailyTaskLogs[today].filter((x) => x !== taskId);
+  }
+  save(STORAGE_KEYS.dailyTaskLogs, dailyTaskLogs);
+}
+
+function toggleTask(id) {
+  const t = tasks.find((x) => x.id === id);
+  if (!t) return;
+  const willBeDone = !t.done;
+  if (t.repeatDaily) setDailyLog(id, willBeDone);
+  t.done = willBeDone;
+  t.completedAt = willBeDone ? new Date().toISOString() : '';
+  save(STORAGE_KEYS.tasks, tasks);
+  emitStoreChanged();
 }
 
 // =============================================
@@ -280,7 +345,7 @@ function resetDayState({ manual = false, autoCycle = false } = {}) {
   save(STORAGE_KEYS.tasks, tasks);
   lastDayOpen = today;
   save(STORAGE_KEYS.dailyReset, lastDayOpen);
-  refreshUI();
+  emitStoreChanged();
   showToast(
     manual ? 'Reiniciado' : 'Novo dia',
     manual ? 'Tarefas e blocos zerados.' : 'Tarefas recomeçaram.',
@@ -298,127 +363,6 @@ function checkNewDay() {
   if (lastDayOpen === today) return false;
   resetDayState({ autoCycle: true });
   return true;
-}
-
-// =============================================
-// Navegação (desktop + mobile, consistente)
-// =============================================
-const PAGES = ['dashboard', 'tasks', 'settings'];
-const PAGE_LABELS = { dashboard: 'Hoje', tasks: 'Planejar', settings: 'Ajustes' };
-const isValidPage = (p) => PAGES.includes(p);
-
-function isMobileLayout() {
-  return window.matchMedia('(max-width: 768px)').matches;
-}
-function prefersReducedMotion() {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-function scrollToTop() {
-  window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
-}
-
-function setSidebarOpen(shouldOpen) {
-  document.body.classList.toggle('sidebar-open', shouldOpen);
-  const overlay = document.getElementById('sidebar-overlay');
-  overlay?.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
-  const sidebar = document.getElementById('sidebar');
-  sidebar?.setAttribute('aria-hidden', shouldOpen || !isMobileLayout() ? 'false' : 'true');
-  document.querySelector('[data-action="toggle-sidebar"]')
-    ?.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
-}
-function toggleSidebar(force) {
-  const shouldOpen = typeof force === 'boolean'
-    ? force
-    : !document.body.classList.contains('sidebar-open');
-  setSidebarOpen(shouldOpen);
-  // Ao abrir no mobile, foca o primeiro item; ao fechar, devolve ao botão.
-  if (shouldOpen && isMobileLayout()) {
-    document.querySelector('#sidebar .nav-item')?.focus();
-  }
-}
-function closeSidebar() { setSidebarOpen(false); }
-
-// Ativa o item certo na sidebar e no dock mobile (ignora botões "Ver mais").
-function updateMobileNavigation(page) {
-  const label = document.getElementById('mobile-page-label');
-  if (label) label.textContent = PAGE_LABELS[page] || 'Minha Rotina';
-  document.querySelectorAll('.nav-item, .mobile-dock-item').forEach((node) => {
-    const isActive = node.getAttribute('data-page') === page;
-    node.classList.toggle('active', isActive);
-    if (node.matches('button')) {
-      if (isActive) node.setAttribute('aria-current', 'page');
-      else node.removeAttribute('aria-current');
-    }
-  });
-}
-
-function renderPage(page) {
-  if (page === 'dashboard') renderDashboard();
-  else if (page === 'tasks') {
-    renderTasks();
-    renderTimeBlocks();
-    if (typeof renderPresetRoutines === 'function') renderPresetRoutines();
-  } else if (page === 'settings') renderSettingsPage();
-}
-
-function navigate(page) {
-  if (!isValidPage(page)) return;
-  document.querySelectorAll('.page').forEach((p) => {
-    const isTarget = p.id === `page-${page}`;
-    p.classList.toggle('active', isTarget);
-    if (isTarget) {
-      p.removeAttribute('hidden');
-      if (typeof p.scrollTo === 'function') p.scrollTo({ top: 0 });
-    }
-  });
-  updateMobileNavigation(page);
-  if (isMobileLayout()) closeSidebar();
-  scrollToTop();
-  renderPage(page);
-}
-
-// =============================================
-// Relógio / saudação
-// =============================================
-function startClock() {
-  const tick = () => {
-    const greetEl = document.getElementById('greeting-text');
-    if (greetEl) {
-      const hr = new Date().getHours();
-      greetEl.textContent = hr < 12 ? 'Bom dia,' : hr < 18 ? 'Boa tarde,' : 'Boa noite,';
-    }
-  };
-  tick();
-  setInterval(tick, 60000);
-}
-
-// =============================================
-// Nome
-// =============================================
-function updateUserName(name) {
-  const safeName = name || 'você';
-  const el = document.getElementById('user-name');
-  if (el) el.textContent = safeName;
-  document.title = name ? `Minha Rotina - ${name}` : 'Minha Rotina';
-}
-function initName() {
-  const name = (load(STORAGE_KEYS.name, '') || '').trim();
-  updateUserName(name);
-  if (!name) openNameModal();
-}
-function openNameModal() {
-  const input = document.getElementById('name-input');
-  if (input) input.value = load(STORAGE_KEYS.name, '');
-  openModal('modal-name');
-}
-function saveName() {
-  const input = document.getElementById('name-input');
-  const n = (input?.value || '').trim();
-  if (n) save(STORAGE_KEYS.name, n);
-  else localStorage.removeItem(STORAGE_KEYS.name);
-  updateUserName(n);
-  renderSettingsPage();
-  closeModal('modal-name');
 }
 
 // =============================================
@@ -475,7 +419,7 @@ function applyImportedBackup(snapshot, { showSuccessToast = true } = {}) {
   normalizeStorage();
   updateUserName(importedName);
   checkNewDay();
-  refreshUI();
+  emitStoreChanged();
   if (showSuccessToast) showToast('Importado', 'Backup aplicado.', 'success');
 }
 async function importDataFromFile(event) {
@@ -492,8 +436,6 @@ async function importDataFromFile(event) {
     if (input) input.value = '';
   }
 }
-// Mantida global para o input file (também ligada via addEventListener).
-window.importDataFromFile = importDataFromFile;
 
 function clearAllDataNow() {
   Object.keys(localStorage).forEach((key) => { if (key.startsWith('mr_')) localStorage.removeItem(key); });
@@ -505,9 +447,8 @@ function clearAllDataNow() {
   normalizeStorage();
   applyTheme(DEFAULT_THEME_ID, { persist: true });
   initName();
-  refreshUI();
-  navigate('dashboard');
-  showToast('Excluído', 'Todos os dados removidos.', 'success');
+  // Volta para o Hoje com estado limpo (recarrega a partir do storage).
+  window.location.href = './index.html';
 }
 function clearAllData() {
   showConfirm('Excluir tudo?', 'Dados, configurações e backups serão apagados. Irreversível.', () => {
@@ -519,158 +460,3 @@ function clearAllData() {
     clearAllDataNow();
   });
 }
-
-// =============================================
-// Modais
-// =============================================
-function openModal(id) {
-  const modal = document.getElementById(id);
-  if (!modal) return;
-  modal.classList.add('open');
-  modal.setAttribute('aria-hidden', 'false');
-  document.body.style.overflow = 'hidden';
-  modal.querySelector('input, button, select, textarea')?.focus();
-}
-function closeModal(id) {
-  const modal = typeof id === 'string' ? document.getElementById(id) : id;
-  if (!modal) return;
-  modal.classList.remove('open');
-  modal.setAttribute('aria-hidden', 'true');
-  if (!document.querySelector('.modal-overlay.open')) document.body.style.overflow = '';
-}
-let confirmCallback = () => {};
-function showConfirm(title, msg, cb = () => {}) {
-  setEl('confirm-title', title);
-  setEl('confirm-msg', msg);
-  confirmCallback = cb;
-  openModal('modal-confirm');
-}
-function confirmDialogYes() {
-  const cb = confirmCallback;
-  confirmCallback = () => {};
-  closeModal('modal-confirm');
-  cb();
-}
-
-// =============================================
-// Eventos: delegação (clique + change + teclado)
-// =============================================
-function handleActionClick(event) {
-  const target = event.target.closest('[data-action]');
-  if (!target) return;
-  const { action, page, filter, taskId, block } = target.dataset;
-  // Tema usa data-theme-id; presets usam data-preset-id (compat: aceita ambos).
-  const themeId = target.dataset.themeId || target.dataset.presetId;
-  const presetId = target.dataset.presetId || target.dataset.themeId;
-
-  switch (action) {
-    case 'navigate': if (page) navigate(page); break;
-    case 'toggle-sidebar': toggleSidebar(); break;
-    case 'close-sidebar': closeSidebar(); break;
-    case 'filter-tasks': if (filter) filterTasks(filter, target); break;
-    case 'toggle-task-composer': toggleTaskComposer(); break;
-    case 'add-task': addTask(); break;
-    case 'clear-done-tasks': clearDoneTasks(); break;
-    case 'restart-day': restartDay(); break;
-    case 'export-data': exportData(); break;
-    case 'import-data': triggerImportData(); break;
-    case 'clear-all-data': clearAllData(); break;
-    case 'open-name-modal': openNameModal(); break;
-    case 'save-name': saveName(); break;
-    case 'save-edit-task': saveEditTask(); break;
-    case 'confirm-yes': confirmDialogYes(); break;
-    case 'close-modal': {
-      const modal = target.closest('.modal-overlay');
-      if (modal) closeModal(modal.id);
-      break;
-    }
-    case 'toggle-task': if (taskId) toggleTask(taskId); break;
-    case 'edit-task': if (taskId) editTask(taskId); break;
-    case 'delete-task': if (taskId) deleteTask(taskId); break;
-    case 'move-to-block': if (taskId && block) moveTaskToBlock(taskId, block); break;
-    case 'remove-from-block': if (taskId && block) removeFromBlock(taskId, block); break;
-    case 'apply-preset': if (presetId) applyPresetRoutine(presetId); break;
-    case 'focus-task-input': focusTaskInput(); break;
-    case 'set-theme': if (themeId) setTheme(themeId); break;
-    // sync-task-form é tratado no evento 'change' (mais confiável p/ checkbox).
-    default: break;
-  }
-}
-
-// Checkbox do formulário: 'change' garante o estado já atualizado.
-function handleFormChange(event) {
-  const target = event.target.closest('[data-action]');
-  if (!target) return;
-  if (target.dataset.action === 'sync-task-form') syncTaskFormState(false);
-  else if (target.dataset.action === 'sync-task-form-edit') syncTaskFormState(true);
-  else if (target.id === 'settings-clock-toggle') toggleDashboardClock();
-}
-
-// Fecha modal clicando no fundo.
-function handleOverlayClick(event) {
-  if (event.target.classList?.contains('modal-overlay')) closeModal(event.target.id);
-  if (event.target.id === 'sidebar-overlay') closeSidebar();
-}
-
-function handleKeydown(event) {
-  if (event.key === 'Enter' && document.activeElement?.id === 'task-input') {
-    event.preventDefault();
-    addTask();
-  }
-  // Acessibilidade: div.task-check com role=checkbox responde a Enter/Espaço.
-  if ((event.key === 'Enter' || event.key === ' ') && document.activeElement?.matches?.('.task-check[role="checkbox"]')) {
-    const id = document.activeElement.getAttribute('data-task-id');
-    if (id) {
-      event.preventDefault();
-      toggleTask(id);
-    }
-  }
-  if (event.key === 'Escape') {
-    document.querySelectorAll('.modal-overlay.open').forEach((m) => closeModal(m.id));
-    closeSidebar();
-  }
-}
-
-// =============================================
-// Init
-// =============================================
-document.addEventListener('DOMContentLoaded', () => {
-  document.body.addEventListener('click', handleActionClick);
-  document.body.addEventListener('change', handleFormChange);
-  document.addEventListener('click', handleOverlayClick, true);
-  document.addEventListener('keydown', handleKeydown);
-
-  // Botão fixo de confirmação (evita onclick inline duplicado).
-  document.getElementById('confirm-yes-btn')
-    ?.addEventListener('click', confirmDialogYes);
-  // Backup: sem inline onchange no HTML.
-  document.getElementById('import-backup-file')
-    ?.addEventListener('change', importDataFromFile);
-
-  initTheme();
-  normalizeStorage();
-
-  const nowValue = getDefaultTaskDateTime();
-  const addInput = document.getElementById('task-datetime');
-  const editInput = document.getElementById('edit-task-datetime');
-  if (addInput && !addInput.value) addInput.value = nowValue;
-  if (editInput && !editInput.value) editInput.value = nowValue;
-
-  if (typeof initTaskComposer === 'function') initTaskComposer();
-  else syncTaskFormState();
-
-  initName();
-  checkNewDay();
-  startClock();
-  refreshUI();
-  updateMobileNavigation('dashboard');
-
-  if (typeof lucide !== 'undefined') lucide.createIcons();
-
-  window.addEventListener('resize', () => { if (!isMobileLayout()) closeSidebar(); });
-  window.addEventListener('focus', () => { checkNewDay(); refreshUI(); });
-  setInterval(() => {
-    checkNewDay();
-    if (document.getElementById('page-dashboard')?.classList.contains('active')) renderDashboard();
-  }, 60000);
-});

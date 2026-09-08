@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark-tech">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ajustes - Minha Rotina</title>
+  <meta name="theme-color" content="#09090b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Minha Rotina" />
+  <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body data-page="settings" data-title="Ajustes">
+
+  <div id="toast-stack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
+
+  <nav id="sidebar" class="sidebar" role="navigation" aria-label="Navegação principal">
+    <div class="nav-logo"><span class="nav-logo-mark">M</span><span>Minha Rotina</span></div>
+
+    <div class="nav-section">Menu</div>
+    <a class="nav-item" href="./index.html">
+      <i data-lucide="layout-dashboard" style="width:20px;height:20px;flex-shrink:0"></i>
+      <span class="nav-label">Hoje</span>
+    </a>
+    <a class="nav-item" href="./planejar.html">
+      <i data-lucide="check-square" style="width:20px;height:20px;flex-shrink:0"></i>
+      <span class="nav-label">Planejar</span>
+    </a>
+    <a class="nav-item active" href="./ajustes.html" aria-current="page">
+      <i data-lucide="settings-2" style="width:20px;height:20px;flex-shrink:0"></i>
+      <span class="nav-label">Ajustes</span>
+    </a>
+
+    <div class="nav-footer"><span class="nav-dot" aria-hidden="true"></span>Dados salvos localmente</div>
+  </nav>
+
+  <main id="main">
+
+    <!-- ==================== AJUSTES ==================== -->
+    <section class="page active" id="page-settings">
+      <div class="settings-hero mb-4">
+        <div class="settings-hero-copy">
+          <div class="settings-kicker">Ajustes</div>
+          <h1 class="page-title" style="margin-bottom:6px">Configurações</h1>
+          <p class="text-sm text-muted">Controle total.</p>
+        </div>
+      </div>
+
+      <div class="settings-layout">
+        <div class="settings-column">
+          <div class="card settings-surface">
+            <div class="settings-section-head">
+              <div>
+                <div class="settings-kicker">Visual</div>
+                <div class="section-title" style="margin-bottom:0">Aparência</div>
+              </div>
+            </div>
+            <div class="settings-panel">
+              <div class="settings-item">
+                <div class="settings-theme-stack" style="width:100%">
+                  <div class="settings-theme-head">
+                    <div>
+                      <div class="settings-title">Tema</div>
+                      <div class="settings-copy" id="settings-theme-copy">Escolha uma aparência.</div>
+                    </div>
+                    <span class="settings-pill-card" id="settings-theme-pill">Minimal</span>
+                  </div>
+                  <div id="settings-theme-grid" class="theme-grid"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-column">
+          <div class="card settings-surface">
+            <div class="settings-section-head">
+              <div>
+                <div class="settings-kicker">Perfil</div>
+                <div class="section-title" style="margin-bottom:0">Conta</div>
+              </div>
+            </div>
+            <div class="settings-panel">
+              <div class="settings-item compact">
+                <div>
+                  <div class="settings-title">Nome</div>
+                  <div class="settings-copy" id="settings-current-name">Você</div>
+                </div>
+                <button class="btn btn-ghost" style="padding:8px 12px" data-action="open-name-modal" type="button">Alterar</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card settings-surface">
+            <div class="settings-section-head">
+              <div>
+                <div class="settings-kicker">Rotina</div>
+                <div class="section-title" style="margin-bottom:0">Dia</div>
+              </div>
+              <span class="settings-pill-card" id="settings-task-count">0 tarefas</span>
+            </div>
+            <div class="settings-panel">
+              <div class="settings-item compact">
+                <div>
+                  <div class="settings-title">Período atual</div>
+                  <div class="settings-copy">Mostra "Foco" no Hoje.</div>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="settings-clock-toggle" />
+                  <span class="switch-track" aria-hidden="true"></span>
+                </label>
+              </div>
+
+              <div class="settings-item compact">
+                <div>
+                  <div class="settings-title">Reiniciar dia</div>
+                  <div class="settings-copy">Zera tarefas e blocos.</div>
+                </div>
+                <button class="btn btn-ghost" style="padding:8px 12px" data-action="restart-day" type="button">Reiniciar</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card settings-surface">
+            <div class="settings-section-head">
+              <div>
+                <div class="settings-kicker">Conta</div>
+                <div class="section-title" style="margin-bottom:0">Dados</div>
+              </div>
+            </div>
+            <div class="settings-panel">
+              <div class="settings-item compact">
+                <div>
+                  <div class="settings-title">Backup</div>
+                  <div class="settings-copy">Exportar ou importar JSON.</div>
+                </div>
+                <div class="settings-inline-actions">
+                  <button class="btn btn-ghost" style="padding:8px 12px" data-action="export-data" type="button">Exportar</button>
+                  <button class="btn btn-primary" style="padding:8px 12px" data-action="import-data" type="button">Importar</button>
+                </div>
+              </div>
+              <input type="file" id="import-backup-file" accept=".json,application/json" hidden>
+            </div>
+          </div>
+
+          <div class="card settings-surface settings-surface-wide">
+            <div class="settings-section-head">
+              <div>
+                <div class="settings-kicker">Privacidade</div>
+                <div class="section-title" style="margin-bottom:0">Dados</div>
+              </div>
+            </div>
+            <div class="settings-note">Dados locais neste navegador.</div>
+            <div class="settings-item compact" style="margin-top:14px">
+              <div>
+                <div class="settings-title">Excluir tudo</div>
+                <div class="settings-copy">Remove tudo e reinicia.</div>
+              </div>
+              <button class="btn btn-danger" style="padding:8px 12px" data-action="clear-all-data" type="button">Excluir</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="mobile-dock" aria-label="Navegação rápida" role="navigation">
+    <a class="mobile-dock-item" href="./index.html">
+      <i data-lucide="layout-dashboard" style="width:18px;height:18px"></i>
+      <span>Hoje</span>
+    </a>
+    <a class="mobile-dock-item" href="./planejar.html">
+      <i data-lucide="check-square" style="width:18px;height:18px"></i>
+      <span>Plano</span>
+    </a>
+    <a class="mobile-dock-item active" href="./ajustes.html" aria-current="page">
+      <i data-lucide="settings-2" style="width:18px;height:18px"></i>
+      <span>Ajustes</span>
+    </a>
+  </nav>
+
+  <!-- Confirm Modal -->
+  <div class="modal-overlay" id="modal-confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-title" id="confirm-title">Confirmar</div>
+      <p class="text-muted mb-4" id="confirm-msg">Tem certeza?</p>
+      <div class="flex gap-2">
+        <button class="btn btn-danger" id="confirm-yes-btn" type="button">Confirmar</button>
+        <button class="btn btn-ghost" data-action="close-modal" type="button">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Name Modal -->
+  <div class="modal-overlay" id="modal-name" role="dialog" aria-modal="true" aria-labelledby="name-modal-title" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-title" id="name-modal-title">Seu nome</div>
+      <div class="mb-3"><input type="text" id="name-input" placeholder="Nome..." maxlength="30" /></div>
+      <div class="flex gap-2">
+        <button class="btn btn-primary" data-action="save-name" type="button">Salvar</button>
+        <button class="btn btn-ghost" data-action="close-modal" type="button">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="scripts/core/theme.js"></script>
+  <script src="scripts/core/store.js"></script>
+  <script src="scripts/core/shell.js"></script>
+  <script src="scripts/pages/settings.js"></script>
+</body>
+
+</html>

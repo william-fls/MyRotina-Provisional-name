@@ -1,20 +1,15 @@
 // Dashboard ("Hoje"): progresso, foco (período atual), prévias de tarefas/diárias.
-function getCurrentTimeBlock() {
-  const hour = new Date().getHours();
-  if (hour >= 6 && hour < 12) return 'morning';
-  if (hour >= 12 && hour < 18) return 'afternoon';
-  if (hour >= 18 && hour < 22) return 'evening';
-  return 'night';
-}
-
-function getTimeBlockMeta(block) {
-  const map = {
-    morning: { label: 'Manhã', range: '06:00 - 12:00' },
-    afternoon: { label: 'Tarde', range: '12:00 - 18:00' },
-    evening: { label: 'Noite', range: '18:00 - 22:00' },
-    night: { label: 'Madrugada', range: '22:00 - 06:00' },
+// Helpers de data/bloco/estado vivem no store.js. Roda só em index.html.
+function startClock() {
+  const tick = () => {
+    const greetEl = document.getElementById('greeting-text');
+    if (greetEl) {
+      const hr = new Date().getHours();
+      greetEl.textContent = hr < 12 ? 'Bom dia,' : hr < 18 ? 'Boa tarde,' : 'Boa noite,';
+    }
   };
-  return map[block] || map.morning;
+  tick();
+  setInterval(tick, 60000);
 }
 
 function isDailyDoneToday(taskId, today) {
@@ -60,7 +55,7 @@ function renderDashboardTasks() {
   card.style.display = '';
   const upcoming = getTodayTasks().filter((t) => !t.repeatDaily && !t.done).slice(0, 6);
   if (!upcoming.length) {
-    list.innerHTML = '<div class="dashboard-now-empty">Nenhuma tarefa para hoje.<br><button class="btn btn-ghost" type="button" data-action="navigate" data-page="tasks" style="margin-top:8px;padding:6px 12px;font-size:12px">Planejar o dia</button></div>';
+    list.innerHTML = '<div class="dashboard-now-empty">Nenhuma tarefa para hoje.<br><a class="btn btn-ghost" href="./planejar.html" style="margin-top:8px;padding:6px 12px;font-size:12px">Planejar o dia</a></div>';
     return;
   }
   list.innerHTML = upcoming.map((t) => `
@@ -83,7 +78,7 @@ function renderDashboardDaily(today) {
   card.style.display = '';
   const pending = tasks.filter((t) => t.repeatDaily && !isDailyDoneToday(t.id, today)).slice(0, 5);
   if (!pending.length) {
-    list.innerHTML = '<div class="dashboard-now-empty">Nenhuma diária pendente.<br><button class="btn btn-ghost" type="button" data-action="navigate" data-page="tasks" style="margin-top:8px;padding:6px 12px;font-size:12px">Ver tarefas</button></div>';
+    list.innerHTML = '<div class="dashboard-now-empty">Nenhuma diária pendente.<br><a class="btn btn-ghost" href="./planejar.html" style="margin-top:8px;padding:6px 12px;font-size:12px">Ver tarefas</a></div>';
     return;
   }
   list.innerHTML = pending.map((t) => `
@@ -144,3 +139,29 @@ function renderDashboard() {
   renderCurrentBlockCard();
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
+
+// ---- Eventos + init (só Hoje) ----
+function handleDashboardClick(event) {
+  const target = event.target.closest('[data-action="toggle-task"]');
+  if (target?.dataset.taskId) toggleTask(target.dataset.taskId);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.body.addEventListener('click', handleDashboardClick);
+  setStoreChangedHandler(renderDashboard);
+
+  startClock();
+  checkNewDay();
+  renderDashboard();
+
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+
+  window.addEventListener('focus', () => {
+    checkNewDay();
+    renderDashboard();
+  });
+  setInterval(() => {
+    checkNewDay();
+    renderDashboard();
+  }, 60000);
+});

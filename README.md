@@ -27,17 +27,28 @@ Dados ficam no `localStorage` do navegador. Nada sai da máquina.
 ## Estrutura
 
 ```
-index.html
+index.html          (Hoje)
+planejar.html       (Planejar)
+ajustes.html        (Ajustes)
 style.css
-app.js
 sw.js
 manifest.webmanifest
-scripts/core/theme.js
+scripts/core/
+  theme.js
+  store.js          (estado, storage, backup — todas as páginas)
+  shell.js          (modais, nome, SW, eventos globais)
 scripts/pages/
-  dashboard.js
-  tasks.js
-  settings.js
-icons/
+  dashboard.js      (só Hoje)
+  tasks.js          (só Planejar)
+  settings.js       (só Ajustes)
+icons/              (SVG + PNG 192/512 + maskable)
+test_*.js, audit2.py (testes Node + auditoria)
 ```
+
+## Instalação no celular (PWA)
+
+1. Sirva a pasta via **HTTPS** (ou `localhost`): `npx serve .`
+2. Abra no Chrome do Android → menu ⋮ → **"Adicionar à tela inicial"** / **"Instalar app"**.
+3. No iPhone (Safari): Compartilhar → **"Adicionar à Tela de Início"**.
 
 

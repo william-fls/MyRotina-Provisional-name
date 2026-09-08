@@ -107,6 +107,7 @@ const windowMock = {
   scrollTo() {},
   addEventListener() {},
   localStorage: localStorageMock,
+  location: { href: '' },
 };
 
 global.localStorage = localStorageMock;
@@ -116,10 +117,11 @@ global.getComputedStyle = () => ({ getPropertyValue: () => '' });
 
 for (const rel of [
   'scripts/core/theme.js',
+  'scripts/core/store.js',
+  'scripts/core/shell.js',
   'scripts/pages/settings.js',
   'scripts/pages/dashboard.js',
   'scripts/pages/tasks.js',
-  'app.js',
 ]) {
   vm.runInThisContext(fs.readFileSync(path.join(__dirname, rel), 'utf8'), { filename: rel });
 }
@@ -530,38 +532,53 @@ it('extractBackupSnapshot null-safe', () => {
 });
 
 // =============================================
-console.log('\n\x1b[1m=== Section 7: Navegação (5) ===\x1b[0m');
+console.log('\n\x1b[1m=== Section 7: Multi-página (5) ===\x1b[0m');
 
-it('isValidPage aceita as 3 páginas', () => {
-  assert.strictEqual(call('isValidPage', 'dashboard'), true);
-  assert.strictEqual(call('isValidPage', 'tasks'), true);
-  assert.strictEqual(call('isValidPage', 'settings'), true);
+it('emitStoreChanged avisa a página registrada', () => {
+  let calls = 0;
+  call('setStoreChangedHandler', () => { calls++; });
+  call('emitStoreChanged');
+  assert.strictEqual(calls, 1);
+  call('setStoreChangedHandler', null);
+  call('emitStoreChanged');
+  assert.strictEqual(calls, 1);
 });
 
-it('isValidPage rejeita página inválida', () => {
-  assert.strictEqual(call('isValidPage', 'admin'), false);
-  assert.strictEqual(call('isValidPage', ''), false);
+it('toggleTask re-renderiza via hook (sem refreshUI global)', () => {
+  seedTasks([{ id: 'h1', text: 'h1', datetime: '', repeatDaily: false, done: false, created: '2026-09-01T10:00:00.000Z' }]);
+  let calls = 0;
+  call('setStoreChangedHandler', () => { calls++; });
+  call('toggleTask', 'h1');
+  assert.strictEqual(calls, 1);
+  assert.strictEqual(g.tasks[0].done, true);
+  call('setStoreChangedHandler', null);
 });
 
-it('PAGE_LABELS mapeia títulos em PT', () => {
-  const labels = vm.runInThisContext('PAGE_LABELS');
-  assert.strictEqual(labels.dashboard, 'Hoje');
-  assert.strictEqual(labels.tasks, 'Planejar');
-  assert.strictEqual(labels.settings, 'Ajustes');
+it('páginas ligadas por href (sem SPA)', () => {
+  const pages = ['index.html', 'planejar.html', 'ajustes.html'].map(f =>
+    fs.readFileSync(path.join(__dirname, f), 'utf8'));
+  for (const html of pages) {
+    assert.ok(html.includes('href="./index.html"'));
+    assert.ok(html.includes('href="./planejar.html"'));
+    assert.ok(html.includes('href="./ajustes.html"'));
+    assert.ok(!html.includes('data-action="navigate"'));
+    assert.ok(!html.includes('app.js'));
+  }
 });
 
-it('navigate com página inválida não lança erro', () => {
-  call('navigate', 'página-invalida');
-  reload();
-  assert.ok(true);
+it('shell expõe modais/nome e store expõe mutações', () => {
+  for (const fn of ['openModal', 'closeModal', 'showConfirm', 'confirmDialogYes', 'updateUserName', 'initName', 'openNameModal', 'saveName']) {
+    assert.strictEqual(vm.runInThisContext(`typeof ${fn}`), 'function', fn);
+  }
+  for (const fn of ['toggleTask', 'resetDayState', 'checkNewDay', 'emitStoreChanged', 'setStoreChangedHandler']) {
+    assert.strictEqual(vm.runInThisContext(`typeof ${fn}`), 'function', fn);
+  }
 });
 
-it('navigate dashboard/tasks/settings não lança com DOM vazio', () => {
-  call('navigate', 'dashboard');
-  call('navigate', 'tasks');
-  call('navigate', 'settings');
-  reload();
-  assert.ok(true);
+it('sem globals da navegação antiga (navigate/sidebar/refreshUI)', () => {
+  for (const fn of ['navigate', 'toggleSidebar', 'closeSidebar', 'updateMobileNavigation', 'refreshUI', 'isValidPage']) {
+    assert.throws(() => vm.runInThisContext(fn), ReferenceError, fn);
+  }
 });
 
 // =============================================

@@ -109,10 +109,11 @@ global.Response = class { static error() { return new (class {}); } };
 // ---- Load source files ----
 for (const rel of [
   'scripts/core/theme.js',
+  'scripts/core/store.js',
+  'scripts/core/shell.js',
   'scripts/pages/settings.js',
   'scripts/pages/dashboard.js',
   'scripts/pages/tasks.js',
-  'app.js',
 ]) {
   const code = fs.readFileSync(path.join(__dirname, rel), 'utf8');
   vm.runInThisContext(code, { filename: rel });

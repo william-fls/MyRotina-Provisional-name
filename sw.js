@@ -1,17 +1,23 @@
-const ASSET_VERSION = '2026-09-07-taskform-v2';
+const ASSET_VERSION = '2026-09-08-split-v1';
 const CACHE_NAME = `minha-rotina-${ASSET_VERSION}`;
 const OFFLINE_FALLBACK = './index.html';
 const CORE_ASSETS = [
   './index.html',
+  './planejar.html',
+  './ajustes.html',
   './style.css',
-  './app.js',
   './scripts/core/theme.js',
+  './scripts/core/store.js',
+  './scripts/core/shell.js',
   './scripts/pages/settings.js',
   './scripts/pages/dashboard.js',
   './scripts/pages/tasks.js',
   './manifest.webmanifest',
   './icons/app-icon.svg',
   './icons/app-badge.svg',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/maskable-512.png',
 ];
 const APP_SHELL = [
   './',

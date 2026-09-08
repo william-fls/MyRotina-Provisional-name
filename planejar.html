@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark-tech">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Planejar - Minha Rotina</title>
+  <meta name="theme-color" content="#09090b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Minha Rotina" />
+  <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body data-page="tasks" data-title="Planejar">
+
+  <div id="toast-stack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
+
+  <nav id="sidebar" class="sidebar" role="navigation" aria-label="Navegação principal">
+    <div class="nav-logo"><span class="nav-logo-mark">M</span><span>Minha Rotina</span></div>
+
+    <div class="nav-section">Menu</div>
+    <a class="nav-item" href="./index.html">
+      <i data-lucide="layout-dashboard" style="width:20px;height:20px;flex-shrink:0"></i>
+      <span class="nav-label">Hoje</span>
+    </a>
+    <a class="nav-item active" href="./planejar.html" aria-current="page">
+      <i data-lucide="check-square" style="width:20px;height:20px;flex-shrink:0"></i>
+      <span class="nav-label">Planejar</span>
+    </a>
+    <a class="nav-item" href="./ajustes.html">
+      <i data-lucide="settings-2" style="width:20px;height:20px;flex-shrink:0"></i>
+      <span class="nav-label">Ajustes</span>
+    </a>
+
+    <div class="nav-footer"><span class="nav-dot" aria-hidden="true"></span>Dados salvos localmente</div>
+  </nav>
+
+  <main id="main">
+
+    <!-- ==================== PLANEJAR ==================== -->
+    <section class="page active" id="page-tasks">
+      <h1 class="page-title" style="margin-bottom:4px">Planejar</h1>
+      <p class="text-sm text-muted mb-4" id="plan-subtitle">Tarefas e blocos do dia.</p>
+
+      <div class="plan-top-grid mb-4">
+        <div class="card" id="task-composer" data-open="true">
+        <div class="task-composer-head">
+          <div>
+            <div class="section-title" style="margin-bottom:4px">Criar</div>
+            <p class="text-sm text-muted">Adicione uma nova tarefa.</p>
+          </div>
+          <button class="btn btn-ghost" id="task-composer-toggle-btn" type="button" data-action="toggle-task-composer" aria-expanded="true" aria-controls="task-composer-form">
+            <i data-lucide="chevron-up" style="width:16px;height:16px"></i>
+            <span>Ocultar</span>
+          </button>
+        </div>
+        <div id="task-composer-form" class="task-composer-form">
+          <div class="mb-2">
+            <label class="composer-label" for="task-input">Tarefa</label>
+            <input type="text" id="task-input" placeholder="Ex.: Beber água, estudar 25 min..." maxlength="120" autocomplete="off" />
+          </div>
+          <div class="mb-2" id="task-datetime-wrap">
+            <label class="composer-label" for="task-datetime">Data e hora</label>
+            <input type="datetime-local" id="task-datetime" step="900" />
+            <p class="form-hint" id="task-daily-hint" hidden>Só o horário importa — repete todo dia.</p>
+          </div>
+          <div class="task-toggle-row mb-2">
+            <label class="option-toggle">
+              <input type="checkbox" id="task-no-datetime" data-action="sync-task-form" />
+              <span class="option-icon" aria-hidden="true"><i data-lucide="calendar-off" style="width:16px;height:16px"></i></span>
+              <div class="option-copy">
+                <strong>Sem hora</strong>
+                <span>Sem hora marcada. Combina com Diária.</span>
+              </div>
+              <span class="option-switch" aria-hidden="true"></span>
+            </label>
+            <label class="option-toggle">
+              <input type="checkbox" id="task-repeat-daily" data-action="sync-task-form" />
+              <span class="option-icon" aria-hidden="true"><i data-lucide="repeat" style="width:16px;height:16px"></i></span>
+              <div class="option-copy">
+                <strong>Diária</strong>
+                <span>Repete todo dia, com ou sem hora.</span>
+              </div>
+              <span class="option-switch" aria-hidden="true"></span>
+            </label>
+          </div>
+          <div id="task-block-wrap" class="task-block-panel mb-2" hidden>
+            <label class="composer-label" for="task-block">Período</label>
+            <p class="form-hint" style="margin-bottom:6px">Tarefas sem hora podem ir para um período.</p>
+            <select id="task-block">
+              <option value="">Depois</option>
+              <option value="morning">Manhã</option>
+              <option value="afternoon">Tarde</option>
+              <option value="evening">Noite</option>
+              <option value="night">Madrugada</option>
+            </select>
+          </div>
+          <div class="task-composer-actions">
+            <button class="btn btn-primary" type="button" data-action="add-task">
+              <i data-lucide="check" style="width:14px;height:14px"></i> Adicionar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="flex items-center justify-between mb-3">
+          <div class="section-title" style="margin-bottom:0">Modelos</div>
+          <span class="tag">1 toque</span>
+        </div>
+        <p class="text-sm text-muted mb-3">Rotinas prontas para aplicar.</p>
+        <div id="preset-grid" class="preset-grid"></div>
+      </div>
+      </div>
+
+      <div class="tasks-section-head">
+        <div class="section-title" style="margin-bottom:0">Tarefas</div>
+        <div class="tasks-section-actions">
+          <span class="tag" id="tasks-count">0 pendentes</span>
+          <button class="btn btn-ghost" id="clear-done-btn" type="button" data-action="clear-done-tasks" style="padding:6px 12px;font-size:12px">Limpar feitas</button>
+        </div>
+      </div>
+
+      <div class="filter-tabs" role="tablist" aria-label="Filtrar tarefas">
+        <button class="filter-tab active" data-filter="all" data-action="filter-tasks" type="button">Todas</button>
+        <button class="filter-tab" data-filter="pending" data-action="filter-tasks" type="button">Pendentes</button>
+        <button class="filter-tab" data-filter="done" data-action="filter-tasks" type="button">Feitas</button>
+        <button class="filter-tab" data-filter="today" data-action="filter-tasks" type="button">Hoje</button>
+      </div>
+
+      <div id="tasks-list"></div>
+
+      <div class="card mt-4 mb-4">
+        <div class="section-title" style="margin-bottom:12px">Progresso Semanal</div>
+        <div id="weekly-heatmap"></div>
+      </div>
+
+      <div class="planning-stack mt-4">
+        <div>
+          <div class="section-title">Dia</div>
+          <div class="tip-bar">
+            <strong style="color:var(--accent)">Hoje:</strong> <span id="tb-date"></span> - Distribua
+            as tarefas pelos blocos.
+          </div>
+        </div>
+
+        <div class="grid-2 timeblocks-layout">
+          <div class="timeblocks-grid">
+            <div class="time-block morning">
+              <div class="time-block-header"></div>
+              <div id="block-morning-tasks"></div>
+            </div>
+            <div class="time-block afternoon">
+              <div class="time-block-header"></div>
+              <div id="block-afternoon-tasks"></div>
+            </div>
+            <div class="time-block evening">
+              <div class="time-block-header"></div>
+              <div id="block-evening-tasks"></div>
+            </div>
+            <div class="time-block night">
+              <div class="time-block-header"></div>
+              <div id="block-night-tasks"></div>
+            </div>
+          </div>
+
+          <div class="card sticky-panel">
+            <div class="section-title">Pendentes</div>
+            <p class="text-sm text-muted mb-3">Escolha um período.</p>
+            <div id="drag-tasks-list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="mobile-dock" aria-label="Navegação rápida" role="navigation">
+    <a class="mobile-dock-item" href="./index.html">
+      <i data-lucide="layout-dashboard" style="width:18px;height:18px"></i>
+      <span>Hoje</span>
+    </a>
+    <a class="mobile-dock-item active" href="./planejar.html" aria-current="page">
+      <i data-lucide="check-square" style="width:18px;height:18px"></i>
+      <span>Plano</span>
+    </a>
+    <a class="mobile-dock-item" href="./ajustes.html">
+      <i data-lucide="settings-2" style="width:18px;height:18px"></i>
+      <span>Ajustes</span>
+    </a>
+  </nav>
+
+  <!-- Confirm Modal -->
+  <div class="modal-overlay" id="modal-confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-title" id="confirm-title">Confirmar</div>
+      <p class="text-muted mb-4" id="confirm-msg">Tem certeza?</p>
+      <div class="flex gap-2">
+        <button class="btn btn-danger" id="confirm-yes-btn" type="button">Confirmar</button>
+        <button class="btn btn-ghost" data-action="close-modal" type="button">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Task Modal -->
+  <div class="modal-overlay" id="modal-edit-task" role="dialog" aria-modal="true" aria-labelledby="edit-task-title" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-title" id="edit-task-title">Editar</div>
+      <div class="mb-3"><input type="text" id="edit-task-text" placeholder="Tarefa" /></div>
+      <div class="mb-3" id="edit-task-datetime-wrap">
+        <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Data e hora</label>
+        <input type="datetime-local" id="edit-task-datetime" step="900" />
+        <p class="form-hint" id="edit-task-daily-hint" hidden>Só o horário importa — repete todo dia.</p>
+      </div>
+      <div class="task-toggle-row mb-3">
+        <label class="option-toggle">
+          <input type="checkbox" id="edit-task-no-datetime" data-action="sync-task-form-edit" />
+          <span class="option-icon" aria-hidden="true"><i data-lucide="calendar-off" style="width:16px;height:16px"></i></span>
+          <div class="option-copy">
+            <strong>Sem hora</strong>
+            <span>Sem hora marcada. Combina com Diária.</span>
+          </div>
+          <span class="option-switch" aria-hidden="true"></span>
+        </label>
+        <label class="option-toggle">
+          <input type="checkbox" id="edit-task-repeat-daily" data-action="sync-task-form-edit" />
+          <span class="option-icon" aria-hidden="true"><i data-lucide="repeat" style="width:16px;height:16px"></i></span>
+          <div class="option-copy">
+            <strong>Diária</strong>
+            <span>Repete todo dia, com ou sem hora.</span>
+          </div>
+          <span class="option-switch" aria-hidden="true"></span>
+        </label>
+      </div>
+      <div id="edit-task-block-wrap" class="task-block-panel mb-3" hidden>
+        <label class="text-sm text-muted" style="display:block;margin-bottom:4px">Período</label>
+        <p class="form-hint" style="margin-bottom:6px">Tarefas sem hora podem ir para um período.</p>
+        <select id="edit-task-block">
+          <option value="">Depois</option>
+          <option value="morning">Manhã</option>
+          <option value="afternoon">Tarde</option>
+          <option value="evening">Noite</option>
+          <option value="night">Madrugada</option>
+        </select>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn btn-primary" data-action="save-edit-task" type="button">Salvar</button>
+        <button class="btn btn-ghost" data-action="close-modal" type="button">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Name Modal -->
+  <div class="modal-overlay" id="modal-name" role="dialog" aria-modal="true" aria-labelledby="name-modal-title" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-title" id="name-modal-title">Seu nome</div>
+      <div class="mb-3"><input type="text" id="name-input" placeholder="Nome..." maxlength="30" /></div>
+      <div class="flex gap-2">
+        <button class="btn btn-primary" data-action="save-name" type="button">Salvar</button>
+        <button class="btn btn-ghost" data-action="close-modal" type="button">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="scripts/core/theme.js"></script>
+  <script src="scripts/core/store.js"></script>
+  <script src="scripts/core/shell.js"></script>
+  <script src="scripts/pages/tasks.js"></script>
+</body>
+
+</html>

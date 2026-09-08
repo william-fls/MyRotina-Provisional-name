@@ -1,4 +1,8 @@
 // Tarefas: criar/editar/concluir/excluir, filtros, heatmap, blocos, modelos.
+// Roda só em planejar.html. Estado compartilhado e toggleTask vivem no store.js.
+let editingTaskId = null;
+let currentFilter = 'all';
+
 function getTaskFormState(isEdit = false) {
   const p = isEdit ? 'edit-task' : 'task';
   return {
@@ -180,30 +184,8 @@ function addTask() {
   setTaskComposerOpen(true, { focusInput: false });
   const input = document.getElementById('task-input');
   if (input && !isMobileLayout()) input.focus();
-  refreshUI();
+  emitStoreChanged();
   showToast('Adicionada', task.text, 'success');
-}
-
-function setDailyLog(taskId, done) {
-  const today = todayKey();
-  if (!dailyTaskLogs[today]) dailyTaskLogs[today] = [];
-  if (done) {
-    if (!dailyTaskLogs[today].includes(taskId)) dailyTaskLogs[today].push(taskId);
-  } else {
-    dailyTaskLogs[today] = dailyTaskLogs[today].filter((x) => x !== taskId);
-  }
-  save(STORAGE_KEYS.dailyTaskLogs, dailyTaskLogs);
-}
-
-function toggleTask(id) {
-  const t = tasks.find((x) => x.id === id);
-  if (!t) return;
-  const willBeDone = !t.done;
-  if (t.repeatDaily) setDailyLog(id, willBeDone);
-  t.done = willBeDone;
-  t.completedAt = willBeDone ? new Date().toISOString() : '';
-  save(STORAGE_KEYS.tasks, tasks);
-  refreshUI();
 }
 
 function deleteTask(id) {
@@ -212,7 +194,7 @@ function deleteTask(id) {
     removeTaskFromAllBlocks(id);
     save(STORAGE_KEYS.tasks, tasks);
     save(STORAGE_KEYS.timeblocks, timeblocks);
-    refreshUI();
+    emitStoreChanged();
   });
 }
 
@@ -238,7 +220,7 @@ function saveEditTask() {
   save(STORAGE_KEYS.tasks, tasks);
   save(STORAGE_KEYS.timeblocks, timeblocks);
   closeModal('modal-edit-task');
-  refreshUI();
+  emitStoreChanged();
 }
 
 // ---- Filtros + resumo ----
@@ -255,11 +237,6 @@ function getFilteredTasks() {
   if (currentFilter === 'done') return tasks.filter((t) => t.done);
   if (currentFilter === 'today') return tasks.filter((t) => isTaskForDate(t, today));
   return tasks;
-}
-
-function getTaskBlockLabel(taskId) {
-  const map = { morning: 'Manhã', afternoon: 'Tarde', evening: 'Noite', night: 'Madrugada' };
-  return map[getTaskAssignedBlock(taskId)] || '';
 }
 
 function focusTaskInput() {
@@ -294,7 +271,7 @@ function clearDoneTasks() {
     });
     save(STORAGE_KEYS.tasks, tasks);
     save(STORAGE_KEYS.timeblocks, timeblocks);
-    refreshUI();
+    emitStoreChanged();
     showToast('Limpo', `${donePunctual.length} removida(s), ${doneDaily.length} diária(s) reaberta(s).`, 'success');
   });
 }
@@ -379,13 +356,6 @@ function renderTasks() {
   }
   list.innerHTML = filtered.map(buildTaskItemHtml).join('');
   if (typeof lucide !== 'undefined') lucide.createIcons();
-}
-
-function formatDT(dt) {
-  if (!dt) return '';
-  const d = new Date(dt);
-  if (Number.isNaN(d.getTime())) return '';
-  return `${d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
 }
 
 // ---- Heatmap semanal (só diárias) ----
@@ -500,14 +470,14 @@ function moveTaskToBlock(taskId, block) {
   }
   applyTaskBlockSelection(taskId, block);
   save(STORAGE_KEYS.timeblocks, timeblocks);
-  refreshUI();
+  emitStoreChanged();
 }
 
 function removeFromBlock(taskId, block) {
   if (!timeblocks[block]) return;
   timeblocks[block] = timeblocks[block].filter((id) => id !== taskId);
   save(STORAGE_KEYS.timeblocks, timeblocks);
-  refreshUI();
+  emitStoreChanged();
 }
 
 // ---- Modelos prontos ----
@@ -618,7 +588,7 @@ function applyPresetRoutine(presetId) {
   });
   save(STORAGE_KEYS.tasks, tasks);
   save(STORAGE_KEYS.timeblocks, timeblocks);
-  refreshUI();
+  emitStoreChanged();
   showToast('Aplicado', `${preset.name}: ${preset.items.length} tarefas.`, 'success');
 }
 
@@ -636,3 +606,72 @@ function renderPresetRoutines() {
     </div>`).join('');
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
+
+// ---- Render da página + eventos + init (só Planejar) ----
+function renderTasksPage() {
+  renderTasks();
+  renderHeatmap();
+  renderTimeBlocks();
+  renderPresetRoutines();
+}
+
+function handleTasksClick(event) {
+  const target = event.target.closest('[data-action]');
+  if (!target) return;
+  const { action, filter, taskId, block, presetId } = target.dataset;
+
+  switch (action) {
+    case 'filter-tasks': if (filter) filterTasks(filter, target); break;
+    case 'toggle-task-composer': toggleTaskComposer(); break;
+    case 'add-task': addTask(); break;
+    case 'clear-done-tasks': clearDoneTasks(); break;
+    case 'toggle-task': if (taskId) toggleTask(taskId); break;
+    case 'edit-task': if (taskId) editTask(taskId); break;
+    case 'delete-task': if (taskId) deleteTask(taskId); break;
+    case 'move-to-block': if (taskId && block) moveTaskToBlock(taskId, block); break;
+    case 'remove-from-block': if (taskId && block) removeFromBlock(taskId, block); break;
+    case 'apply-preset': if (presetId) applyPresetRoutine(presetId); break;
+    case 'focus-task-input': focusTaskInput(); break;
+    case 'save-edit-task': saveEditTask(); break;
+    default: break;
+  }
+}
+
+// Checkbox do formulário: 'change' garante o estado já atualizado.
+function handleTasksChange(event) {
+  const target = event.target.closest('[data-action]');
+  if (!target) return;
+  if (target.dataset.action === 'sync-task-form') syncTaskFormState(false);
+  else if (target.dataset.action === 'sync-task-form-edit') syncTaskFormState(true);
+}
+
+function handleTasksKeydown(event) {
+  if (event.key === 'Enter' && document.activeElement?.id === 'task-input') {
+    event.preventDefault();
+    addTask();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.body.addEventListener('click', handleTasksClick);
+  document.body.addEventListener('change', handleTasksChange);
+  document.addEventListener('keydown', handleTasksKeydown);
+  setStoreChangedHandler(renderTasksPage);
+
+  const nowValue = getDefaultTaskDateTime();
+  const addInput = document.getElementById('task-datetime');
+  const editInput = document.getElementById('edit-task-datetime');
+  if (addInput && !addInput.value) addInput.value = nowValue;
+  if (editInput && !editInput.value) editInput.value = nowValue;
+
+  initTaskComposer();
+  checkNewDay();
+  renderTasksPage();
+
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+
+  window.addEventListener('focus', () => {
+    checkNewDay();
+    renderTasksPage();
+  });
+});

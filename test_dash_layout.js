@@ -99,10 +99,11 @@ global.getComputedStyle = () => ({ getPropertyValue: () => '' });
 
 for (const rel of [
   'scripts/core/theme.js',
+  'scripts/core/store.js',
+  'scripts/core/shell.js',
   'scripts/pages/settings.js',
   'scripts/pages/dashboard.js',
   'scripts/pages/tasks.js',
-  'app.js',
 ]) {
   vm.runInThisContext(fs.readFileSync(path.join(__dirname, rel), 'utf8'), { filename: rel });
 }
